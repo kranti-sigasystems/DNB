@@ -1,0 +1,41 @@
+// prisma/models/BusinessOwner.prisma
+model BusinessOwner {
+  id                  String      @id @default(uuid())
+  userId              String?
+  businessName        String
+  first_name          String?
+  last_name           String?
+  email               String      @unique
+  phoneNumber         String?
+  registrationNumber  String?     @unique
+  country             String
+  state               String?
+  city                String?
+  address             String?
+  postalCode          String?
+  planId              String?
+  paymentId           String?
+  status              BusinessOwnerStatus @default(active)
+  is_deleted          Boolean     @default(false)
+  is_verified         Boolean     @default(false)
+  is_approved         Boolean     @default(false)
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+  
+  // Relations
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan         Plan?      @relation(fields: [planId], references: [id])
+  payment      Payment?   @relation(fields: [paymentId], references: [id])
+  buyers       Buyer[]
+  offers       Offer[]
+  
+  @@map("business_owners")
+  @@index([email])
+  @@index([registrationNumber])
+  @@index([userId])
+}
+
+enum BusinessOwnerStatus {
+  active
+  inactive
+}

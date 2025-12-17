@@ -1,7 +1,7 @@
-import React from 'react';
+import Login from "./login/page";
 
 const layout = () => {
-  return <div>laasdfsdfasfout</div>;
+  return <><Login /></>;
 };
 
 export default layout;
