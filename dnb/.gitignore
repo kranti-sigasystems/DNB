@@ -10,6 +10,13 @@
 !.yarn/releases
 !.yarn/versions
 
+# .gitignore
+# Don't commit the generated schema if you're keeping separate model files
+# prisma/schema.prisma
+
+# But DO commit if this is your main schema file
+# Uncomment the line above only if you want separate model files in git
+
 # testing
 /coverage
 

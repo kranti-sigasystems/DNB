@@ -1,0 +1,16 @@
+model Role {
+  id          Int       @id
+  name        String    @unique
+  description String?   @default("")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  users       User[]
+  
+  @@map("roles")
+  
+  // Note: Prisma doesn't support validation regex like Sequelize
+  // You'll need to handle validation at the application level
+}

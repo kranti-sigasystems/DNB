@@ -25,7 +25,6 @@ export interface AuthSession {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  remember: boolean;
 }
 
 interface SetSessionOptions {
@@ -36,7 +35,6 @@ interface AuthContextValue {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  remember: boolean;
   isAuthenticated: boolean;
   loading: boolean;
   login: (session: AuthSession, options?: SetSessionOptions) => void;
@@ -55,7 +53,6 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   accessToken: null,
   refreshToken: null,
-  remember: true,
   isAuthenticated: false,
   loading: true,
   login: () => {},
@@ -127,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user: nextUser,
       };
 
-      persistSession(nextSession, { remember: prev.remember });
+      persistSession(nextSession);
       return nextSession;
     });
   }, []);
@@ -139,7 +136,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user: session?.user ?? null,
       accessToken: session?.accessToken ?? null,
       refreshToken: session?.refreshToken ?? null,
-      remember: session?.remember ?? true,
       isAuthenticated: Boolean(session?.accessToken && session?.user),
       loading: !initialised,
       login,
