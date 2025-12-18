@@ -1,35 +1,29 @@
-// model Plan {
-//   id                   String    @id @default(uuid())
-//   key                  String    @unique
-//   name                 String
-//   description          String    @default("")
-//   currency             String    @default("INR")
-//   billingCycle         BillingCycle @default(monthly)
-//   stripeProductId      String?
-//   stripePriceMonthlyId String?
-//   stripePriceYearlyId  String?
-//   priceMonthly         Float?
-//   priceYearly          Float?
-//   maxLocations         Int       @default(1)
-//   maxProducts          Int       @default(50)
-//   maxOffers            Int       @default(100)
-//   maxBuyers            Int       @default(50)
-//   features             Json      @default("[]")
-//   trialDays            Int       @default(0)
-//   isDefault            Boolean   @default(false)
-//   isActive             Boolean   @default(true)
-//   sortOrder            Int       @default(100)
-//   created_at           DateTime  @default(now())
-//   updated_at           DateTime  @updatedAt
+model Plan {
+  id                   String    @id @default(uuid())
+  key                  String    @unique
+  name                 String
+  description          String    @default("")
+  currency             String    @default("INR")
+  stripeProductId      String?
+  stripePriceMonthlyId String?
+  stripePriceYearlyId  String?
+  priceMonthly         Int       // Changed to Int for cents
+  priceYearly          Int       // Changed to Int for cents
+  maxUsers             Int       @default(1)
+  maxProducts          Int       @default(50)
+  maxOffers            Int       @default(100)
+  maxBuyers            Int       @default(50)
+  features             Json      @default("[]")
+  trialDays            Int       @default(0)
+  isDefault            Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  sortOrder            Int       @default(100)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   
-//   // Relations - ADDED payments relation
-//   businessOwners BusinessOwner[]
-//   payments       Payment[]
+  // Relations
+  payments             Payment[]
+  subscriptions        Subscription[]
   
-//   @@map("plans")
-// }
-
-// enum BillingCycle {
-//   monthly
-//   yearly
-// }
+  @@map("plans")
+}

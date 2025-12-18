@@ -1,19 +1,13 @@
 'use client';
 
-'use client';
-
 import { useEffect, useMemo, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { cn } from '@/lib/utils';
 import useAuth from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
-/**
- * Props interface
- */
 interface LandingNavbarProps {
   onMenuClick?: () => void;
   showSidebarButton?: boolean;
@@ -30,23 +24,16 @@ export default function LandingNavbar({
   showSidebarButton = false,
   isNoSidebarRoute = true,
 }: LandingNavbarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
-  /**
-   * Redirect authenticated users to dashboard
-   */
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/dashboard');
     }
   }, [isAuthenticated, router]);
 
-  /**
-   * Navigation links
-   */
   const navLinks: NavLink[] = useMemo(
     () => [
       { label: 'Onboard Process', path: '/onboard-process' },
@@ -60,19 +47,14 @@ export default function LandingNavbar({
   };
 
   return (
-    <header
-      className={cn(
-        'w-full h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50'
-      )}
-    >
-      {/* Wrapper Container */}
-      <div className="h-full mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl">
+    <header className="w-full sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* LEFT SECTION */}
         <div className="flex items-center gap-2">
           {showSidebarButton && (
             <button
               type="button"
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
               onClick={onMenuClick}
               aria-label="Open sidebar"
             >
@@ -91,27 +73,29 @@ export default function LandingNavbar({
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-4">
           {/* Desktop Navigation */}
-          <nav className=" lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 href={link.path}
-                className="text-gray-700  hover:text-gray-900 font-medium transition whitespace-nowrap"
+                className="text-gray-700 hover:text-gray-900 font-medium transition"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Login Button */}
-          <Button className="button-styling whitespace-nowrap " asChild>
-            <Link href="/login">Login </Link>
-          </Button>
+          {/* Desktop Login Button */}
+          <div className="hidden lg:block">
+            <Button asChild>
+              <Link href="/login">Login</Link>
+            </Button>
+          </div>
 
           {/* Mobile Menu Icon */}
           <button
             type="button"
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open mobile menu"
           >
@@ -122,27 +106,26 @@ export default function LandingNavbar({
 
       {/* MOBILE DRAWER */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/40 lg:hidden z-9000" role="dialog" aria-modal="true">
-          <div
-            className={cn(
-              'absolute top-0 right-0 h-full w-72 bg-white p-5 shadow-xl',
-              'transform transition-all duration-300 ease-out translate-x-0'
-            )}
-          >
-            {/* Drawer Header */}
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+
+          {/* Drawer */}
+          <div className="relative ml-auto w-72 h-full bg-white shadow-xl p-5 flex flex-col overflow-y-auto">
+            {/* Header */}
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold">Menu</h3>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg hover:bg-gray-100 transition"
                 aria-label="Close menu"
               >
                 <X className="w-6 h-6 text-gray-700" />
               </button>
             </div>
 
-            {/* Drawer Navigation */}
+            {/* Navigation */}
             <nav className="flex flex-col gap-5 text-lg">
               {navLinks.map((link) => (
                 <Link
@@ -156,15 +139,15 @@ export default function LandingNavbar({
               ))}
             </nav>
 
-            {/* Login Button */}
-            <div className="mt-8">
+            {/* Login */}
+            <div className="mt-auto">
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleLogin();
                 }}
-                className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg"
+                className="w-full py-2 mt-6 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition"
               >
                 Login
               </button>

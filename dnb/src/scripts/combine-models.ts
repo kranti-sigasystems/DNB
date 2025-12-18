@@ -22,8 +22,9 @@ function combinePrismaModels(): void {
   }
 
   // Get all .prisma files
-  const modelFiles = fs.readdirSync(modelsDir)
-    .filter(file => file.endsWith('.prisma'))
+  const modelFiles = fs
+    .readdirSync(modelsDir)
+    .filter((file) => file.endsWith('.prisma'))
     .sort(); // Sort for consistent ordering
 
   if (modelFiles.length === 0) {
@@ -40,7 +41,8 @@ function combinePrismaModels(): void {
 // ============================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -52,15 +54,15 @@ datasource db {
 
   const parsedContent: ParsedContent = {
     enums: [],
-    models: []
+    models: [],
   };
 
   // Parse each model file
-  modelFiles.forEach(file => {
+  modelFiles.forEach((file) => {
     const filePath = path.join(modelsDir, file);
     const content = fs.readFileSync(filePath, 'utf8');
     const { enums, models } = parsePrismaFile(content, file);
-    
+
     parsedContent.enums.push(...enums);
     parsedContent.models.push(...models);
   });
@@ -113,18 +115,18 @@ function parsePrismaFile(content: string, fileName: string): ParsedContent {
   const lines = content.split('\n');
   const result: ParsedContent = {
     enums: [],
-    models: []
+    models: [],
   };
-  
+
   let currentEnum: string[] = [];
   let inEnum = false;
   let currentModel: string[] = [];
   let inModel = false;
   let braceCount = 0;
-  
+
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     if (trimmed.startsWith('enum ')) {
       inEnum = true;
       braceCount = 1;
@@ -138,7 +140,7 @@ function parsePrismaFile(content: string, fileName: string): ParsedContent {
       // Count braces to handle nested structures (though uncommon in enums)
       braceCount += (line.match(/{/g) || []).length;
       braceCount -= (line.match(/}/g) || []).length;
-      
+
       if (braceCount === 0) {
         result.enums.push(currentEnum.join('\n'));
         currentEnum = [];
@@ -149,7 +151,7 @@ function parsePrismaFile(content: string, fileName: string): ParsedContent {
       // Count braces to handle nested field types
       braceCount += (line.match(/{/g) || []).length;
       braceCount -= (line.match(/}/g) || []).length;
-      
+
       if (braceCount === 0) {
         result.models.push(currentModel.join('\n'));
         currentModel = [];
@@ -157,18 +159,18 @@ function parsePrismaFile(content: string, fileName: string): ParsedContent {
       }
     }
   }
-  
+
   // Handle edge cases where file might not end properly
   if (currentEnum.length > 0) {
     console.warn(`⚠️  Unclosed enum in ${fileName}`);
     result.enums.push(currentEnum.join('\n'));
   }
-  
+
   if (currentModel.length > 0) {
     console.warn(`⚠️  Unclosed model in ${fileName}`);
     result.models.push(currentModel.join('\n'));
   }
-  
+
   return result;
 }
 
@@ -177,12 +179,14 @@ function validatePrismaSchema(content: string): boolean {
   // Basic validation - check for balanced braces
   const openBraces = (content.match(/{/g) || []).length;
   const closeBraces = (content.match(/}/g) || []).length;
-  
+
   if (openBraces !== closeBraces) {
-    console.error(`❌ Schema validation failed: Unbalanced braces (${openBraces} vs ${closeBraces})`);
+    console.error(
+      `❌ Schema validation failed: Unbalanced braces (${openBraces} vs ${closeBraces})`
+    );
     return false;
   }
-  
+
   return true;
 }
 

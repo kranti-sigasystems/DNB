@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 /* ============================
    Validation
