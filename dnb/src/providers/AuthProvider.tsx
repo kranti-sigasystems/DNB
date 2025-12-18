@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   useCallback,
@@ -13,18 +15,27 @@ import {
   getStoredSession,
   persistSession,
   subscribeToSessionChanges,
+  AuthSession as AuthUtilSession,
 } from '@/utils/auth';
 
 /* ----------------------------- Types ----------------------------- */
 
 export interface User {
+  id?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  businessName?: string;
+  userRole?: string;
   [key: string]: unknown;
 }
 
 export interface AuthSession {
   user: User | null;
-  accessToken: string | null;
+  authToken: string | null;
   refreshToken: string | null;
+  remember?: boolean;
 }
 
 interface SetSessionOptions {
@@ -33,8 +44,9 @@ interface SetSessionOptions {
 
 interface AuthContextValue {
   user: User | null;
-  accessToken: string | null;
+  authToken: string | null;
   refreshToken: string | null;
+  remember: boolean;
   isAuthenticated: boolean;
   loading: boolean;
   login: (session: AuthSession, options?: SetSessionOptions) => void;
@@ -51,8 +63,9 @@ interface AuthProviderProps {
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  accessToken: null,
+  authToken: null,
   refreshToken: null,
+  remember: true,
   isAuthenticated: false,
   loading: true,
   login: () => {},
@@ -64,7 +77,10 @@ const AuthContext = createContext<AuthContextValue>({
 /* -------------------------- Provider ---------------------------- */
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [session, setSessionState] = useState<AuthSession | null>(() => getStoredSession());
+  const [session, setSessionState] = useState<AuthUtilSession | null>(() => {
+    const initialSession = getStoredSession();
+    return initialSession;
+  });
   const [initialised, setInitialised] = useState<boolean>(Boolean(session));
   const initializingRef = useRef<boolean>(false);
 
@@ -82,7 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /* ------------------ Cross-tab Sync --------------------------- */
 
   useEffect(() => {
-    const unsubscribe = subscribeToSessionChanges((nextSession: AuthSession | null) => {
+    const unsubscribe = subscribeToSessionChanges((nextSession: AuthUtilSession | null) => {
       setSessionState(nextSession);
     });
 
@@ -113,36 +129,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const updateUser = useCallback((updater: User | ((prevUser: User) => User)) => {
     setSessionState((prev) => {
-      if (!prev || !prev.user) return prev;
+      if (!prev) return prev;
 
-      const nextUser = typeof updater === 'function' ? updater(prev.user) : updater;
+      const nextUser = typeof updater === 'function' ? updater(prev.user ?? {}) : updater;
 
       if (!nextUser) return prev;
 
-      const nextSession: AuthSession = {
+      const nextSession: AuthUtilSession = {
         ...prev,
         user: nextUser,
       };
 
-      persistSession(nextSession);
+      persistSession(nextSession, { remember: prev.remember });
       return nextSession;
     });
   }, []);
 
   /* ---------------------- Memo Value --------------------------- */
-
   const value: AuthContextValue = useMemo(
-    () => ({
-      user: session?.user ?? null,
-      accessToken: session?.accessToken ?? null,
-      refreshToken: session?.refreshToken ?? null,
-      isAuthenticated: Boolean(session?.accessToken && session?.user),
-      loading: !initialised,
-      login,
-      logout,
-      setSession,
-      updateUser,
-    }),
+    () => {
+      const authValue = {
+        user: session?.user ?? null,
+        authToken: session?.accessToken ?? null,
+        refreshToken: session?.refreshToken ?? null,
+        remember: session?.remember ?? true,
+        isAuthenticated: Boolean(session?.accessToken && session?.user),
+        loading: !initialised,
+        login,
+        logout,
+        setSession,
+        updateUser,
+      };
+      
+      return authValue;
+    },
     [session, initialised, login, logout, setSession, updateUser]
   );
 

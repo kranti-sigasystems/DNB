@@ -1,7 +1,9 @@
-import React from 'react';
+import Layout from '@/components/layout/Layout';
 
-const layout = () => {
-  return <div>layout</div>;
-};
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
 
-export default layout;
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  return <Layout>{children}</Layout>;
+}
