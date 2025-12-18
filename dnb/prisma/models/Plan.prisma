@@ -1,35 +1,35 @@
-// prisma/models/Plan.prisma
-model Plan {
-  id                   String    @id @default(uuid())
-  key                  String    @unique
-  name                 String
-  description          String    @default("")
-  currency             String    @default("INR")
-  billingCycle         BillingCycle @default(monthly)
-  stripeProductId      String?
-  stripePriceMonthlyId String?
-  stripePriceYearlyId  String?
-  priceMonthly         Float?
-  priceYearly          Float?
-  maxLocations         Int       @default(1)
-  maxProducts          Int       @default(50)
-  maxOffers            Int       @default(100)
-  maxBuyers            Int       @default(50)
-  features             Json      @default("[]")
-  trialDays            Int       @default(0)
-  isDefault            Boolean   @default(false)
-  isActive             Boolean   @default(true)
-  sortOrder            Int       @default(100)
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
+// model Plan {
+//   id                   String    @id @default(uuid())
+//   key                  String    @unique
+//   name                 String
+//   description          String    @default("")
+//   currency             String    @default("INR")
+//   billingCycle         BillingCycle @default(monthly)
+//   stripeProductId      String?
+//   stripePriceMonthlyId String?
+//   stripePriceYearlyId  String?
+//   priceMonthly         Float?
+//   priceYearly          Float?
+//   maxLocations         Int       @default(1)
+//   maxProducts          Int       @default(50)
+//   maxOffers            Int       @default(100)
+//   maxBuyers            Int       @default(50)
+//   features             Json      @default("[]")
+//   trialDays            Int       @default(0)
+//   isDefault            Boolean   @default(false)
+//   isActive             Boolean   @default(true)
+//   sortOrder            Int       @default(100)
+//   created_at           DateTime  @default(now())
+//   updated_at           DateTime  @updatedAt
   
-  // Relations
-  businessOwners BusinessOwner[]
+//   // Relations - ADDED payments relation
+//   businessOwners BusinessOwner[]
+//   payments       Payment[]
   
-  @@map("plans")
-}
+//   @@map("plans")
+// }
 
-enum BillingCycle {
-  monthly
-  yearly
-}
+// enum BillingCycle {
+//   monthly
+//   yearly
+// }

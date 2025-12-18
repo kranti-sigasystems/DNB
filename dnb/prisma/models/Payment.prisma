@@ -1,36 +1,35 @@
-// prisma/models/Payment.prisma
-model Payment {
-  id               String     @id @default(uuid())
-  userId           String
-  businessOwnerId  String?
-  planId           String
-  amount           Float
-  currency         String     @default("INR")
-  status           PaymentStatus @default(pending)
-  paymentMethod    PaymentMethod @default(card)
-  transactionId    String     @unique
-  subscriptionId   String?
-  invoicePdf       String?
-  created_at       DateTime   @default(now())
-  updated_at       DateTime   @updatedAt
+// model Payment {
+//   id               String     @id @default(uuid())
+//   userId           Int        // CHANGED from String
+//   businessOwnerId  String?
+//   planId           String
+//   amount           Float
+//   currency         String     @default("INR")
+//   status           PaymentStatus @default(pending)
+//   paymentMethod    PaymentMethod @default(card)
+//   transactionId    String     @unique
+//   subscriptionId   String?
+//   invoicePdf       String?
+//   created_at       DateTime   @default(now())
+//   updated_at       DateTime   @updatedAt
   
-  // Relations
-  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan            Plan       @relation(fields: [planId], references: [id])
-  businessOwners  BusinessOwner[]
+//   // Relations
+//   user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   plan            Plan       @relation(fields: [planId], references: [id])
+//   businessOwners  BusinessOwner[]
   
-  @@map("payments")
-}
+//   @@map("payments")
+// }
 
-enum PaymentStatus {
-  pending
-  success
-  failed
-}
+// enum PaymentStatus {
+//   pending
+//   success
+//   failed
+// }
 
-enum PaymentMethod {
-  card
-  upi
-  netbanking
-  wallet
-}
+// enum PaymentMethod {
+//   card
+//   upi
+//   netbanking
+//   wallet
+// }
