@@ -1,22 +1,21 @@
-// // prisma/models/User.prisma
-// model User {
-//   id             Int       @id @default(autoincrement())
-//   email          String    @unique  // ← Add @unique here
-//   password       String
-//   roleId         Int
-//   businessName   String?
-//   firstName      String?
-//   lastName       String?
-//   isDeleted      Boolean   @default(false)
-//   status         String    @default("active")
-//   deletedAt      DateTime?
-//   createdAt      DateTime  @default(now())
-//   updatedAt      DateTime  @updatedAt
+// prisma/models/User.prisma
+model User {
+  id                String    @id @default(uuid())
+  first_name        String?   @map("first_name")
+  last_name         String?   @map("last_name")
+  email             String    @unique
+  password          String
+  roleId            Int       @map("roleId")
+  businessName      String?   @map("businessName")
+  created_at        DateTime  @default(now()) @map("created_at")
+  updated_at        DateTime  @updatedAt @map("updated_at")
+  stripeCustomerId  String?   @map("stripeCustomerId")
+  subscriptionId    String?   @map("subscriptionId")
   
-//   // Relations
-//   role           Role      @relation(fields: [roleId], references: [id])
-//   businessOwner  BusinessOwner?
+  // Relations
+  businessOwner     BusinessOwner?
+  payments          Payment[]
+  subscriptions     Subscription[]
   
-//   @@map("users")
-//   // Remove any @@index or @@unique lines if you added @unique above
-// }
+  @@map("users")
+}

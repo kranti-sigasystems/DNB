@@ -9,7 +9,7 @@ async function main() {
     const projectRoot = process.cwd();
     const modelDir = path.join(projectRoot, 'prisma/models');
     const outputFile = path.join(projectRoot, 'prisma/schema.prisma');
-    
+
     console.log('📂 Project root:', projectRoot);
     console.log('🔍 Model directory:', modelDir);
     
@@ -43,6 +43,7 @@ async function main() {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {

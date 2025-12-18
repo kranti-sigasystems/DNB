@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 /* ============================
    Validation
@@ -227,12 +227,6 @@ export async function loginAction(
 
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
-    
-    console.log('Tokens generated:');
-    console.log('- Access Token Length:', accessToken.length);
-    console.log('- Refresh Token Length:', refreshToken.length);
-    console.log('- Access Token Preview:', accessToken.substring(0, 50) + '...');
-    console.log('- Refresh Token Preview:', refreshToken.substring(0, 50) + '...');
 
     const cookieStore = await cookies();
 

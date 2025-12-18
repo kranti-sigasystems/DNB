@@ -1,40 +1,29 @@
-// model BusinessOwner {
-//   id                  String      @id @default(uuid())
-//   userId              Int?        // CHANGED from String?
-//   businessName        String
-//   first_name          String?
-//   last_name           String?
-//   email               String      @unique
-//   phoneNumber         String?
-//   registrationNumber  String?     @unique
-//   country             String
-//   state               String?
-//   city                String?
-//   address             String?
-//   postalCode          String?
-//   planId              String?
-//   paymentId           String?
-//   status              BusinessOwnerStatus @default(active)
-//   is_deleted          Boolean     @default(false)
-//   is_verified         Boolean     @default(false)
-//   is_approved         Boolean     @default(false)
-//   created_at          DateTime    @default(now())
-//   updated_at          DateTime    @updatedAt
+model BusinessOwner {
+  id                  String      @id @default(uuid())
+  userId              String      @unique
+  businessName        String      @unique
+  first_name          String?     @map("first_name")
+  last_name           String?     @map("last_name")
+  email               String      @unique
+  phoneNumber         String?     @map("phoneNumber")
+  registrationNumber  String      @unique @map("registrationNumber")
+  country             String
+  state               String
+  city                String
+  address             String
+  postalCode          String      @map("postalCode")
+  planId              String?     @map("planId")
+  paymentId           String?     @map("paymentId")
+  status              String      @default("active")
+  is_deleted          Boolean     @default(false) @map("is_deleted")
+  is_verified         Boolean     @default(false) @map("is_verified")
+  is_approved         Boolean     @default(false) @map("is_approved")
+  createdAt           DateTime    @default(now()) @map("createdAt")
+  updatedAt           DateTime    @updatedAt @map("updatedAt")
   
-//   // Relations
-//   user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   plan         Plan?      @relation(fields: [planId], references: [id])
-//   payment      Payment?   @relation(fields: [paymentId], references: [id])
-//   buyers       Buyer[]
-//   offers       Offer[]
+  // Relations
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions       Subscription[]
   
-//   @@map("business_owners")
-//   @@index([email])
-//   @@index([registrationNumber])
-//   @@index([userId])
-// }
-
-// // enum BusinessOwnerStatus {
-// //   active
-// //   inactive
-// // }
+  @@map("business_owners")
+}

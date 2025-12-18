@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2 } from 'lucide-react';
 
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+/* -------------------- TYPES -------------------- */
 
 type BillingCycle = 'monthly' | 'yearly';
 
@@ -31,6 +33,8 @@ interface Plan {
   features?: string[];
 }
 
+/* -------------------- HELPERS -------------------- */
+
 const safeJSONParse = <T,>(value: string | null): T | null => {
   try {
     return value ? (JSON.parse(value) as T) : null;
@@ -39,26 +43,42 @@ const safeJSONParse = <T,>(value: string | null): T | null => {
   }
 };
 
+const fetchPlans = async (): Promise<Plan[]> => {
+  const res = await fetch('http://localhost:3000/api/plans');
+  if (!res.ok) throw new Error('Failed to fetch plans');
+  return res.json();
+};
+
+/* -------------------- COMPONENT -------------------- */
+
 export default function Plans() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
   const router = useRouter();
 
-  const storedUser = useMemo<StoredUser | null>(() => {
-    return safeJSONParse<StoredUser>(sessionStorage.getItem('user'));
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
+  const [storedUser, setStoredUser] = useState<StoredUser | null>(null);
+
+  /* ---- Read sessionStorage SAFELY ---- */
+  useEffect(() => {
+    const user = safeJSONParse<StoredUser>(sessionStorage.getItem('user'));
+    setStoredUser(user);
   }, []);
 
   const currentPlanId = storedUser?.planId ?? null;
   const userId = storedUser?.id;
 
+  /* ---- React Query ---- */
   const {
     data: plans = [],
     isLoading,
     isError,
   } = useQuery<Plan[]>({
     queryKey: ['plans'],
+    queryFn: fetchPlans,
     retry: 1,
     staleTime: 1000 * 60 * 5,
   });
+
+  /* -------------------- UI HELPERS -------------------- */
 
   const formatCurrency = (amount = 0, currency = 'INR'): string =>
     new Intl.NumberFormat('en-IN', {
@@ -70,6 +90,22 @@ export default function Plans() {
   const isActivePlan = (planId: string): boolean => planId === currentPlanId;
 
   const handlePlanSelect = (plan: Plan): void => {
+    console.log('Plan selected:', plan);
+    console.log('Billing cycle:', billingCycle);
+
+    // Store plan data for checkout page
+    const planData = {
+      selectedPlan: {
+        ...plan,
+        price: billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly,
+        currency: plan.currency || 'INR',
+        maxUsers: plan.maxBuyers, // Map maxBuyers to maxUsers for compatibility
+      },
+      billingCycle,
+    };
+    console.log('Storing plan data:', planData);
+    sessionStorage.setItem('selectedPlanData', JSON.stringify(planData));
+    // Also store for payment processing
     sessionStorage.setItem(
       'pendingBusinessData',
       JSON.stringify({
@@ -80,10 +116,11 @@ export default function Plans() {
       })
     );
 
-    router.push(userId ? '/checkout' : '/register');
+    console.log('Navigating to checkout...');
+    router.push('/checkout');
   };
 
-  /* ---------------- UI STATES ---------------- */
+  /* -------------------- STATES -------------------- */
 
   if (isLoading) {
     return (
@@ -101,7 +138,7 @@ export default function Plans() {
     );
   }
 
-  /* ---------------- RENDER ---------------- */
+  /* -------------------- RENDER -------------------- */
 
   return (
     <div className="space-y-10 text-center">
@@ -198,6 +235,8 @@ export default function Plans() {
     </div>
   );
 }
+
+/* -------------------- SMALL COMPONENT -------------------- */
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (

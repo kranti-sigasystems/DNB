@@ -1,35 +1,65 @@
-// model Payment {
-//   id               String     @id @default(uuid())
-//   userId           Int        // CHANGED from String
-//   businessOwnerId  String?
-//   planId           String
-//   amount           Float
-//   currency         String     @default("INR")
-//   status           PaymentStatus @default(pending)
-//   paymentMethod    PaymentMethod @default(card)
-//   transactionId    String     @unique
-//   subscriptionId   String?
-//   invoicePdf       String?
-//   created_at       DateTime   @default(now())
-//   updated_at       DateTime   @updatedAt
+model Payment {
+  id                    String        @id @default(uuid())
+  userId                String
+  planId                String
+  amount                Int           // Amount in cents
+  currency              String        @default("INR")
+  status                PaymentStatus @default(PENDING)
+  billingCycle          BillingCycle  @default(MONTHLY)
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?       @unique
+  stripeSubscriptionId  String?
+  metadata              Json?
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   
-//   // Relations
-//   user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   plan            Plan       @relation(fields: [planId], references: [id])
-//   businessOwners  BusinessOwner[]
+  // Relations
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  Plan          @relation(fields: [planId], references: [id])
   
-//   @@map("payments")
-// }
+  @@map("payments")
+}
 
-// enum PaymentStatus {
-//   pending
-//   success
-//   failed
-// }
+model Subscription {
+  id                   String            @id @default(uuid())
+  userId               String
+  planId               String
+  businessOwnerId      String?
+  status               SubscriptionStatus @default(ACTIVE)
+  billingCycle         BillingCycle      @default(MONTHLY)
+  startDate            DateTime
+  endDate              DateTime
+  stripeSubscriptionId String?           @unique
+  autoRenew            Boolean           @default(true)
+  lastPaymentDate      DateTime?
+  cancelledAt          DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  
+  // Relations
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 Plan              @relation(fields: [planId], references: [id])
+  businessOwner        BusinessOwner?    @relation(fields: [businessOwnerId], references: [id])
+  
+  @@map("subscriptions")
+}
 
-// enum PaymentMethod {
-//   card
-//   upi
-//   netbanking
-//   wallet
-// }
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAYMENT_FAILED
+}
