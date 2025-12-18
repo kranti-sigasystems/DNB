@@ -1,43 +1,43 @@
-// prisma/models/Offer.prisma
-model Offer {
-  id                  Int           @id @default(autoincrement())
-  business_owner_id   String
-  offer_name          String
-  business_name       String
-  from_party          String
-  to_party            String
-  buyer_id            String?
-  origin              String
-  processor           String?
-  plant_approval_number String
-  destination         String
-  brand               String
-  draft_name          String?
-  offer_validity_date DateTime
-  shipment_date       DateTime?
-  grand_total         Float?
-  quantity            String?
-  tolerance           String?
-  payment_terms       String?
-  remark              String?
-  status              OfferStatus   @default(open)
-  is_deleted          Boolean       @default(false)
-  created_at          DateTime      @default(now())
-  updated_at          DateTime      @updatedAt
+// // prisma/models/Offer.prisma
+// model Offer {
+//   id                  Int           @id @default(autoincrement())
+//   business_owner_id   String
+//   offer_name          String
+//   business_name       String
+//   from_party          String
+//   to_party            String
+//   buyer_id            String?
+//   origin              String
+//   processor           String?
+//   plant_approval_number String
+//   destination         String
+//   brand               String
+//   draft_name          String?
+//   offer_validity_date DateTime
+//   shipment_date       DateTime?
+//   grand_total         Float?
+//   quantity            String?
+//   tolerance           String?
+//   payment_terms       String?
+//   remark              String?
+//   status              OfferStatus   @default(open)
+//   is_deleted          Boolean       @default(false)
+//   created_at          DateTime      @default(now())
+//   updated_at          DateTime      @updatedAt
   
-  // Relations
-  businessOwner BusinessOwner @relation(fields: [business_owner_id], references: [id], onDelete: Cascade)
-  buyer         Buyer?        @relation(fields: [buyer_id], references: [id], onDelete: SetNull)
+//   // Relations
+//   businessOwner BusinessOwner @relation(fields: [business_owner_id], references: [id], onDelete: Cascade)
+//   buyer         Buyer?        @relation(fields: [buyer_id], references: [id], onDelete: SetNull)
   
-  @@map("offers")
-}
+//   @@map("offers")
+// }
 
-enum OfferStatus {
-  open
-  Open
-  Close
-  buyer_accepted         @map("Buyer Accepted")
-  buyer_rejected         @map("Buyer Rejected")
-  business_owner_accepted @map("Business Owner Accepted")
-  business_owner_rejected @map("Business Owner Rejected")
-}
+// enum OfferStatus {
+//   open
+//   Open
+//   Close
+//   buyer_accepted         @map("Buyer Accepted")
+//   buyer_rejected         @map("Buyer Rejected")
+//   business_owner_accepted @map("Business Owner Accepted")
+//   business_owner_rejected @map("Business Owner Rejected")
+// }

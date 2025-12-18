@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,55 +8,50 @@ import toast from "react-hot-toast";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { authValidation } from "@/lib/utils/authValidation";
-import { login } from "@/core/services/auth.service";
+import { loginFormAction } from "@/actions/auth.actions";
 import { InputField } from "@/components/common/InputField";
 import { PasswordField } from "@/components/common/PasswordField";
 import useAuth from "@/hooks/use-auth";
-import { LoginFormData, AuthResponse, ApiError } from "@/types/auth";
+import { LoginFormData } from "@/types/auth";
 
 export default function Login() {
   const router = useRouter();
-  const [loading, setLoading] = useState<boolean>(false);
   const { login: setSession } = useAuth();
+  
+  const [state, formAction, isPending] = useActionState(
+    async (prevState: any, formData: FormData) => {
+      const result = await loginFormAction(prevState, formData);
+      
+      // Handle successful login
+      if (result?.success && result?.data) {
+        const { accessToken, refreshToken, tokenPayload } = result.data;
+        
+        // Store in sessionStorage exactly as shown in the image
+        sessionStorage.setItem('authToken', accessToken);
+        sessionStorage.setItem('refreshToken', refreshToken);
+        sessionStorage.setItem('user', JSON.stringify(tokenPayload));
+        
+        console.log('Stored in sessionStorage:');
+        console.log('- authToken:', accessToken);
+        console.log('- refreshToken:', refreshToken);
+        console.log('- user:', JSON.stringify(tokenPayload));
+        
+        toast.success("Login successful!");
+        
+        // Redirect to dashboard or specified route
+        if (result.redirectTo) {
+          router.push(result.redirectTo);
+        }
+      }
+      
+      return result;
+    },
+    { error: "" }
+  );
 
   const form = useForm<LoginFormData>({
     defaultValues: { businessName: "", email: "", password: "" },
   });
-
-  const onSubmit = async (values: LoginFormData) => {
-    setLoading(true);
-    try {
-      const { data } = await login(values);
-
-      if (!data?.accessToken || !data?.refreshToken) {
-        throw new Error("Missing tokens from server");
-      }
-
-      setSession(
-        {
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          user: data.tokenPayload,
-        },
-        { remember: true }
-      );
-
-      toast.success(`Welcome back, ${data.tokenPayload?.name ?? "User"}!`);
-      const activeNegId = data.tokenPayload?.activeNegotiationId;
-      if (activeNegId) {
-        router.push(`/negotiation/${activeNegId}`); // Changed from navigate
-      } else {
-        router.push("/dashboard"); // Changed from navigate
-      }
-    } catch (err: unknown) {
-      const error = err as ApiError;
-      toast.error(
-        error.response?.data?.message || error.message || "Login failed"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex flex-col-reverse md:flex-row min-h-screen bg-white">
@@ -68,7 +63,7 @@ export default function Login() {
           </h1>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form action={formAction} className="space-y-6">
               {/* Business Name */}
               <Controller
                 name="businessName"
@@ -115,26 +110,31 @@ export default function Login() {
                 )}
               />
 
+              {/* Display error from server action */}
+              {state?.error && (
+                <div className="text-red-600 text-sm">{state.error}</div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full button-styling"
-                disabled={loading}
+                disabled={isPending}
               >
-                {loading ? "Logging in..." : "Login"}
+                {isPending ? "Logging in..." : "Login"}
               </Button>
             </form>
           </Form>
 
           <div className="flex justify-between items-center mt-6 text-sm font-medium">
             <Link
-              href="/forgot-password" // Changed from 'to'
+              href="/forgot-password"
               className="text-blue-600 underline hover:text-blue-800 transition"
             >
               Forgot password?
             </Link>
 
             <Link
-              href="/" // Changed from 'to'
+              href="/"
               className="text-blue-600 underline hover:text-blue-800 transition"
             >
               Back to home

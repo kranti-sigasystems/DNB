@@ -1,36 +1,22 @@
-model User {
-  // UUID with PostgreSQL gen_random_uuid() equivalent
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+// // prisma/models/User.prisma
+// model User {
+//   id             Int       @id @default(autoincrement())
+//   email          String    @unique  // ← Add @unique here
+//   password       String
+//   roleId         Int
+//   businessName   String?
+//   firstName      String?
+//   lastName       String?
+//   isDeleted      Boolean   @default(false)
+//   status         String    @default("active")
+//   deletedAt      DateTime?
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
   
-  // Name fields with length constraints
-  first_name     String?   @db.VarChar(50) @map("first_name")
-  last_name      String?   @db.VarChar(50) @map("last_name")
+//   // Relations
+//   role           Role      @relation(fields: [roleId], references: [id])
+//   businessOwner  BusinessOwner?
   
-  // Email with TEXT type and unique constraint
-  email          String    @unique @db.Text
-  
-  // Password with TEXT type
-  password       String    @db.Text
-  
-  // Foreign key to Role
-  roleId         Int
-  role           Role      @relation(fields: [roleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  
-  // Business name with length constraint
-  businessName   String?   @db.VarChar(100) @map("business_name")
-  
-  // Optional subscription reference
-  subscriptionId Int?
-  
-  // Timestamps
-  created_at     DateTime  @default(now()) @map("created_at")
-  updated_at     DateTime  @updatedAt @map("updated_at")
-  
-  @@map("users")
-  @@index([email], unique: true)
-  
-  // Note: Prisma doesn't support:
-  // 1. Regex validation in schema (handle in app layer)
-  // 2. Password length validation in schema (handle in app layer)
-  // 3. Direct sequelize.literal for default values (use dbgenerated)
-}
+//   @@map("users")
+//   // Remove any @@index or @@unique lines if you added @unique above
+// }

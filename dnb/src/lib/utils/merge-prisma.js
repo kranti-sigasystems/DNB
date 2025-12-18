@@ -2,59 +2,67 @@
 const fs = require('fs/promises');
 const path = require('path');
 
-async function mergePrismaSchemas() {
+console.log('🚀 Starting Prisma schema merge...');
+
+async function main() {
   try {
-    console.log('📦 Merging Prisma schemas...');
-    
     const projectRoot = process.cwd();
     const modelDir = path.join(projectRoot, 'prisma/models');
     const outputFile = path.join(projectRoot, 'prisma/schema.prisma');
     
-    console.log(`Looking in: ${modelDir}`);
+    console.log('Project:', projectRoot);
     
-    // Read all .prisma files from models directory
-    const files = await fs.readdir(modelDir);
-    const prismaFiles = files.filter(file => file.endsWith('.prisma'));
+    // Ensure directories exist
+    await fs.mkdir(path.dirname(outputFile), { recursive: true });
+    await fs.mkdir(modelDir, { recursive: true });
     
-    if (prismaFiles.length === 0) {
-      console.error('❌ No .prisma files found in prisma/models/');
-      process.exit(1);
+    // Get files
+    let files = [];
+    try {
+      files = await fs.readdir(modelDir);
+    } catch {
+      console.log('No models directory, creating...');
     }
     
-    console.log(`Found ${prismaFiles.length} model files:`);
-    prismaFiles.forEach(file => console.log(`  - ${file}`));
+    const prismaFiles = files.filter(f => f.endsWith('.prisma'));
+    console.log(`Found ${prismaFiles.length} .prisma files`);
     
-    // Create base schema
-    let mergedSchema = `generator client {
+    if (prismaFiles.length === 0) {
+      console.log('No model files found.');
+      return;
+    }
+    
+    // Build schema CORRECTLY
+    let schema = `// Auto-generated
+// Date: ${new Date().toISOString()}
+
+generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 `;
     
-    // Add imports
-    mergedSchema += '\n// Import model files\n';
-    prismaFiles.forEach(file => {
-      mergedSchema += `import "./models/${file}"\n`;
-    });
+    // CONCATENATE actual content, NOT import statements
+    for (const file of prismaFiles) {
+      console.log('Adding content from:', file);
+      const filePath = path.join(modelDir, file);
+      const content = await fs.readFile(filePath, 'utf-8');
+      schema += `\n// === ${file} ===\n`;
+      schema += content + '\n';
+    }
     
-    // Write output
-    await fs.writeFile(outputFile, mergedSchema, 'utf-8');
-    console.log(`✅ Schema created at: ${outputFile}`);
+    // Write
+    await fs.writeFile(outputFile, schema);
+    console.log('✅ Schema created successfully');
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error:', error.message);
     process.exit(1);
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  mergePrismaSchemas();
-}
-
-module.exports = { mergePrismaSchemas };
+main();
