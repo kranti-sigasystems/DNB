@@ -16,7 +16,7 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  accessToken: string;
+  authToken: string;
   refreshToken: string;
   tokenPayload: {
     id: string;
@@ -27,7 +27,7 @@ export interface LoginResponse {
     [key: string]: any;
   };
   data?: {
-    accessToken?: string;
+    authToken?: string;
     refreshToken?: string;
     tokenPayload?: any;
     remember?: boolean;
@@ -37,7 +37,7 @@ export interface LoginResponse {
 
 export interface RefreshTokenResponse {
   data?: {
-    accessToken?: string;
+    authToken?: string;
     refreshToken?: string;
     [key: string]: any;
   };
@@ -55,7 +55,7 @@ export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 export interface Session {
-  accessToken: string | null;
+  authToken: string | null;
   refreshToken: string | null;
   user: any;
   remember: boolean;

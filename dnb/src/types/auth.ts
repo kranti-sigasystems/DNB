@@ -6,7 +6,7 @@ export interface LoginFormData {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  authToken: string;
   refreshToken: string;
   tokenPayload: TokenPayload;
 }
@@ -21,7 +21,7 @@ export interface TokenPayload {
 }
 
 export interface AuthState {
-  accessToken: string | null;
+  authToken: string | null;
   refreshToken: string | null;
   user: TokenPayload | null;
   isAuthenticated: boolean;

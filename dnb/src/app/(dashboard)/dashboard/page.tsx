@@ -1,7 +1,10 @@
-import React from 'react';
+"use client";
 
-const page = () => {
-  return <div>page</div>;
-};
+import useAuth from "@/hooks/use-auth";
+import { OptimizedDashboard } from "@/components/dashboard/optimized-dashboard";
 
-export default page;
+export default function Dashboard() {
+  const { user } = useAuth();
+  
+  return <OptimizedDashboard user={user} />;
+}

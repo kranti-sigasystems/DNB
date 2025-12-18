@@ -45,21 +45,23 @@ const parseJSON = <T>(value: string | null, fallback: T | null = null): T | null
 const normaliseSession = (
   session: Partial<AuthSession & { token?: string; tokenPayload?: any; data?: any }> | null = {}
 ): AuthSession | null => {
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const { accessToken = null, refreshToken = null, user = null, remember } = session;
-
   if (!accessToken || !user) {
     return null;
   }
 
-  return {
+  const normalized = {
     accessToken,
     refreshToken,
     user,
     remember: remember ?? true,
     updatedAt: Date.now(),
   };
+  return normalized;
 };
 
 const syncStorage = (storage: Storage | null, session: AuthSession | null): void => {
@@ -105,13 +107,17 @@ const emitSessionChange = (session: AuthSession | null): void => {
 /* ------------------------------ API -------------------------------- */
 
 export const getUserFromCookie = (): User | null => {
-  const userCookie = Cookies.get('userInfo');
-  if (!userCookie) return null;
+  const userCookie = Cookies.get('user');
+  
+  if (!userCookie) {
+    return null;
+  }
 
   try {
-    return JSON.parse(userCookie) as User;
+    const parsed = JSON.parse(userCookie) as User;
+    return parsed;
   } catch (err) {
-    console.error('Failed to parse user cookie:', err);
+    console.error('getUserFromCookie: Failed to parse user cookie:', err);
     return null;
   }
 };
@@ -119,17 +125,75 @@ export const getUserFromCookie = (): User | null => {
 export const getStoredSession = (): AuthSession | null => {
   if (!isBrowser) return null;
 
-  const sessionValue =
-    sessionStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem(AUTH_STORAGE_KEY);
+  // First check session/local storage for complete session
+  const sessionValue = sessionStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem(AUTH_STORAGE_KEY);
 
-  const parsed = parseJSON<AuthSession>(sessionValue);
-  const normalised = normaliseSession(parsed);
+  if (sessionValue) {
+    const parsed = parseJSON<AuthSession>(sessionValue);
+    
+    // If session exists but accessToken is null, try to get it from individual storage
+    if (parsed && parsed.user && !parsed.accessToken) {
+      const authTokenFromStorage = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+      const refreshTokenFromStorage = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+      
+      if (authTokenFromStorage) {
+        // Update the parsed session with the token from storage
+        parsed.accessToken = authTokenFromStorage;
+        parsed.refreshToken = refreshTokenFromStorage || parsed.refreshToken
+      }
+    }
+    
+    const normalised = normaliseSession(parsed);
 
-  if (normalised && !sessionStorage.getItem(AUTH_STORAGE_KEY)) {
-    syncStorage(sessionStorage, normalised);
+    if (normalised && !sessionStorage.getItem(AUTH_STORAGE_KEY)) {
+      syncStorage(sessionStorage, normalised);
+    }
+    return normalised;
   }
 
-  return normalised;
+  // If no complete session, check individual storage items
+  const authTokenFromStorage = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+  const refreshTokenFromStorage = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+  const userFromStorage = sessionStorage.getItem('user') || localStorage.getItem('user');
+
+  if (authTokenFromStorage && userFromStorage) {
+    try {
+      const userParsed = JSON.parse(userFromStorage);
+      const storageSession: AuthSession = {
+        accessToken: authTokenFromStorage,
+        refreshToken: refreshTokenFromStorage || null,
+        user: userParsed,
+        remember: true,
+        updatedAt: Date.now(),
+      };
+      syncStorage(sessionStorage, storageSession);
+      
+      return storageSession;
+    } catch (err) {
+      console.error('getStoredSession: Failed to parse user from storage:', err);
+    }
+  }
+
+  // If no session storage, check cookies
+  const authTokenCookie = Cookies.get('accessToken');
+  const refreshTokenCookie = Cookies.get('refreshToken');
+  const userCookie = getUserFromCookie();
+
+  if (userCookie && authTokenCookie) {
+    // Create session from cookie data
+    const cookieSession: AuthSession = {
+      accessToken: authTokenCookie,
+      refreshToken: refreshTokenCookie || null,
+      user: userCookie,
+      remember: true,
+      updatedAt: Date.now(),
+    };
+    // Store in session storage for future use
+    syncStorage(sessionStorage, cookieSession);
+    
+    return cookieSession;
+  }
+  return null;
 };
 
 export const getSession = (): User | null => {
@@ -137,9 +201,14 @@ export const getSession = (): User | null => {
   return session?.user ?? null;
 };
 
-export const getAccessToken = (): string | null => {
+export const getauthToken = (): string | null => {
   const session = getStoredSession();
   return session?.accessToken ?? null;
+};
+
+// Alias for compatibility with frontend code
+export const getAccessToken = (): string | null => {
+  return getauthToken();
 };
 
 export const getRefreshToken = (): string | null => {
@@ -190,6 +259,12 @@ export const clearSession = (): void => {
 
   syncStorage(sessionStorage, null);
   syncStorage(localStorage, null);
+  
+  // Also clear cookies
+  sessionStorage.remove('accessToken');
+  sessionStorage.remove('refreshToken');
+  sessionStorage.remove('user');
+  
   emitSessionChange(null);
 };
 
