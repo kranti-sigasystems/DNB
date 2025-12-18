@@ -8,7 +8,7 @@ import axios, {
 } from "axios";
 import {
   clearSession,
-  getAccessToken,
+  getauthToken,
   getRefreshToken,
   getStoredSession,
   persistSession,
@@ -18,7 +18,6 @@ import {
   RefreshTokenResponse,
   Session 
 } from "@/types/api";
-console.log("process.env.VITE_API_URL",process.env.NEXT_PUBLIC_API_URL)
 export const apiClient: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
@@ -32,7 +31,7 @@ let refreshPromise: Promise<AxiosResponse<RefreshTokenResponse>> | null = null;
 // Attach Authorization header
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
+    const token = getauthToken();
     if (token && config.headers) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -76,13 +75,13 @@ apiClient.interceptors.response.use(
         const refreshResponse = await refreshPromise!;
 
         const refreshedData = refreshResponse?.data?.data ?? {};
-        const newAccessToken = refreshedData?.accessToken;
+        const newauthToken = refreshedData?.authToken;
         const newRefreshToken = refreshedData?.refreshToken;
         const existingSession = getStoredSession();
 
         if (existingSession) {
           const nextSession: Session = {
-            accessToken: newAccessToken ?? existingSession.accessToken,
+            authToken: newauthToken ?? existingSession.accessToken,
             refreshToken: newRefreshToken ?? existingSession.refreshToken,
             user: existingSession.user,
             remember: existingSession.remember,
@@ -90,10 +89,10 @@ apiClient.interceptors.response.use(
           persistSession(nextSession, { remember: existingSession.remember });
         }
 
-        if (newAccessToken && originalRequest.headers) {
-          originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        if (newauthToken && originalRequest.headers) {
+          originalRequest.headers["Authorization"] = `Bearer ${newauthToken}`;
           if (apiClient.defaults.headers) {
-            apiClient.defaults.headers["Authorization"] = `Bearer ${newAccessToken}`;
+            apiClient.defaults.headers["Authorization"] = `Bearer ${newauthToken}`;
           }
         }
 

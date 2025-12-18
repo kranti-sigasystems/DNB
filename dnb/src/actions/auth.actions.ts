@@ -40,7 +40,7 @@ interface TokenPayload {
 }
 
 interface LoginResponse {
-  accessToken: string;
+  authToken: string;
   refreshToken: string;
   tokenPayload: TokenPayload;
   roleCreatedAt?: Date;
@@ -52,7 +52,7 @@ interface LoginResponse {
    Helpers
 ============================ */
 
-const generateAccessToken = (payload: TokenPayload) =>
+const generateauthToken = (payload: TokenPayload) =>
   jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET!, {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m',
   });
@@ -92,7 +92,6 @@ export async function loginAction(
     }
 
     const { email, password, businessName } = parsed.data;
-    console.log('Login attempt for email:', email);
     
     let user = await prisma.user.findUnique({
       where: { email },
@@ -102,16 +101,6 @@ export async function loginAction(
       },
     });
     
-    console.log('User found:', user ? 'Yes' : 'No');
-    if (user) {
-      console.log('User details:', {
-        id: user.id,
-        email: user.email,
-        roleId: user.roleId,
-        role: user.role?.name,
-        businessOwner: user.businessOwner ? 'Has business owner' : 'No business owner'
-      });
-    }
     // Create user
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -225,12 +214,12 @@ export async function loginAction(
        Tokens & Cookies
     ============================ */
 
-    const accessToken = generateAccessToken(tokenPayload);
+    const authToken = generateauthToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
 
-    const cookieStore = await cookies();
+    const sessionStorage = await cookies();
 
-    cookieStore.set('accessToken', accessToken, {
+    sessionStorage.set('authToken', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -238,7 +227,7 @@ export async function loginAction(
       path: '/',
     });
 
-    cookieStore.set('refreshToken', refreshToken, {
+    sessionStorage.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -246,7 +235,7 @@ export async function loginAction(
       path: '/',
     });
 
-    cookieStore.set('user', JSON.stringify(tokenPayload), {
+    sessionStorage.set('user', JSON.stringify(tokenPayload), {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24,
@@ -256,7 +245,7 @@ export async function loginAction(
     const loginResponse = {
       success: true,
       data: {
-        accessToken,
+        authToken,
         refreshToken,
         tokenPayload,
         roleCreatedAt: user.role.createdAt,
@@ -267,14 +256,7 @@ export async function loginAction(
         ? `/negotiation/${tokenPayload.activeNegotiationId}`
         : '/dashboard',
     };
-    
-    console.log('=== LOGIN SUCCESSFUL ===');
-    console.log('Complete Login Response:', JSON.stringify(loginResponse, null, 2));
-    console.log('Access Token:', accessToken);
-    console.log('Refresh Token:', refreshToken);
-    console.log('Token Payload:', JSON.stringify(tokenPayload, null, 2));
-    console.log('========================');
-    
+
     return loginResponse;
   } catch (err) {
     console.error('Login error:', err);
@@ -282,7 +264,6 @@ export async function loginAction(
       success: false,
       error: err instanceof Error ? err.message : 'Login failed',
     };
-    console.log('Login failed! Error response:', errorResponse);
     return errorResponse;
   }
 }

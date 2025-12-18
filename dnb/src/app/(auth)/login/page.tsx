@@ -16,7 +16,7 @@ import { LoginFormData } from "@/types/auth";
 
 export default function Login() {
   const router = useRouter();
-  const { login: setSession } = useAuth();
+  const { } = useAuth();
   
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -24,18 +24,12 @@ export default function Login() {
       
       // Handle successful login
       if (result?.success && result?.data) {
-        const { accessToken, refreshToken, tokenPayload } = result.data;
+        const { authToken, refreshToken, tokenPayload } = result.data;
         
         // Store in sessionStorage exactly as shown in the image
-        sessionStorage.setItem('authToken', accessToken);
+        sessionStorage.setItem('authToken', authToken);
         sessionStorage.setItem('refreshToken', refreshToken);
         sessionStorage.setItem('user', JSON.stringify(tokenPayload));
-        
-        console.log('Stored in sessionStorage:');
-        console.log('- authToken:', accessToken);
-        console.log('- refreshToken:', refreshToken);
-        console.log('- user:', JSON.stringify(tokenPayload));
-        
         toast.success("Login successful!");
         
         // Redirect to dashboard or specified route
@@ -46,7 +40,7 @@ export default function Login() {
       
       return result;
     },
-    { error: "" }
+    { success: false, error: "" }
   );
 
   const form = useForm<LoginFormData>({
@@ -54,16 +48,21 @@ export default function Login() {
   });
 
   return (
-    <div className="flex flex-col-reverse md:flex-row min-h-screen bg-white">
+    <div className="flex flex-col-reverse lg:flex-row min-h-screen bg-gray-900">
       {/* Left Section (Form) */}
-      <div className="flex w-full md:w-1/2 justify-center items-center px-4 sm:px-8 lg:px-16 py-10 bg-gray-100">
-        <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl text-left">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-            Login to your account!
-          </h1>
+      <div className="flex w-full lg:w-1/2 justify-center items-center px-4 sm:px-6 lg:px-8 xl:px-16 py-6 sm:py-8 lg:py-10 bg-black">
+        <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl">
+          <div className="text-center lg:text-left mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+              Login to your account!
+            </h1>
+            <p className="text-sm sm:text-base text-gray-400 mt-2">
+              Welcome back! Please sign in to continue.
+            </p>
+          </div>
 
           <Form {...form}>
-            <form action={formAction} className="space-y-6">
+            <form action={formAction} className="space-y-4 sm:space-y-6">
               {/* Business Name */}
               <Controller
                 name="businessName"
@@ -112,30 +111,39 @@ export default function Login() {
 
               {/* Display error from server action */}
               {state?.error && (
-                <div className="text-red-600 text-sm">{state.error}</div>
+                <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/30 rounded-md">
+                  {state.error}
+                </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full button-styling"
+                className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isPending}
               >
-                {isPending ? "Logging in..." : "Login"}
+                {isPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Logging in...
+                  </div>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
           </Form>
 
-          <div className="flex justify-between items-center mt-6 text-sm font-medium">
+          <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-3 sm:gap-4 mt-6 sm:mt-8 text-xs sm:text-sm">
             <Link
               href="/forgot-password"
-              className="text-blue-600 underline hover:text-blue-800 transition"
+              className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
             >
               Forgot password?
             </Link>
 
             <Link
               href="/"
-              className="text-blue-600 underline hover:text-blue-800 transition"
+              className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
             >
               Back to home
             </Link>
@@ -144,7 +152,7 @@ export default function Login() {
       </div>
 
       {/* Right Section (Image) */}
-      <div className="w-full md:w-1/2 h-56 sm:h-72 md:h-auto">
+      <div className="w-full lg:w-1/2 h-48 sm:h-64 md:h-80 lg:h-auto">
         <img
           src={"/images/loginimage.webp"}
           alt="Login illustration"
