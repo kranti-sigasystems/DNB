@@ -43,16 +43,19 @@ export default function CTA() {
   ];
 
   return (
-    <section className="w-full rounded-lg py-20 text-center text-gray-900">
-      <h2 className="mb-4 text-4xl font-bold sm:text-5xl">Grow Your Business with DNB</h2>
+    <section className="w-full rounded-lg py-20 text-center">
+      <h2 className="mb-4 text-4xl font-bold text-foreground sm:text-5xl">Grow Your Business with DNB</h2>
 
-      <p className="mb-12 text-lg text-gray-700 sm:text-xl">
+      <p className="mb-12 text-lg text-muted-foreground sm:text-xl">
         Create, manage, and promote your business — all from one powerful platform built for growth.
       </p>
 
       {/* Buttons */}
       <div className="mb-16 flex flex-col justify-center gap-4 sm:flex-row">
-        <Button onClick={() => router.push('/')} className="button-styling">
+        <Button 
+          onClick={() => router.push('/')} 
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg transition-all duration-200 hover:shadow-md"
+        >
           Get Started
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
@@ -60,7 +63,7 @@ export default function CTA() {
         <Button
           variant="outline"
           onClick={() => router.push('/pricing')}
-          className="rounded-lg border-[#16a34a] px-8 py-3 text-[#16a34a] transition-all duration-200 hover:bg-blue-50"
+          className="rounded-lg border-border px-8 py-3 text-foreground transition-all duration-200 hover:bg-accent hover:text-accent-foreground"
         >
           Learn More
         </Button>
@@ -71,7 +74,7 @@ export default function CTA() {
         {features.map((feature) => (
           <div
             key={feature.title}
-            className="group rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition-all duration-500 hover:shadow-blue-500/20"
+            className="group rounded-2xl border border-border bg-card p-8 shadow-lg transition-all duration-500 hover:shadow-xl hover:border-primary/50"
           >
             <div
               className={`mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-xl ${feature.bg} ${feature.color}`}
@@ -79,14 +82,14 @@ export default function CTA() {
               {feature.icon}
             </div>
 
-            <h3 className="mb-3 text-xl font-bold text-gray-900">{feature.title}</h3>
+            <h3 className="mb-3 text-xl font-bold text-foreground">{feature.title}</h3>
 
-            <p className="text-base text-gray-700">{feature.description}</p>
+            <p className="text-base text-muted-foreground">{feature.description}</p>
           </div>
         ))}
       </div>
 
-      <p className="mt-16 text-sm text-gray-500">
+      <p className="mt-16 text-sm text-muted-foreground">
         Build. Manage. Connect. Everything your business needs — all in one place with DNB.
       </p>
     </section>

@@ -18,17 +18,17 @@ export const InputField: React.FC<InputFieldProps> = ({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-white mb-2">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="block text-sm font-medium text-foreground mb-2">
+        {label} {required && <span className="text-destructive">*</span>}
       </label>
       <input
         {...mergedProps}
         type={type}
         placeholder={placeholder}
-        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none hover:bg-gray-700 transition-all"
+        className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-ring outline-none hover:bg-accent transition-all"
       />
 
-      {error && <p className="text-red-400 text-sm mt-1">{error.message}</p>}
+      {error && <p className="text-destructive text-sm mt-1">{error.message}</p>}
     </div>
   );
 };

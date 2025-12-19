@@ -41,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
   const isNoSidebarRoute = noSidebarRoutes.includes(pathname);
 
   return (
-    <div className="flex min-h-screen bg-gray-800">
+    <div className="flex min-h-screen bg-background">
       {shouldShowSidebar && (
         <div className="hidden lg:block">
           <Sidebar
@@ -63,7 +63,7 @@ export default function Layout({ children }: LayoutProps) {
         >
           <div
             className={cn(
-              "absolute top-0 left-0 w-64 h-full bg-black shadow-2xl transform transition-transform duration-300",
+              "absolute top-0 left-0 w-64 h-full bg-sidebar shadow-2xl transform transition-transform duration-300",
               mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}
             onClick={(e) => e.stopPropagation()}

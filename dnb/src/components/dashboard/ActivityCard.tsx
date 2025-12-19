@@ -18,13 +18,13 @@ export function ActivityCard({ title, icon: Icon, activities }: ActivityCardProp
   const getActivityColor = (type: ActivityItem['type']) => {
     switch (type) {
       case 'success':
-        return 'bg-green-500';
+        return 'bg-success';
       case 'warning':
-        return 'bg-yellow-500';
+        return 'bg-warning';
       case 'info':
-        return 'bg-blue-500';
+        return 'bg-info';
       default:
-        return 'bg-gray-500';
+        return 'bg-muted-foreground';
     }
   };
 
@@ -34,7 +34,7 @@ export function ActivityCard({ title, icon: Icon, activities }: ActivityCardProp
         <CardTitle className="text-base sm:text-lg font-semibold truncate pr-2">
           {title}
         </CardTitle>
-        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 flex-shrink-0" />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-2 sm:space-y-3">
