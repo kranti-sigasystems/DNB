@@ -48,15 +48,15 @@ export default function Login() {
   });
 
   return (
-    <div className="flex flex-col-reverse lg:flex-row min-h-screen bg-gray-900">
+    <div className="flex flex-col-reverse lg:flex-row min-h-screen bg-background">
       {/* Left Section (Form) */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center px-4 sm:px-6 lg:px-8 xl:px-16 py-6 sm:py-8 lg:py-10 bg-black">
+      <div className="flex w-full lg:w-1/2 justify-center items-center px-4 sm:px-6 lg:px-8 xl:px-16 py-6 sm:py-8 lg:py-10 bg-card">
         <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl">
           <div className="text-center lg:text-left mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
               Login to your account!
             </h1>
-            <p className="text-sm sm:text-base text-gray-400 mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Welcome back! Please sign in to continue.
             </p>
           </div>
@@ -111,14 +111,14 @@ export default function Login() {
 
               {/* Display error from server action */}
               {state?.error && (
-                <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/30 rounded-md">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                   {state.error}
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isPending}
               >
                 {isPending ? (
@@ -136,14 +136,14 @@ export default function Login() {
           <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-3 sm:gap-4 mt-6 sm:mt-8 text-xs sm:text-sm">
             <Link
               href="/forgot-password"
-              className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
+              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
             >
               Forgot password?
             </Link>
 
             <Link
               href="/"
-              className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
+              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
             >
               Back to home
             </Link>

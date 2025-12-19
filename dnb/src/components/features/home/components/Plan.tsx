@@ -125,7 +125,7 @@ export default function Plans() {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-lg text-gray-500">Loading plans...</p>
+        <p className="text-lg text-muted-foreground">Loading plans...</p>
       </div>
     );
   }
@@ -133,7 +133,7 @@ export default function Plans() {
   if (isError) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-lg text-gray-500">Unable to load plans. Please refresh.</p>
+        <p className="text-lg text-muted-foreground">Unable to load plans. Please refresh.</p>
       </div>
     );
   }
@@ -142,20 +142,20 @@ export default function Plans() {
 
   return (
     <div className="space-y-10 text-center">
-      <h2 className="text-5xl font-bold text-gray-800">Choose Your Plan</h2>
-      <p className="text-gray-700">Simple pricing for businesses of all sizes</p>
+      <h2 className="text-5xl font-bold text-foreground">Choose Your Plan</h2>
+      <p className="text-muted-foreground">Simple pricing for businesses of all sizes</p>
 
       {/* Billing Toggle */}
       <div className="flex justify-center">
-        <div className="flex rounded-full border bg-gray-100 p-1">
+        <div className="flex rounded-full border border-border bg-muted p-1">
           {(['monthly', 'yearly'] as BillingCycle[]).map((cycle) => (
             <button
               key={cycle}
               onClick={() => setBillingCycle(cycle)}
-              className={`rounded-full px-5 py-2 text-sm font-medium ${
+              className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 ${
                 billingCycle === cycle
-                  ? 'bg-[#16a34a] text-white'
-                  : 'text-gray-700 hover:text-[#16a34a]'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
             >
               {cycle === 'monthly' ? 'Monthly' : 'Yearly'}
@@ -173,29 +173,29 @@ export default function Plans() {
           return (
             <Card
               key={plan.id}
-              className={`relative transition-all ${
-                isActive ? 'ring-2 ring-green-500' : 'hover:shadow-lg'
+              className={`relative transition-all duration-300 ${
+                isActive ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-xl hover:border-primary/50'
               }`}
             >
               {isActive && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-600 px-3 py-1 text-xs text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs text-primary-foreground shadow-md">
                   Active Plan
                 </span>
               )}
 
               <CardHeader className="text-center">
-                <h3 className="text-xl font-semibold">{plan.name}</h3>
-                <p className="text-sm text-gray-700">
+                <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
+                <p className="text-sm text-muted-foreground">
                   {plan.description ?? 'Ideal for scaling your business.'}
                 </p>
               </CardHeader>
 
               <CardContent className="text-center">
                 <div className="mb-6">
-                  <span className="text-4xl font-semibold">
+                  <span className="text-4xl font-semibold text-foreground">
                     {formatCurrency(price, plan.currency)}
                   </span>
-                  <span className="ml-1 text-gray-700">
+                  <span className="ml-1 text-muted-foreground">
                     /{billingCycle === 'monthly' ? 'mo' : 'yr'}
                   </span>
                 </div>
@@ -210,8 +210,8 @@ export default function Plans() {
                 <ul className="mt-4 space-y-2 text-left">
                   {plan.features?.map((feature, i) => (
                     <li key={i} className="flex gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span>{feature}</span>
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-foreground">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -221,11 +221,13 @@ export default function Plans() {
                 <Button
                   disabled={isActive}
                   onClick={() => handlePlanSelect(plan)}
-                  className={`w-full ${
-                    isActive ? 'cursor-not-allowed bg-gray-300' : 'bg-[#16a34a] hover:bg-green-700'
+                  className={`w-full transition-all duration-200 ${
+                    isActive 
+                      ? 'cursor-not-allowed bg-muted text-muted-foreground' 
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-md'
                   }`}
                 >
-                  {isActive ? 'Current Plan' : `Choose ${plan.name}`}
+                  {isActive ? 'Current Plan' : `${plan.name}`}
                 </Button>
               </CardFooter>
             </Card>
@@ -241,8 +243,8 @@ export default function Plans() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <span className="text-gray-700">{label}: </span>
-      <span className="font-medium">{value}</span>
+      <span className="text-muted-foreground">{label}: </span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }

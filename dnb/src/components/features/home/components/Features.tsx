@@ -69,13 +69,13 @@ export default function Features() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-16 text-center lg:mb-20">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-indigo-400">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">
             Core Capabilities
           </p>
-          <h2 className="text-4xl font-bold leading-tight text-black md:text-5xl">
+          <h2 className="text-4xl font-bold leading-tight text-foreground md:text-5xl">
             Designed for Modern Digital Teams
           </h2>
-          <p className="mx-auto mt-4 max-w-3xl text-xl text-gray-700">
+          <p className="mx-auto mt-4 max-w-3xl text-xl text-muted-foreground">
             Everything you need to build, deploy, and scale world-class applications, all in one
             place.
           </p>
@@ -101,9 +101,9 @@ interface FeatureCardProps {
 function FeatureCard({ feature }: FeatureCardProps) {
   return (
     <div
-      className="group transform rounded-2xl border border-gray-100 p-6 shadow-xl
+      className="group transform rounded-2xl border border-border bg-card p-6 shadow-xl
                  transition-all duration-500 ease-in-out hover:scale-[1.02]
-                 hover:border-indigo-500 hover:shadow-indigo-500/20 md:p-8"
+                 hover:border-primary/50 hover:shadow-primary/20 md:p-8"
     >
       <div
         className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl ${feature.bg} ${feature.color}
@@ -112,9 +112,9 @@ function FeatureCard({ feature }: FeatureCardProps) {
         {feature.icon}
       </div>
 
-      <h3 className="mb-3 text-xl font-bold text-black">{feature.title}</h3>
+      <h3 className="mb-3 text-xl font-bold text-foreground">{feature.title}</h3>
 
-      <p className="text-base text-gray-700">{feature.description}</p>
+      <p className="text-base text-muted-foreground">{feature.description}</p>
     </div>
   );
 }

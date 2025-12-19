@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Menu, LogOut, X, ChevronDown, User } from "lucide-react";
+import { Menu, LogOut, X, ChevronDown, User, Sun, Moon } from "lucide-react";
 import LogoutDialog from "../common/LogoutModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/use-auth";
+import { useTheme } from "@/providers/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -19,8 +20,9 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const router = useRouter();;
+  const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const userRole = user?.userRole || "guest";
   const isBuyer = userRole === "buyer";
@@ -85,7 +87,7 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
     <>
       <header
         className={cn(
-          "w-full h-16 bg-black border-b border-gray-900 sticky top-0 z-50",
+          "w-full h-16 bg-background border-b border-border sticky top-0 z-50 transition-colors duration-300",
           isNoSidebarRoute ? "px-4 sm:px-6 lg:px-8" : "px-4 sm:px-6 lg:px-10"
         )}
       >
@@ -105,7 +107,7 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
             <Link
               href="/"
               className={cn(
-                "text-xl font-semibold text-white whitespace-nowrap",
+                "text-xl font-semibold text-foreground whitespace-nowrap",
                 isNoSidebarRoute ? "ml-0" : "ml-2 lg:ml-0"
               )}
             >
@@ -122,13 +124,26 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                   <Link
                     key={link.path}
                     href={link.path}
-                    className="text-gray-300 hover:text-white font-medium transition whitespace-nowrap"
+                    className="text-muted-foreground hover:text-foreground font-medium transition whitespace-nowrap"
                   >
                     {link.label}
                   </Link>
                 ))}
               </nav>
             )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </Button>
 
             {/* User Section */}
             <div className="flex items-center gap-4">
@@ -144,12 +159,12 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                   <button
                     ref={userNameRef}
                     onClick={() => setUserDropdownOpen((v) => !v)}
-                    className="flex items-center gap-2 px-3 py-2 border border-gray-700 rounded-lg hover:bg-gray-800 transition cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg hover:bg-accent transition cursor-pointer"
                   >
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium text-gray-200">{userName}</span>
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{userName}</span>
                     <ChevronDown
-                      className={`w-4 h-4 text-gray-400 transition ${
+                      className={`w-4 h-4 text-muted-foreground transition ${
                         userDropdownOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -158,13 +173,13 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                   {/* Dropdown */}
                   {userDropdownOpen && (
                     <div
-                      className="absolute right-0 mt-2 bg-gray-900 rounded-lg shadow-lg border border-gray-700 z-60 py-2 min-w-[180px]"
+                      className="absolute right-0 mt-2 bg-popover rounded-lg shadow-lg border border-border z-60 py-2 min-w-[180px]"
                       style={{ width: dropdownWidth || "auto" }}
                     >
                       <div className="flex flex-col">
                         <Link
                           href="/profile"
-                          className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors duration-150 cursor-pointer rounded-lg text-left"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150 cursor-pointer rounded-lg text-left"
                           onClick={() => setUserDropdownOpen(false)}
                         >
                           <User className="w-4 h-4 flex-shrink-0" />
@@ -172,7 +187,7 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                         </Link>
                         <button
                           onClick={() => setLogoutOpen(true)}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-900/30 transition-colors duration-150 cursor-pointer rounded-lg text-left"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-destructive hover:bg-destructive/10 transition-colors duration-150 cursor-pointer rounded-lg text-left"
                         >
                           <LogOut className="w-4 h-4 flex-shrink-0" />
                           <span className="text-sm font-medium">Logout</span>
@@ -188,7 +203,7 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden text-gray-300 hover:text-white hover:bg-gray-800"
+                className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <Menu className="w-6 h-6" />
               </Button>
@@ -200,14 +215,14 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
       {/* Mobile Menu Panel */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/40 z-40 lg:hidden">
-          <div className="absolute top-0 right-0 w-72 h-full bg-gray-900 shadow-xl p-4">
+          <div className="absolute top-0 right-0 w-72 h-full bg-background shadow-xl p-4 border-l border-border">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">Menu</h3>
+              <h3 className="text-lg font-semibold text-foreground">Menu</h3>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-300 hover:text-white hover:bg-gray-800"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <X className="w-6 h-6" />
               </Button>
@@ -220,19 +235,40 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                     key={link.path}
                     href={link.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-gray-300 text-lg font-medium hover:text-white"
+                    className="text-muted-foreground text-lg font-medium hover:text-foreground"
                   >
                     {link.label}
                   </Link>
                 ))}
               </nav>
             )}
+            {/* Mobile Theme Toggle */}
+            <div className="mt-4">
+              <Button
+                variant="ghost"
+                onClick={toggleTheme}
+                className="w-full flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg"
+              >
+                {theme === 'light' ? (
+                  <>
+                    <Moon className="w-4 h-4" />
+                    Dark Mode
+                  </>
+                ) : (
+                  <>
+                    <Sun className="w-4 h-4" />
+                    Light Mode
+                  </>
+                )}
+              </Button>
+            </div>
+
             <div className="mt-6">
               {isAuthenticated ? (
                 <Button
                   onClick={() => setLogoutOpen(true)}
                   variant="ghost"
-                  className="w-full flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50"
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -240,7 +276,7 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
               ) : (
                 <Button
                   onClick={handleDashboardCTA}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                  className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90"
                 >
                   Login
                 </Button>

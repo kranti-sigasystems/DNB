@@ -11,9 +11,10 @@ import Testimonal from '@/components/features/home/components/Testimonal';
 export default function LandingPage() {
   return (
     <main className="flex w-full flex-col">
+      <LandingNavbar />
       <Hero />
 
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto px-4">
         <Features />
         <Plan />
         <Testimonal />

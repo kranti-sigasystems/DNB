@@ -36,44 +36,66 @@ export default function StatCards({
   return (
     <div className={cn("w-full", className)}>
       <div className={cn("grid w-full gap-3 sm:gap-4 lg:gap-6", gridCols[columns])}>
-        {data.map((item) => (
-          <Card key={item.name} className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  {item.icon && (
-                    <div className="text-muted-foreground flex-shrink-0">
-                      {item.icon}
-                    </div>
-                  )}
-                  <span className="text-muted-foreground text-sm sm:text-base font-medium truncate">
-                    {item.name}
+        {data.map((item, index) => {
+          // Assign different colors to each card
+          const colorClasses = [
+            "border-l-4 border-l-info bg-gradient-to-r from-info/5 to-transparent",
+            "border-l-4 border-l-success bg-gradient-to-r from-success/5 to-transparent", 
+            "border-l-4 border-l-warning bg-gradient-to-r from-warning/5 to-transparent",
+            "border-l-4 border-l-purple bg-gradient-to-r from-purple/5 to-transparent",
+            "border-l-4 border-l-orange bg-gradient-to-r from-orange/5 to-transparent"
+          ];
+          
+          const iconColors = [
+            "text-info",
+            "text-success", 
+            "text-warning",
+            "text-purple",
+            "text-orange"
+          ];
+          
+          const cardColor = colorClasses[index % colorClasses.length];
+          const iconColor = iconColors[index % iconColors.length];
+          
+          return (
+            <Card key={item.name} className={cn("hover:shadow-lg transition-all duration-200", cardColor)}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {item.icon && (
+                      <div className={cn("flex-shrink-0", iconColor)}>
+                        {item.icon}
+                      </div>
+                    )}
+                    <span className="text-muted-foreground text-sm sm:text-base font-medium truncate">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs sm:text-sm font-medium flex-shrink-0 px-2 py-1 rounded-full",
+                      item.changeType === "positive"
+                        ? "text-success-foreground bg-success"
+                        : "text-destructive-foreground bg-destructive"
+                    )}
+                  >
+                    {item.change}
                   </span>
                 </div>
-                <span
-                  className={cn(
-                    "text-xs sm:text-sm font-medium flex-shrink-0",
-                    item.changeType === "positive"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
+                <div className="mt-3 sm:mt-4">
+                  <div className="text-foreground text-2xl sm:text-3xl font-bold">
+                    {item.value}
+                  </div>
+                  {item.description && (
+                    <p className="text-muted-foreground text-xs sm:text-sm mt-1 line-clamp-2">
+                      {item.description}
+                    </p>
                   )}
-                >
-                  {item.change}
-                </span>
-              </div>
-              <div className="mt-3 sm:mt-4">
-                <div className="text-foreground text-2xl sm:text-3xl font-bold">
-                  {item.value}
                 </div>
-                {item.description && (
-                  <p className="text-muted-foreground text-xs sm:text-sm mt-1 line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

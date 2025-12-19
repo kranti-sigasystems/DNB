@@ -261,9 +261,9 @@ export const clearSession = (): void => {
   syncStorage(localStorage, null);
   
   // Also clear cookies
-  sessionStorage.remove('accessToken');
-  sessionStorage.remove('refreshToken');
-  sessionStorage.remove('user');
+  Cookies.remove('accessToken');
+  Cookies.remove('refreshToken');
+  Cookies.remove('user');
   
   emitSessionChange(null);
 };
