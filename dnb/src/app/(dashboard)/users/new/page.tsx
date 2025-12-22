@@ -1,0 +1,543 @@
+'use client';
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Building2,
+  UserCircle2,
+  MapPin,
+  ArrowLeft,
+  Save,
+  Package,
+  MapPinIcon,
+  ChevronDown,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useBuyerForm } from '@/hooks/use-buyer-form';
+import { useToast } from '@/hooks/use-toast';
+import { ToastContainer } from '@/components/ui/toast';
+import { BUYER_FORM_FIELDS } from '@/config/buyerFormConfig';
+import { validateBuyerData } from '@/utils/validation';
+
+export default function AddBuyerPage() {
+  const router = useRouter();
+  const { toasts, showToast, removeToast } = useToast();
+  
+  const {
+    formData,
+    updateField,
+    products,
+    productsLoading,
+    selectedProduct,
+    setSelectedProduct,
+    locations,
+    locationsLoading,
+    selectedLocation,
+    setSelectedLocation,
+    remainingBuyers,
+    loading,
+    errors,
+    submitForm,
+    showConfirmDialog,
+    setShowConfirmDialog,
+  } = useBuyerForm();
+
+
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    const validation = validateBuyerData(formData);
+    if (!validation.isValid) {
+      const errorMessage = validation.errors.map(e => e.message).join(', ');
+      showToast('error', errorMessage);
+      return;
+    }
+
+    if (!formData.productName) {
+      showToast('error', 'Please select a product');
+      return;
+    }
+
+    setShowConfirmDialog(true);
+  };
+
+  const confirmSubmit = async () => {
+    try {
+      await submitForm();
+      showToast('success', 'Buyer added successfully!');
+    } catch (error) {
+      showToast('error', 'Failed to add buyer. Please try again.');
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen bg-background">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+          <p className="text-foreground font-medium">Adding buyer...</p>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <Package className="w-6 h-6 text-green-600" />
+                </div>
+                <CardTitle>Confirm Buyer Creation</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">Are you sure you want to add this buyer?</p>
+              
+              {selectedProduct && (
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground mb-1">Selected Product:</p>
+                  <p className="text-sm text-foreground font-semibold">{selectedProduct.productName}</p>
+                </div>
+              )}
+              
+              {selectedLocation && (
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground mb-1">Selected Location:</p>
+                  <p className="text-sm text-foreground font-semibold">
+                    {formData.locationName || "No location name set"}
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmDialog(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={confirmSubmit} disabled={loading}>
+                  {loading ? 'Adding...' : 'Confirm & Add Buyer'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Header */}
+      <header className="sticky top-0 bg-background border-b border-border shadow-sm z-20 rounded-xl mb-6">
+        <div className="py-4 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+            <div className="h-8 w-px bg-border hidden sm:block" />
+            <div className="flex items-center gap-3 ml-3">
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-foreground">Add Buyer</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Create new buyer entry</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="py-6">
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            {/* Plan Usage Info */}
+            <div className="flex items-center gap-2 pt-4 font-bold">
+              {remainingBuyers > 0 ? (
+                <>
+                  <span className="text-green-600 text-lg">Remaining Credits:</span>
+                  <span className="text-green-600 text-lg">{remainingBuyers}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-green-600 text-lg">Remaining Credits:</span>
+                  <span className="text-red-700 text-lg">Plan limit for adding buyer is exceeded...</span>
+                </>
+              )}
+            </div>
+
+
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Company Information */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <Building2 className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Company Information</CardTitle>
+                      <p className="text-sm text-muted-foreground">Basic details about the buyer's company</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {BUYER_FORM_FIELDS.company.map((field) => (
+                      <div key={field.name} className="space-y-2">
+                        <Label htmlFor={field.name}>
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </Label>
+                        <Input
+                          id={field.name}
+                          type={field.type || "text"}
+                          placeholder={field.placeholder || field.label}
+                          value={formData[field.name]}
+                          onChange={(e) => updateField(field.name, e.target.value)}
+                          className={errors[field.name] ? 'border-red-500' : ''}
+                        />
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">{errors[field.name]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Contact Information */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <UserCircle2 className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Contact Information</CardTitle>
+                      <p className="text-sm text-muted-foreground">Primary contact details for communication</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {BUYER_FORM_FIELDS.contact.map((field) => (
+                      <div key={field.name} className="space-y-2">
+                        <Label htmlFor={field.name}>
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </Label>
+                        <Input
+                          id={field.name}
+                          type={field.type || "text"}
+                          placeholder={field.placeholder || field.label}
+                          value={formData[field.name]}
+                          onChange={(e) => updateField(field.name, e.target.value)}
+                          className={errors[field.name] ? 'border-red-500' : ''}
+                        />
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">{errors[field.name]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Product Selection */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <Package className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Product Selection</CardTitle>
+                      <p className="text-sm text-muted-foreground">Select the product associated with this buyer</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>
+                      Select Product <span className="text-red-500">*</span>
+                    </Label>
+                    {productsLoading ? (
+                      <div className="flex items-center justify-center p-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                        <span className="ml-3 text-muted-foreground">Loading your products...</span>
+                      </div>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-between h-12 px-4 text-left font-normal hover:bg-accent hover:text-accent-foreground focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            type="button"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Package className="w-4 h-4 text-muted-foreground" />
+                              <span className={!selectedProduct ? 'text-muted-foreground' : 'text-foreground'}>
+                                {selectedProduct ? selectedProduct.productName : "Select a product"}
+                              </span>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-72 overflow-y-auto border shadow-lg">
+                          <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold text-foreground">
+                            Available Products ({products.length})
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {products.length === 0 ? (
+                            <div className="px-4 py-8 text-center">
+                              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                              <p className="text-sm text-muted-foreground font-medium">No products found</p>
+                              <p className="text-xs text-muted-foreground mt-1">Create products first or contact support</p>
+                            </div>
+                          ) : (
+                            products.map((product) => (
+                              <DropdownMenuItem
+                                key={product._id}
+                                onClick={() => setSelectedProduct(product)}
+                                className="px-3 py-3 cursor-pointer hover:bg-accent focus:bg-accent"
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="p-1.5 bg-primary/10 rounded-md">
+                                    <Package className="w-3 h-3 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-foreground truncate">
+                                      {product.productName}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                        {product.code}
+                                      </span>
+                                      {product.sku && (
+                                        <span className="text-xs text-muted-foreground">
+                                          SKU: {product.sku}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {selectedProduct?._id === product._id && (
+                                    <div className="w-2 h-2 bg-primary rounded-full" />
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            ))
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    {errors.productName && (
+                      <p className="text-sm text-red-500">{errors.productName}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Location Selection */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <MapPinIcon className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Location Selection (Optional)</CardTitle>
+                      <p className="text-sm text-muted-foreground">Select a location to auto-fill address fields</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>Select Location</Label>
+                    {locationsLoading ? (
+                      <div className="flex items-center justify-center p-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                        <span className="ml-3 text-muted-foreground">Loading your locations...</span>
+                      </div>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-between h-12 px-4 text-left font-normal hover:bg-accent hover:text-accent-foreground focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            type="button"
+                          >
+                            <div className="flex items-center gap-3">
+                              <MapPinIcon className="w-4 h-4 text-muted-foreground" />
+                              <span className={!formData.locationName ? 'text-muted-foreground' : 'text-foreground'}>
+                                {formData.locationName || "Select a location (optional)"}
+                              </span>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-72 overflow-y-auto border shadow-lg">
+                          <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold text-foreground">
+                            Available Locations ({locations.length})
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {locations.length === 0 ? (
+                            <div className="px-4 py-8 text-center">
+                              <MapPinIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                              <p className="text-sm text-muted-foreground font-medium">No locations found</p>
+                              <p className="text-xs text-muted-foreground mt-1">Create locations first or contact support</p>
+                            </div>
+                          ) : (
+                            locations.map((location) => (
+                              <DropdownMenuItem
+                                key={location._id}
+                                onClick={() => setSelectedLocation(location)}
+                                className="px-3 py-3 cursor-pointer hover:bg-accent focus:bg-accent"
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="p-1.5 bg-blue-50 rounded-md">
+                                    <MapPinIcon className="w-3 h-3 text-blue-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-foreground truncate">
+                                      {location.locationName || "Unnamed Location"}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                        {location.code}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground truncate">
+                                        {location.city}, {location.state}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {selectedLocation?._id === location._id && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            ))
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Address Information */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Address Details</CardTitle>
+                      <p className="text-sm text-muted-foreground">Complete address information</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {BUYER_FORM_FIELDS.address.map((field) => (
+                      <div key={field.name} className="space-y-2">
+                        <Label htmlFor={field.name}>
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </Label>
+                        <Input
+                          id={field.name}
+                          type={field.type || "text"}
+                          placeholder={field.placeholder || field.label}
+                          value={formData[field.name]}
+                          onChange={(e) => updateField(field.name, e.target.value)}
+                          className={errors[field.name] ? 'border-red-500' : ''}
+                        />
+                        {errors[field.name] && (
+                          <p className="text-sm text-red-500">{errors[field.name]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">
+                      Street Address <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => updateField('address', e.target.value)}
+                      rows={4}
+                      placeholder="Enter complete street address..."
+                      className={errors.address ? 'border-red-500' : ''}
+                    />
+                    {errors.address && (
+                      <p className="text-sm text-red-500">{errors.address}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-6 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Add Buyer
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* General Error */}
+              {errors.general && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">{errors.general}</p>
+                </div>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}

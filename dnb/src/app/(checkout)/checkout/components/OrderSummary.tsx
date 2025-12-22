@@ -7,9 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { registerAndLoginUser } from '@/actions/auth';
-import toast from 'react-hot-toast';
 import useAuth from '@/hooks/use-auth';
-import { showError, showSuccess } from '@/utils/toastService';
+import { toast, toastMessages } from '@/utils/toast';
 
 /* ---------------------------------- Types --------------------------------- */
 
@@ -74,7 +73,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         return { ...formData, ...parsedData };
       }
     } catch (error) {
-      console.error('Error parsing form data:', error);
+      // Handle error silently
     }
     return formData;
   };
@@ -125,31 +124,24 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   /* ------------------------------ Submit Flow ------------------------------ */
 
   const handleSubmit = async (): Promise<void> => {
-    console.log('🚀 Starting Complete Purchase Flow...');
-
     // Get the latest form data
     const latestFormData = getLatestFormData();
-    console.log('📋 Form data retrieved:', latestFormData);
 
     // Validate form data
     const validation = validateForm(latestFormData);
 
     if (!validation.isValid) {
       const missingFieldsList = validation.missingFields.join(', ');
-      showError(`Please fill in all required fields: ${missingFieldsList}`);
-      console.log('❌ Validation failed:', validation.missingFields);
+      toast.error(`Please fill in all required fields: ${missingFieldsList}`);
 
       // Scroll to top to show the form
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    console.log('✅ Form validation passed');
     setSubmitting(true);
 
     try {
-      console.log('🔐 Step 1: Auto-registering/logging in user...');
-
       /* 1️⃣ Auto-register / login user */
       const loginResponse = await registerAndLoginUser({
         first_name: latestFormData.first_name || '',
@@ -168,15 +160,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         website: latestFormData.website || '',
       });
 
-      console.log('🔐 Login response:', loginResponse);
-
       const authData = loginResponse?.data;
       const tokenPayload = authData?.tokenPayload;
       const accessToken = authData?.accessToken;
       const refreshToken = authData?.refreshToken ?? null;
 
       if (loginResponse?.success === true && accessToken && tokenPayload) {
-        console.log('✅ User registered/logged in successfully');
         setSession(
           {
             accessToken,
@@ -186,46 +175,28 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           { remember: true }
         );
       } else {
-        console.log('❌ Login failed:', authData?.message);
-        toast.error(authData?.message || 'Something went wrong. Please try again.');
+        toast.error(authData?.message || toastMessages.error.generic);
         return;
       }
 
-      console.log('💳 Step 2: Creating Stripe checkout session...');
-
       /* 2️⃣ Create Stripe checkout session */
-      const paymentPayload = {
-        userId: tokenPayload.id,
-        planKey: selectedPlan.key,
-        // billingCycle,
-      };
-
-      console.log('💳 Payment payload:', paymentPayload);
       const paymentResult = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           planKey: selectedPlan.key,
-          // billingCycle,
           userId: tokenPayload.id,
         }),
       }).then((res) => res.json());
 
-      console.log('💳 Payment result:', paymentResult);
-
       if (!paymentResult.success || !paymentResult.checkoutUrl) {
-        console.log('❌ Checkout session creation failed:', paymentResult.message);
-        showError(paymentResult.message || 'Checkout URL not received from server.');
+        toast.error(paymentResult.message || 'Failed to create checkout session');
         return;
       }
 
-      console.log('✅ Stripe checkout session created successfully');
-      console.log('🔗 Checkout URL:', paymentResult.checkoutUrl);
-
-      showSuccess('Redirecting to Stripe checkout...');
+      toast.success('Redirecting to secure payment...');
 
       // Store pending business data for webhook processing
       sessionStorage.setItem(
@@ -238,13 +209,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         })
       );
 
-      console.log('🚀 Redirecting to Stripe...');
-
       // Redirect to Stripe checkout
       window.location.href = paymentResult.checkoutUrl;
     } catch (error: any) {
-      console.error('❌ Payment error:', error);
-      showError(error?.message || 'Something went wrong during checkout');
+      toast.error(error?.message || toastMessages.error.generic);
     } finally {
       setSubmitting(false);
     }
@@ -310,8 +278,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <span className="font-semibold text-slate-900">Total</span>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-slate-900">
-                    {selectedPlan.price === 0
-                      ? 'You’re starting your trial plan'
+                    {calculateTotal() === 0
+                      ? 'You\'re starting your trial plan'
                       : `${calculateTotal()} ${selectedPlan.currency}`}
                   </p>
                   <p className="text-xs text-slate-500">

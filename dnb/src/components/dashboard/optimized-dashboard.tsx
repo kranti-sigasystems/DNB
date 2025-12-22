@@ -48,24 +48,54 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
   // Fetch dashboard data
   const fetchDashboardData = useCallback(
     async (filters: SearchFilters = {}, pageIndex = 0, pageSize = 10) => {
-      if (userRole === USER_ROLES.GUEST) return;
+      console.log('🎯 fetchDashboardData called with:', { userRole, filters, pageIndex, pageSize });
+      
+      if (userRole === USER_ROLES.GUEST) {
+        console.log('👤 User role is GUEST, skipping fetch');
+        return;
+      }
 
       setIsLoading(true);
       try {
+        console.log('🔑 Getting auth token...');
         const authToken = await ensureAuthenticated();
+        console.log('🔑 Auth token obtained:', !!authToken);
+        
         const params = { pageIndex, pageSize, ...filters };
+        console.log('📦 Request params:', params);
 
         const result = hasActiveFilters(filters)
           ? await searchDashboardData(userRole, params, authToken)
           : await getDashboardData(userRole, params, authToken);
 
+        console.log('📊 Dashboard data result:', {
+          success: result.success,
+          hasData: !!result.data,
+          error: result.error
+        });
+
         if (result.success && result.data) {
+          console.log('✅ Setting dashboard data:', {
+            dataCount: result.data.data?.length || 0,
+            stats: result.data.stats,
+            totalPages: result.data.totalPages
+          });
+          
+          console.log('📋 First few data items:', result.data.data?.slice(0, 3).map(item => ({
+            id: item.id,
+            contactName: item.contactName,
+            email: item.email,
+            buyersCompanyName: item.buyersCompanyName,
+            status: item.status
+          })));
+          
           setDashboardData(result.data);
         } else {
+          console.log('❌ Dashboard data fetch failed:', result.error);
           toast.error(result.error || 'Failed to fetch dashboard data');
         }
       } catch (error) {
-        console.error('Dashboard fetch error:', error);
+        console.error('❌ Dashboard fetch error:', error);
         if (error instanceof Error && error.message.includes('Authentication required')) {
           toast.error('Session expired. Please login again.');
           window.location.href = '/login';
@@ -293,6 +323,21 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
 
         {/* Data Table - Mobile Optimized */}
         <div className="transition-opacity duration-300 ease-in-out">
+          {(() => {
+            console.log('🎨 Rendering DataTable with:', {
+              dataLength: dashboardData?.data?.length || 0,
+              isLoading,
+              totalItems: dashboardData?.stats.totalItems || 0,
+              sampleData: dashboardData?.data?.slice(0, 2).map(item => ({
+                id: item?.id,
+                contactName: item?.contactName,
+                email: item?.email,
+                buyersCompanyName: item?.buyersCompanyName,
+                status: item?.status
+              }))
+            });
+            return null;
+          })()}
           <DataTable
             data={dashboardData?.data || []}
             columns={columns}

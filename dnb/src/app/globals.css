@@ -286,34 +286,67 @@
 /* Dashboard Color Utilities */
 @layer utilities {
   .dashboard-card-blue {
-    @apply border-l-4 border-l-info bg-gradient-to-r from-info/5 to-transparent;
+    @apply border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent;
   }
   
   .dashboard-card-green {
-    @apply border-l-4 border-l-success bg-gradient-to-r from-success/5 to-transparent;
+    @apply border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-transparent;
   }
   
   .dashboard-card-yellow {
-    @apply border-l-4 border-l-warning bg-gradient-to-r from-warning/5 to-transparent;
+    @apply border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 to-transparent;
   }
   
   .dashboard-card-purple {
-    @apply border-l-4 border-l-purple bg-gradient-to-r from-purple/5 to-transparent;
+    @apply border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-transparent;
   }
   
   .dashboard-card-orange {
-    @apply border-l-4 border-l-orange bg-gradient-to-r from-orange/5 to-transparent;
+    @apply border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-transparent;
   }
   
   .status-active {
-    @apply bg-success/10 text-success border border-success/20;
+    @apply bg-green-50 text-green-700 border border-green-200;
   }
   
   .status-inactive {
-    @apply bg-muted text-muted-foreground border border-border;
+    @apply bg-gray-50 text-gray-600 border border-gray-200;
   }
   
   .status-pending {
-    @apply bg-warning/10 text-warning border border-warning/20;
+    @apply bg-yellow-50 text-yellow-700 border border-yellow-200;
   }
+}
+
+/* Dark theme overrides for dashboard colors */
+.dark .dashboard-card-blue {
+  @apply border-l-blue-400 bg-gradient-to-r from-blue-950/20 to-transparent;
+}
+
+.dark .dashboard-card-green {
+  @apply border-l-green-400 bg-gradient-to-r from-green-950/20 to-transparent;
+}
+
+.dark .dashboard-card-yellow {
+  @apply border-l-yellow-400 bg-gradient-to-r from-yellow-950/20 to-transparent;
+}
+
+.dark .dashboard-card-purple {
+  @apply border-l-purple-400 bg-gradient-to-r from-purple-950/20 to-transparent;
+}
+
+.dark .dashboard-card-orange {
+  @apply border-l-orange-400 bg-gradient-to-r from-orange-950/20 to-transparent;
+}
+
+.dark .status-active {
+  @apply bg-green-950/20 text-green-400 border border-green-800/30;
+}
+
+.dark .status-inactive {
+  @apply bg-gray-800/20 text-gray-400 border border-gray-700/30;
+}
+
+.dark .status-pending {
+  @apply bg-yellow-950/20 text-yellow-400 border border-yellow-800/30;
 }

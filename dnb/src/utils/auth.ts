@@ -37,7 +37,7 @@ const parseJSON = <T>(value: string | null, fallback: T | null = null): T | null
   try {
     return JSON.parse(value) as T;
   } catch (error) {
-    console.error('Failed to parse JSON value:', error);
+    
     return fallback;
   }
 };
@@ -90,7 +90,7 @@ const syncStorage = (storage: Storage | null, session: AuthSession | null): void
       ? storage.setItem(USER_KEY, JSON.stringify(session.user))
       : storage.removeItem(USER_KEY);
   } catch (error) {
-    console.error('Failed to synchronise auth storage:', error);
+    
   }
 };
 
@@ -117,7 +117,7 @@ export const getUserFromCookie = (): User | null => {
     const parsed = JSON.parse(userCookie) as User;
     return parsed;
   } catch (err) {
-    console.error('getUserFromCookie: Failed to parse user cookie:', err);
+    
     return null;
   }
 };
@@ -170,7 +170,7 @@ export const getStoredSession = (): AuthSession | null => {
       
       return storageSession;
     } catch (err) {
-      console.error('getStoredSession: Failed to parse user from storage:', err);
+      
     }
   }
 
