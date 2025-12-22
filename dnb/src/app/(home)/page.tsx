@@ -14,7 +14,7 @@ export default function LandingPage() {
       <LandingNavbar />
       <Hero />
 
-      <div className="container mx-auto px-4">
+      <div className="app-container">
         <Features />
         <Plan />
         <Testimonal />

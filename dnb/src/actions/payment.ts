@@ -64,7 +64,6 @@ export async function createCheckoutSession(
 
     /* ---------------- PRICE ---------------- */
     const rawAmount = payload.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-    console.log('Raw ammount.....', rawAmount);
 
     if (rawAmount <= 0) {
       return { success: false, message: 'Free plans do not require payment' };
@@ -99,8 +98,6 @@ export async function createCheckoutSession(
         billingCycle: payload.billingCycle,
       },
     });
-
-    console.log('session log.....', session);
     /* ---------------- PAYMENT RECORD ---------------- */
     // await prisma.payment.create({
     //   data: {
@@ -125,7 +122,6 @@ export async function createCheckoutSession(
         transactionId: `temp_${Date.now()}`,
       },
     });
-    console.log('Checkout url....', session.url);
 
     return { success: true, checkoutUrl: session.url! };
   } catch (error: any) {

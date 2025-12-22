@@ -3,12 +3,10 @@ import prisma from '@/lib/prisma-client';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Setting up buyers table via API...');
     
     // Check if buyers table already exists
     try {
       await prisma.$queryRaw`SELECT 1 FROM "buyers" LIMIT 1`;
-      console.log('ℹ️ Buyers table already exists');
       return NextResponse.json({ 
         success: true, 
         message: 'Buyers table already exists',
@@ -16,7 +14,6 @@ export async function POST(request: NextRequest) {
       });
     } catch (checkError: any) {
       if (checkError.message?.includes('relation "buyers" does not exist')) {
-        console.log('📋 Buyers table does not exist, creating...');
         
         // Create the buyers table
         await prisma.$executeRaw`
@@ -39,8 +36,6 @@ export async function POST(request: NextRequest) {
           );
         `;
         
-        console.log('✅ Buyers table created successfully!');
-        
         // Try to add foreign key constraint (skip if it fails)
         try {
           await prisma.$executeRaw`
@@ -50,9 +45,7 @@ export async function POST(request: NextRequest) {
             REFERENCES "business_owners"("id") 
             ON DELETE CASCADE ON UPDATE CASCADE;
           `;
-          console.log('✅ Foreign key constraint added successfully!');
         } catch (fkError) {
-          console.log('⚠️ Foreign key constraint failed, but table created successfully');
         }
         
         // Create some test buyers for existing business owners
@@ -63,7 +56,6 @@ export async function POST(request: NextRequest) {
           });
           
           if (businessOwners.length > 0) {
-            console.log(`🧪 Creating test buyers for ${businessOwners.length} business owners...`);
             
             for (const bo of businessOwners) {
               // Create 2-3 test buyers for each business owner
@@ -96,10 +88,8 @@ export async function POST(request: NextRequest) {
               }
             }
             
-            console.log('✅ Test buyers created successfully!');
           }
         } catch (testDataError) {
-          console.log('⚠️ Failed to create test data, but table created successfully');
         }
         
         return NextResponse.json({ 

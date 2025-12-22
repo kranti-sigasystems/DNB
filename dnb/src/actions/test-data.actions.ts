@@ -6,7 +6,6 @@ import prisma from '@/lib/prisma-client';
  * Create test business owner data
  */
 export async function createTestBusinessOwner(): Promise<{ success: boolean; message: string; data?: any }> {
-  console.log('🧪 createTestBusinessOwner - Creating test data');
 
   try {
     // Check if test user already exists
@@ -15,7 +14,6 @@ export async function createTestBusinessOwner(): Promise<{ success: boolean; mes
     });
 
     if (existingUser) {
-      console.log('⚠️ createTestBusinessOwner - Test user already exists');
       return { success: false, message: 'Test business owner already exists' };
     }
 
@@ -31,7 +29,6 @@ export async function createTestBusinessOwner(): Promise<{ success: boolean; mes
       },
     });
 
-    console.log('✅ createTestBusinessOwner - User created:', user.id);
 
     // Create test business owner
     const businessOwner = await prisma.businessOwner.create({
@@ -52,7 +49,6 @@ export async function createTestBusinessOwner(): Promise<{ success: boolean; mes
       },
     });
 
-    console.log('✅ createTestBusinessOwner - Business owner created:', businessOwner.id);
 
     return {
       success: true,
@@ -82,7 +78,6 @@ export async function getDatabaseStats(): Promise<{
   activeBusinessOwners: number;
   inactiveBusinessOwners: number;
 }> {
-  console.log('📊 getDatabaseStats - Fetching database statistics');
 
   try {
     const [users, businessOwners, activeBusinessOwners, inactiveBusinessOwners] = await Promise.all([
@@ -98,8 +93,6 @@ export async function getDatabaseStats(): Promise<{
       activeBusinessOwners,
       inactiveBusinessOwners,
     };
-
-    console.log('📊 getDatabaseStats - Statistics:', stats);
     return stats;
   } catch (error: any) {
     console.error('❌ getDatabaseStats - Error:', error);
@@ -111,8 +104,6 @@ export async function getDatabaseStats(): Promise<{
  * Create test buyer data for a business owner
  */
 export async function createTestBuyer(businessOwnerId: string): Promise<{ success: boolean; message: string; data?: any }> {
-  console.log('🧪 createTestBuyer - Creating test buyer for business owner:', businessOwnerId);
-
   try {
     const buyer = await prisma.buyer.create({
       data: {
@@ -127,8 +118,6 @@ export async function createTestBuyer(businessOwnerId: string): Promise<{ succes
         status: 'active',
       },
     });
-
-    console.log('✅ createTestBuyer - Buyer created:', buyer.id);
 
     return {
       success: true,
@@ -153,7 +142,6 @@ export async function createTestBuyer(businessOwnerId: string): Promise<{ succes
  * List all business owners (for debugging)
  */
 export async function listAllBusinessOwners(): Promise<any[]> {
-  console.log('📋 listAllBusinessOwners - Fetching all business owners');
 
   try {
     const businessOwners = await prisma.businessOwner.findMany({
@@ -162,20 +150,6 @@ export async function listAllBusinessOwners(): Promise<any[]> {
         buyers: true, // Include buyers
       },
       orderBy: { createdAt: 'desc' },
-    });
-
-    console.log('📋 listAllBusinessOwners - Found business owners:', businessOwners.length);
-    businessOwners.forEach((bo, index) => {
-      console.log(`👤 Business Owner ${index + 1}:`, {
-        id: bo.id,
-        name: `${bo.first_name} ${bo.last_name}`,
-        email: bo.email,
-        businessName: bo.businessName,
-        status: bo.status,
-        isDeleted: bo.is_deleted,
-        buyersCount: bo.buyers?.length || 0,
-        createdAt: bo.createdAt,
-      });
     });
 
     return businessOwners;
@@ -189,7 +163,6 @@ export async function listAllBusinessOwners(): Promise<any[]> {
  * List all buyers for debugging
  */
 export async function listAllBuyers(): Promise<any[]> {
-  console.log('📋 listAllBuyers - Fetching all buyers');
 
   try {
     const buyers = await prisma.buyer.findMany({
@@ -202,21 +175,6 @@ export async function listAllBuyers(): Promise<any[]> {
         }
       },
       orderBy: { createdAt: 'desc' },
-    });
-
-    console.log('📋 listAllBuyers - Found buyers:', buyers.length);
-    buyers.forEach((buyer, index) => {
-      console.log(`🛒 Buyer ${index + 1}:`, {
-        id: buyer.id,
-        contactName: buyer.contactName,
-        email: buyer.email,
-        buyersCompanyName: buyer.buyersCompanyName,
-        productName: buyer.productName,
-        locationName: buyer.locationName,
-        status: buyer.status,
-        businessOwner: buyer.businessOwner?.businessName,
-        createdAt: buyer.createdAt,
-      });
     });
 
     return buyers;

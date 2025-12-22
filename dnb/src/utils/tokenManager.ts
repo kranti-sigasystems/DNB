@@ -17,7 +17,6 @@ export async function getValidToken(): Promise<string | null> {
   const currentToken = getauthToken();
   
   if (!currentToken) {
-    console.log('❌ No access token found');
     return null;
   }
 
@@ -25,7 +24,6 @@ export async function getValidToken(): Promise<string | null> {
   try {
     const tokenParts = currentToken.split('.');
     if (tokenParts.length !== 3) {
-      console.log('❌ Invalid token format');
       return null;
     }
 
@@ -39,7 +37,6 @@ export async function getValidToken(): Promise<string | null> {
       return await refreshAccessToken();
     }
 
-    console.log('✅ Token is valid');
     return currentToken;
   } catch (error) {
     console.error('❌ Error checking token validity:', error);

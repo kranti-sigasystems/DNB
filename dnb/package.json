@@ -17,6 +17,10 @@
     "prisma:studio": "npm run merge:prisma && npx prisma studio",
     "prisma:reset": "npx prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-plans": "tsx scripts/seed-plans.ts",
+    "db:setup-buyers": "tsx scripts/setup-buyers-table.ts",
+    "db:setup-products-locations": "tsx scripts/setup-products-locations.ts",
+    "db:setup-all": "npm run db:seed-plans && npm run db:setup-products-locations && npm run db:setup-buyers",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

@@ -49,13 +49,9 @@ export default function CheckoutPage() {
   /* -------------------- Load Plan from Storage -------------------- */
 
   useEffect(() => {
-    console.log('Checkout page loading...');
     const stored = sessionStorage.getItem("selectedPlanData");
-    console.log('Stored plan data:', stored);
 
     if (!stored) {
-      console.log('No plan data found, redirecting to plans...');
-      // Show loading state briefly before redirecting
       setTimeout(() => {
         router.replace("/plans");
       }, 1000);
@@ -64,11 +60,9 @@ export default function CheckoutPage() {
 
     try {
       const parsed = JSON.parse(stored);
-      console.log('Parsed plan data:', parsed);
       const plan = parsed.selectedPlan;
       
       if (!plan || !plan.id) {
-        console.log('Invalid plan data, redirecting...');
         router.replace("/plans");
         return;
       }
@@ -83,8 +77,6 @@ export default function CheckoutPage() {
         maxOffers: plan.maxOffers || 100,
         maxBuyers: plan.maxBuyers || 50,
       };
-      
-      console.log('Setting plan:', planWithPrice);
       setSelectedPlan(planWithPrice);
       setBillingCycle(parsed.billingCycle || "monthly");
     } catch (error) {

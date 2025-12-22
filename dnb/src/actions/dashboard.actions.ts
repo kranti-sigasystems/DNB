@@ -7,11 +7,8 @@ export async function getDashboardData(
   authToken?: string
 ): Promise<{ success: boolean; data?: DashboardData; error?: string }> {
   
-  console.log('🎯 getDashboardData called with:', { userRole, params, hasAuthToken: !!authToken });
-  
   try {
     if (!authToken) {
-      console.log('❌ No authToken provided to getDashboardData');
       return { success: false, error: 'Authentication token required' };
     }
     
@@ -32,19 +29,15 @@ export async function getDashboardData(
       params.locationName
     );
     
-    console.log('🔍 Has search filters:', hasSearchFilters);
     
     let result;
     
     if (hasSearchFilters) {
-      console.log('🔍 Using search function');
       result = await searchDashboardData(userRole, params, authToken);
       return result;
     } else {
-      console.log('📊 Using regular data fetch for role:', userRole);
       switch (userRole) {
         case 'super_admin':
-          console.log('👑 Fetching super admin data');
           // Import and use superadmin actions
           const { getAllBusinessOwners } = await import('./superadmin.actions');
           result = await getAllBusinessOwners({
@@ -55,47 +48,26 @@ export async function getDashboardData(
           break;
           
         case 'business_owner':
-          console.log('🏢 Fetching business owner data (buyers)');
           // Import and use business owner actions
           const { getAllBuyers } = await import('./business-owner.actions');
           result = await getAllBuyers({
             pageIndex: params.pageIndex,
             pageSize: params.pageSize,
           }, authToken);
-          console.log('🏢 getAllBuyers result:', { 
-            success: result.success, 
-            hasData: !!result.data,
-            error: result.error 
-          });
           break;
           
         default:
-          console.log('❌ Invalid user role:', userRole);
           return { success: false, error: 'Invalid user role' };
       }
     }
 
     if (!result.success) {
-      console.log('❌ Action result failed:', result.error);
       return result;
     }
-
-    console.log('📦 Raw result from action:', {
-      success: result.success,
-      hasData: !!result.data,
-      dataKeys: result.data ? Object.keys(result.data) : []
-    });
 
     // Match your exact response structure: response.data.data
     const apiResponse = result.data || {};
     const apiData = apiResponse.data || {};
-
-    console.log('🔧 Processing result structure:', {
-      apiResponseKeys: Object.keys(apiResponse),
-      apiDataKeys: Object.keys(apiData),
-      dataArray: Array.isArray(apiData.data) ? apiData.data.length : 'not array'
-    });
-
     const dashboardData: DashboardData = {
       data: apiData?.data || [],
       stats: {
@@ -111,22 +83,6 @@ export async function getDashboardData(
       pageIndex: apiData?.pageIndex ?? params.pageIndex,
       pageSize: apiData?.pageSize ?? params.pageSize,
     };
-
-    console.log('✅ Final dashboard data:', {
-      dataCount: dashboardData.data.length,
-      stats: dashboardData.stats,
-      totalPages: dashboardData.totalPages,
-      pageIndex: dashboardData.pageIndex,
-      pageSize: dashboardData.pageSize
-    });
-
-    console.log('📋 Sample data items:', dashboardData.data.slice(0, 2).map(item => ({
-      id: item.id,
-      contactName: item.contactName,
-      email: item.email,
-      buyersCompanyName: item.buyersCompanyName,
-      status: item.status
-    })));
 
     return { success: true, data: dashboardData };
   } catch (error) {

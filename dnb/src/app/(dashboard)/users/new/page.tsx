@@ -28,12 +28,15 @@ import {
 import { useBuyerForm } from '@/hooks/use-buyer-form';
 import { useToast } from '@/hooks/use-toast';
 import { ToastContainer } from '@/components/ui/toast';
+import { useAlertDialog } from '@/components/ui/alert-dialog';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { BUYER_FORM_FIELDS } from '@/config/buyerFormConfig';
 import { validateBuyerData } from '@/utils/validation';
 
 export default function AddBuyerPage() {
   const router = useRouter();
-  const { toasts, showToast, removeToast } = useToast();
+  const { toasts, success: showSuccess, error: showError, removeToast } = useToast();
+  const { showAlert, AlertDialog } = useAlertDialog();
   
   const {
     formData,
@@ -50,8 +53,6 @@ export default function AddBuyerPage() {
     loading,
     errors,
     submitForm,
-    showConfirmDialog,
-    setShowConfirmDialog,
   } = useBuyerForm();
 
 
@@ -63,84 +64,44 @@ export default function AddBuyerPage() {
     const validation = validateBuyerData(formData);
     if (!validation.isValid) {
       const errorMessage = validation.errors.map(e => e.message).join(', ');
-      showToast('error', errorMessage);
+      showError(errorMessage);
       return;
     }
 
     if (!formData.productName) {
-      showToast('error', 'Please select a product');
+      showError('Please select a product');
       return;
     }
 
-    setShowConfirmDialog(true);
-  };
-
-  const confirmSubmit = async () => {
-    try {
-      await submitForm();
-      showToast('success', 'Buyer added successfully!');
-    } catch (error) {
-      showToast('error', 'Failed to add buyer. Please try again.');
-    }
+    // Show confirmation dialog
+    showAlert({
+      title: 'Add New Buyer',
+      description: 'Are you sure you want to add this buyer to your system?',
+      action: 'add',
+      itemName: `${formData.contactName} (${formData.buyersCompanyName})`,
+      onConfirm: async () => {
+        try {
+          await submitForm();
+          showSuccess('Buyer added successfully!');
+          
+          // Navigate back to users page after a short delay
+          setTimeout(() => {
+            router.push('/users');
+          }, 1000);
+        } catch (error) {
+          showError('Failed to add buyer. Please try again.');
+        }
+      },
+    });
   };
 
   return (
     <div className="relative min-h-screen bg-background">
       {/* Loading Overlay */}
-      {loading && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
-          <p className="text-foreground font-medium">Adding buyer...</p>
-        </div>
-      )}
+      <LoadingOverlay isVisible={loading} message="Adding buyer..." />
 
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <Package className="w-6 h-6 text-green-600" />
-                </div>
-                <CardTitle>Confirm Buyer Creation</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">Are you sure you want to add this buyer?</p>
-              
-              {selectedProduct && (
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground mb-1">Selected Product:</p>
-                  <p className="text-sm text-foreground font-semibold">{selectedProduct.productName}</p>
-                </div>
-              )}
-              
-              {selectedLocation && (
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground mb-1">Selected Location:</p>
-                  <p className="text-sm text-foreground font-semibold">
-                    {formData.locationName || "No location name set"}
-                  </p>
-                </div>
-              )}
-              
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowConfirmDialog(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={confirmSubmit} disabled={loading}>
-                  {loading ? 'Adding...' : 'Confirm & Add Buyer'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Alert Dialog */}
+      <AlertDialog />
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -321,7 +282,7 @@ export default function AddBuyerPage() {
                           ) : (
                             products.map((product) => (
                               <DropdownMenuItem
-                                key={product._id}
+                                key={product.id}
                                 onClick={() => setSelectedProduct(product)}
                                 className="px-3 py-3 cursor-pointer hover:bg-accent focus:bg-accent"
                               >
@@ -344,7 +305,7 @@ export default function AddBuyerPage() {
                                       )}
                                     </div>
                                   </div>
-                                  {selectedProduct?._id === product._id && (
+                                  {selectedProduct?.id === product.id && (
                                     <div className="w-2 h-2 bg-primary rounded-full" />
                                   )}
                                 </div>
@@ -413,7 +374,7 @@ export default function AddBuyerPage() {
                           ) : (
                             locations.map((location) => (
                               <DropdownMenuItem
-                                key={location._id}
+                                key={location.id}
                                 onClick={() => setSelectedLocation(location)}
                                 className="px-3 py-3 cursor-pointer hover:bg-accent focus:bg-accent"
                               >
@@ -434,7 +395,7 @@ export default function AddBuyerPage() {
                                       </span>
                                     </div>
                                   </div>
-                                  {selectedLocation?._id === location._id && (
+                                  {selectedLocation?.id === location.id && (
                                     <div className="w-2 h-2 bg-blue-600 rounded-full" />
                                   )}
                                 </div>

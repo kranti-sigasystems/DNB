@@ -40,7 +40,9 @@ export async function getUsersData(
     if (userRole === 'super_admin') {
 
       // Build where clause for filtering
-      const whereClause: any = {};
+      const whereClause: any = {
+        is_deleted: false, // Only show non-deleted business owners
+      };
       
       if (hasFilters) {
         if (filters.first_name) {
@@ -443,7 +445,23 @@ export async function createUser(
         userRole: 'business_owner',
       } as BusinessOwner;
     } else {
-      throw new Error('Buyer creation not implemented - no Buyer model in schema');
+      // Use buyer actions for business_owner role
+      const buyerData = userData as Partial<Buyer>;
+      const { createBuyer } = await import('./business-owner.actions');
+      const result = await createBuyer({
+        contactName: buyerData.contactName || `${buyerData.first_name || ''} ${buyerData.last_name || ''}`.trim(),
+        contactEmail: buyerData.email!,
+        buyersCompanyName: buyerData.buyersCompanyName || buyerData.businessName || '',
+        country: buyerData.country || 'India',
+        ...buyerData
+      }, authToken);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create buyer');
+      }
+      
+      revalidatePath('/users');
+      return result.data.buyer as Buyer;
     }
   } catch (error: any) {
     
@@ -512,7 +530,23 @@ export async function updateUser(
         userRole: 'business_owner',
       } as BusinessOwner;
     } else {
-      throw new Error('Buyer update not implemented - no Buyer model in schema');
+      // Use buyer actions for business_owner role
+      const buyerData = userData as Partial<Buyer>;
+      const { updateBuyer } = await import('./business-owner.actions');
+      const result = await updateBuyer(userId, {
+        contactName: buyerData.contactName,
+        contactEmail: buyerData.email,
+        buyersCompanyName: buyerData.buyersCompanyName || buyerData.businessName,
+        status: buyerData.status,
+        ...buyerData
+      }, authToken);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update buyer');
+      }
+      
+      revalidatePath('/users');
+      return result.data.buyer as Buyer;
     }
   } catch (error: any) {
     
@@ -536,7 +570,12 @@ export async function activateUser(
         data: { status: 'active' },
       });
     } else {
-      throw new Error('Buyer activation not implemented - no Buyer model in schema');
+      // Use buyer actions for business_owner role
+      const { activateBuyer } = await import('./business-owner.actions');
+      const result = await activateBuyer(userId, authToken);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to activate buyer');
+      }
     }
 
     revalidatePath('/users');
@@ -562,7 +601,12 @@ export async function deactivateUser(
         data: { status: 'inactive' },
       });
     } else {
-      throw new Error('Buyer deactivation not implemented - no Buyer model in schema');
+      // Use buyer actions for business_owner role
+      const { deactivateBuyer } = await import('./business-owner.actions');
+      const result = await deactivateBuyer(userId, authToken);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to deactivate buyer');
+      }
     }
 
     revalidatePath('/users');
@@ -580,7 +624,6 @@ export async function deleteUser(
   userId: string,
   authToken: string
 ): Promise<void> {
-
   try {
     if (userRole === 'super_admin') {
       await prisma.businessOwner.update({
@@ -588,12 +631,17 @@ export async function deleteUser(
         data: { is_deleted: true },
       });
     } else {
-      throw new Error('Buyer deletion not implemented - no Buyer model in schema');
+      // Use buyer actions for business_owner role
+      const { deleteBuyer } = await import('./business-owner.actions');
+      const result = await deleteBuyer(userId, authToken);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete buyer');
+      }
     }
 
     revalidatePath('/users');
   } catch (error: any) {
-    
+    console.error('Error in deleteUser:', error);
     throw new Error(error.message || 'Failed to delete user');
   }
 }

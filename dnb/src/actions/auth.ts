@@ -36,12 +36,7 @@ interface AuthResponse {
 }
 
 export async function registerAndLoginUser(userData: RegisterUserData): Promise<AuthResponse> {
-  try {
-    console.log("🔐 Starting user registration with data:", {
-      email: userData.email,
-      businessName: userData.businessName,
-      phoneNumber: userData.phoneNumber
-    });
+  try {;
 
     // Validate required fields
     const requiredFields = [
@@ -79,12 +74,9 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
       };
     }
 
-    // Check if user already exists
-    console.log("🔍 Checking if user exists...");
     const existingUser = await prisma.user.findUnique({
       where: { email: userData.email }
     });
-      console.log("existing user log...",existingUser);
     if (existingUser) {
       return {
         success: false,
@@ -196,11 +188,6 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
-    });
-
-    console.log("✅ User registered successfully:", {
-      userId: result.user.id,
-      businessOwnerId: result.businessOwner.id
     });
 
     return {

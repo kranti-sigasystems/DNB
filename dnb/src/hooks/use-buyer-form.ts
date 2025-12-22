@@ -7,10 +7,10 @@ import {
   Product, 
   Location, 
   PlanUsage,
-  ApiResponse 
 } from '@/types/buyer';
-import { createBuyer, getProducts, getLocations, getPlanUsage } from '@/actions/buyer.actions';
+import { createBuyer, getProducts, getLocations, getPlanUsage } from '@/actions/business-owner.actions';
 import { sanitizeString } from '@/utils/validation';
+import { getValidToken } from '@/utils/tokenManager';
 
 interface UseBuyerFormReturn {
   // Form data
@@ -38,10 +38,6 @@ interface UseBuyerFormReturn {
   loading: boolean;
   errors: Record<string, string>;
   submitForm: () => Promise<void>;
-  
-  // UI state
-  showConfirmDialog: boolean;
-  setShowConfirmDialog: (show: boolean) => void;
 }
 
 export function useBuyerForm(): UseBuyerFormReturn {
@@ -56,13 +52,8 @@ export function useBuyerForm(): UseBuyerFormReturn {
     return {};
   });
 
-  // Get auth token
-  const [authToken] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('authToken') || localStorage.getItem('authToken') || '';
-    }
-    return '';
-  });
+  // Get auth token using token manager (with automatic refresh)
+  const [authToken, setAuthToken] = useState<string>('');
 
   // Form data
   const [formData, setFormData] = useState<CreateBuyerData>({
@@ -100,54 +91,56 @@ export function useBuyerForm(): UseBuyerFormReturn {
   // Form submission state
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      if (!authToken) return;
-
       try {
+        const validToken = await getValidToken();
+        
+        if (!validToken) {
+          return;
+        }
+        
+        setAuthToken(validToken);
+        
         // Load products
         setProductsLoading(true);
-        console.log('🔄 useBuyerForm - Loading products with authToken:', authToken ? 'Present' : 'Missing');
-        const productsResponse = await getProducts(authToken, 0, 100); // pageIndex=0, pageSize=100
-        console.log('📦 useBuyerForm - Products response:', productsResponse);
+        const productsResponse = await getProducts(validToken, 0, 100);
+        
         if (productsResponse.success && productsResponse.data) {
-          console.log('📦 useBuyerForm - Setting products:', productsResponse.data.data);
           setProducts(productsResponse.data.data);
         } else {
-          console.error('❌ useBuyerForm - Failed to load products:', productsResponse.message);
+          console.error('❌ useBuyerForm - Failed to load products:', productsResponse.error);
         }
         setProductsLoading(false);
 
         // Load locations
         setLocationsLoading(true);
-        console.log('🔄 useBuyerForm - Loading locations with authToken:', authToken ? 'Present' : 'Missing');
-        const locationsResponse = await getLocations(authToken, 0, 100); // pageIndex=0, pageSize=100
-        console.log('📍 useBuyerForm - Locations response:', locationsResponse);
+        const locationsResponse = await getLocations(validToken, 0, 100);
+        
         if (locationsResponse.success && locationsResponse.data) {
-          console.log('📍 useBuyerForm - Setting locations:', locationsResponse.data.data);
           setLocations(locationsResponse.data.data);
         } else {
-          console.error('❌ useBuyerForm - Failed to load locations:', locationsResponse.message);
+          console.error('❌ useBuyerForm - Failed to load locations:', locationsResponse.error);
         }
         setLocationsLoading(false);
 
-        // Load plan usage
-        const usageResponse = await getPlanUsage(authToken);
+        const usageResponse = await getPlanUsage(validToken);
         if (usageResponse.success && usageResponse.data) {
           setPlanUsage(usageResponse.data);
           setRemainingBuyers(usageResponse.data.buyers?.remaining || 0);
         }
 
       } catch (error) {
-        console.error('Failed to load initial data:', error);
+        console.error('❌ useBuyerForm - Failed to load initial data:', error);
+        setProductsLoading(false);
+        setLocationsLoading(false);
       }
     };
 
     loadData();
-  }, [authToken]);
+  }, []); // Remove authToken dependency since we get it fresh each time
 
   // Update form field
   const updateField = (name: keyof CreateBuyerData, value: string) => {
@@ -180,37 +173,25 @@ export function useBuyerForm(): UseBuyerFormReturn {
     setSelectedLocation(location);
     
     if (location) {
-      // Build location display name
+      // For table display, use minimal location info (just country or city, country)
       let locationDisplayName = '';
-      if (location.locationName) locationDisplayName += location.locationName + ', ';
-      if (location.address) locationDisplayName += location.address + ', ';
-      if (location.city) locationDisplayName += location.city;
-      if (location.state) {
-        if (locationDisplayName.endsWith(', ')) {
-          locationDisplayName += location.state;
-        } else {
-          locationDisplayName += ', ' + location.state;
-        }
+      
+      // Priority: City, Country (most concise)
+      if (location.city && location.country) {
+        locationDisplayName = `${location.city}, ${location.country}`;
+      } else if (location.country) {
+        locationDisplayName = location.country;
+      } else if (location.city) {
+        locationDisplayName = location.city;
+      } else if (location.locationName) {
+        locationDisplayName = location.locationName;
+      } else {
+        locationDisplayName = 'Unknown Location';
       }
-      if (location.postalCode) locationDisplayName += ' ' + location.postalCode;
-      if (location.country) {
-        if (locationDisplayName.length > 0) {
-          locationDisplayName += ', ' + location.country;
-        } else {
-          locationDisplayName += location.country;
-        }
-      }
-
-      // Clean up display name
-      const cleanedLocationName = locationDisplayName
-        .replace(/,(\s*,)+/g, ',')
-        .replace(/,+\s*$/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
 
       setFormData(prev => ({
         ...prev,
-        locationName: cleanedLocationName,
+        locationName: locationDisplayName,
         country: location.country || '',
         state: location.state || '',
         city: location.city || '',
@@ -233,8 +214,31 @@ export function useBuyerForm(): UseBuyerFormReturn {
         return;
       }
 
+      // Get fresh token for submission
+      const validToken = await getValidToken();
+      if (!validToken) {
+        setErrors({ general: 'Authentication expired. Please login again.' });
+        setLoading(false);
+        return;
+      }
+
       // Create buyer
-      const result = await createBuyer(formData, authToken);
+      const buyerData = {
+        contactName: formData.contactName,
+        contactEmail: formData.contactEmail || formData.email,
+        buyersCompanyName: formData.buyersCompanyName || '',
+        country: formData.country || 'United States',
+        contactPhone: formData.contactPhone,
+        productName: formData.productName,
+        locationName: formData.locationName,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postalCode: formData.postalCode,
+        registrationNumber: formData.registrationNumber
+      };
+      
+      const result = await createBuyer(buyerData, validToken);
       
       if (result.success) {
         // Reset form
@@ -264,7 +268,7 @@ export function useBuyerForm(): UseBuyerFormReturn {
         }, 1000);
         
       } else {
-        setErrors({ general: result.error || result.message });
+        setErrors({ general: result.error || 'Failed to create buyer' });
       }
 
     } catch (error: any) {
@@ -272,7 +276,6 @@ export function useBuyerForm(): UseBuyerFormReturn {
       setErrors({ general: 'Failed to create buyer. Please try again.' });
     } finally {
       setLoading(false);
-      setShowConfirmDialog(false);
     }
   };
 
@@ -302,9 +305,5 @@ export function useBuyerForm(): UseBuyerFormReturn {
     loading,
     errors,
     submitForm,
-    
-    // UI state
-    showConfirmDialog,
-    setShowConfirmDialog,
   };
 }

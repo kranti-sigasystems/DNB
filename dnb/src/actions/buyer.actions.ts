@@ -242,7 +242,6 @@ export async function updateOffer(offerId: string, offerData: {
 
 // Delete offer
 export async function deleteOffer(offerId: string) {
-  console.log('🗑️ deleteOffer called for ID:', offerId);
   
   try {
     const headers = await getAuthHeaders();

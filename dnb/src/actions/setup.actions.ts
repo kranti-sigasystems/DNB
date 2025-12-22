@@ -5,7 +5,6 @@
  */
 export async function setupBuyersTable(): Promise<{ success: boolean; message: string; error?: string }> {
   try {
-    console.log('🔄 Setting up buyers table via server action...');
     
     // Call the API route internally
     const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/setup-buyers`, {

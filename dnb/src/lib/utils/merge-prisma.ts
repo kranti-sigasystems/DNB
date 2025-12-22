@@ -2,16 +2,11 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-console.log('🚀 Starting Prisma schema merge...');
-
 async function main() {
   try {
     const projectRoot = process.cwd();
     const modelDir = path.join(projectRoot, 'prisma/models');
     const outputFile = path.join(projectRoot, 'prisma/schema.prisma');
-
-    console.log('📂 Project root:', projectRoot);
-    console.log('🔍 Model directory:', modelDir);
     
     // Ensure directories exist
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
@@ -22,14 +17,11 @@ async function main() {
     try {
       files = await fs.readdir(modelDir);
     } catch (error) {
-      console.log('📁 Created models directory');
     }
     
     const prismaFiles = files.filter((f: string) => f.endsWith('.prisma'));
-    console.log(`📄 Found ${prismaFiles.length} .prisma files:`);
     
     if (prismaFiles.length === 0) {
-      console.log('❌ No .prisma files found. Create files in prisma/models/');
       return;
     }
     
@@ -55,7 +47,6 @@ datasource db {
     
     // Read and append each file's CONTENT (not import statements)
     for (const file of prismaFiles) {
-      console.log(`  📖 Reading: ${file}`);
       const filePath = path.join(modelDir, file);
       const content = await fs.readFile(filePath, 'utf-8');
       
@@ -66,8 +57,6 @@ datasource db {
     
     // Write to file
     await fs.writeFile(outputFile, schema, 'utf-8');
-    console.log(`✅ Created: ${outputFile}`);
-    console.log('👉 Next: Run "npx prisma generate"');
     
   } catch (error: any) {
     console.error('❌ Error:', error.message);

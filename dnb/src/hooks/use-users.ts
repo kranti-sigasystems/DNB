@@ -26,6 +26,8 @@ export function useUsers({ userRole, authToken }: UseUsersProps) {
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [paginationLoading, setPaginationLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [currentSearchFilters, setCurrentSearchFilters] = useState<SearchParams>({});
 
   // Log data changes
   useEffect(() => {
@@ -38,6 +40,9 @@ export function useUsers({ userRole, authToken }: UseUsersProps) {
       if (isSearch) setSearchLoading(true);
       if (isPagination) setPaginationLoading(true);
       if (!isSearch && !isPagination) setLoading(true);
+
+      // Store current search filters for use in action handlers
+      setCurrentSearchFilters(params);
 
       // Check if we have any search filters
       const { pageIndex, pageSize, ...filters } = params;
@@ -72,70 +77,77 @@ export function useUsers({ userRole, authToken }: UseUsersProps) {
   }, [userRole, authToken]);
 
   const handleActivate = useCallback(async (userId: string) => {
-    
     try {
+      setActionLoading(true);
       await activateUser(userRole, userId, authToken);
       toast.success('User activated successfully');
       
-      // Update local data
+      // Refresh data from server instead of updating local state
       if (data) {
-        const updatedData = data.data.map(user => 
-          user.id === userId ? { ...user, status: 'active' as const } : user
-        );
-        
-        setData({ ...data, data: updatedData });
+        await fetchUsers({
+          ...currentSearchFilters,
+          pageIndex: data.pageIndex,
+          pageSize: data.pageSize,
+        });
       }
     } catch (error: any) {
-      
+      console.error('Error in handleActivate:', error);
       toast.error(error.message || 'Failed to activate user');
+    } finally {
+      setActionLoading(false);
     }
-  }, [userRole, authToken, data]);
+  }, [userRole, authToken, data, fetchUsers, currentSearchFilters]);
 
   const handleDeactivate = useCallback(async (userId: string) => {
-    
     try {
+      setActionLoading(true);
       await deactivateUser(userRole, userId, authToken);
       toast.success('User deactivated successfully');
       
-      // Update local data
+      // Refresh data from server instead of updating local state
       if (data) {
-        const updatedData = data.data.map(user => 
-          user.id === userId ? { ...user, status: 'inactive' as const } : user
-        );
-        
-        setData({ ...data, data: updatedData });
+        await fetchUsers({
+          ...currentSearchFilters,
+          pageIndex: data.pageIndex,
+          pageSize: data.pageSize,
+        });
       }
     } catch (error: any) {
-      
+      console.error('Error in handleDeactivate:', error);
       toast.error(error.message || 'Failed to deactivate user');
+    } finally {
+      setActionLoading(false);
     }
-  }, [userRole, authToken, data]);
+  }, [userRole, authToken, data, fetchUsers, currentSearchFilters]);
 
   const handleDelete = useCallback(async (userId: string) => {
-    
     try {
+      setActionLoading(true);
       await deleteUser(userRole, userId, authToken);
       toast.success('User deleted successfully');
       
-      // Update local data
+      // Refresh data from server instead of updating local state
       if (data) {
-        const updatedData = data.data.map(user => 
-          user.id === userId ? { ...user, isDeleted: true } : user
-        );
-        
-        setData({ ...data, data: updatedData });
+        await fetchUsers({
+          ...currentSearchFilters,
+          pageIndex: data.pageIndex,
+          pageSize: data.pageSize,
+        });
       }
     } catch (error: any) {
-      
+      console.error('Error in handleDelete:', error);
       toast.error(error.message || 'Failed to delete user');
+    } finally {
+      setActionLoading(false);
     }
-  }, [userRole, authToken, data]);
+  }, [userRole, authToken, data, fetchUsers, currentSearchFilters]);
 
   return {
     data,
     loading,
     searchLoading,
     paginationLoading,
+    actionLoading,
     fetchUsers,
     handleActivate,
     handleDeactivate,

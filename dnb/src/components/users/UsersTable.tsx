@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Table,
@@ -37,11 +37,24 @@ import {
   ChevronsRight,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
+import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { TableRefreshIndicator } from '@/components/ui/table-refresh-indicator';
 import { UserSearch } from './UserSearch';
 import type { BusinessOwner, Buyer, SearchFilters, SearchField } from '@/types/users';
+
+type SortDirection = 'asc' | 'desc' | null;
+type SortField = 'name' | 'email' | 'status' | 'businessName' | 'phone' | 'registration' | 'product' | 'location' | 'contactPhone' | 'createdAt';
+
+interface SortConfig {
+  field: SortField | null;
+  direction: SortDirection;
+}
 
 interface UsersTableProps {
   data: (BusinessOwner | Buyer)[];
@@ -62,6 +75,8 @@ interface UsersTableProps {
   onSearch?: (filters: SearchFilters) => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+  // Action loading states
+  isRefreshing?: boolean;
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -99,57 +114,126 @@ const ActionMenu = ({
 }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { showAlert, AlertDialog } = useAlertDialog();
 
-  const handleAction = async (action: 'activate' | 'deactivate' | 'delete') => {
-    setIsLoading(true);
-    try {
-      if (action === 'activate') {
-        await onActivate(user.id);
-      } else if (action === 'deactivate') {
-        await onDeactivate(user.id);
-      } else if (action === 'delete') {
-        await onDelete(user.id);
-      }
-    } finally {
-      setIsLoading(false);
+  const getUserName = () => {
+    if ('contactName' in user) {
+      return user.contactName || 'Unknown User';
     }
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
+  };
+
+  const handleAction = (action: 'activate' | 'deactivate' | 'delete') => {
+    const actionMessages = {
+      activate: {
+        title: 'Activate User',
+        description: 'Are you sure you want to activate this user? They will be able to access the system.',
+      },
+      deactivate: {
+        title: 'Deactivate User',
+        description: 'Are you sure you want to deactivate this user? They will lose access to the system.',
+      },
+      delete: {
+        title: 'Delete User',
+        description: 'Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.',
+      },
+    };
+
+    const config = actionMessages[action];
+    
+    showAlert({
+      title: config.title,
+      description: config.description,
+      action: action,
+      itemName: getUserName(),
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          if (action === 'activate') {
+            await onActivate(user.id);
+          } else if (action === 'deactivate') {
+            await onDeactivate(user.id);
+          } else if (action === 'delete') {
+            await onDelete(user.id);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={isLoading}>
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}`)}>
-          <Eye className="w-4 h-4 mr-2" />
-          View
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}/edit`)}>
-          <Edit className="w-4 h-4 mr-2" />
-          Edit
-        </DropdownMenuItem>
-        {user.status !== 'active' && (
-          <DropdownMenuItem onClick={() => handleAction('activate')}>
-            Activate
-          </DropdownMenuItem>
-        )}
-        {user.status === 'active' && (
-          <DropdownMenuItem onClick={() => handleAction('deactivate')}>
-            Deactivate
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem 
-          onClick={() => handleAction('delete')}
-          className="text-red-600 dark:text-red-400"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            disabled={isLoading}
+            className="h-8 w-8 p-0 hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className="w-48 p-1 shadow-lg border border-border/50 bg-popover/95 backdrop-blur-sm"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem 
+            onClick={() => router.push(`/users/${user.id}`)}
+            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent/50 focus:bg-accent/50 rounded-sm transition-colors"
+          >
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span>View Details</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={() => router.push(`/users/${user.id}/edit`)}
+            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent/50 focus:bg-accent/50 rounded-sm transition-colors"
+          >
+            <Edit className="w-4 h-4 text-muted-foreground" />
+            <span>Edit</span>
+          </DropdownMenuItem>
+          
+          {user.status !== 'active' && (
+            <DropdownMenuItem 
+              onClick={() => handleAction('activate')}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-green-50 focus:bg-green-50 dark:hover:bg-green-900/20 dark:focus:bg-green-900/20 rounded-sm transition-colors text-green-700 dark:text-green-400"
+            >
+              <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+              </div>
+              <span>Activate</span>
+            </DropdownMenuItem>
+          )}
+          
+          {user.status === 'active' && (
+            <DropdownMenuItem 
+              onClick={() => handleAction('deactivate')}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 focus:bg-orange-50 dark:hover:bg-orange-900/20 dark:focus:bg-orange-900/20 rounded-sm transition-colors text-orange-700 dark:text-orange-400"
+            >
+              <div className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+              </div>
+              <span>Deactivate</span>
+            </DropdownMenuItem>
+          )}
+          
+          <div className="h-px bg-border/50 my-1" />
+          
+          <DropdownMenuItem 
+            onClick={() => handleAction('delete')}
+            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 dark:hover:bg-red-900/20 dark:focus:bg-red-900/20 rounded-sm transition-colors text-red-600 dark:text-red-400"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog />
+    </>
   );
 };
 
@@ -463,8 +547,153 @@ export function UsersTable({
   onSearch,
   onClearSearch,
   searchLoading = false,
+  // Action loading
+  isRefreshing = false,
 }: UsersTableProps) {
   const userLabel = userRole === 'super_admin' ? 'Business Owners' : 'Buyers';
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: null,
+    direction: null,
+  });
+
+  // Sort data based on sortConfig
+  const sortedData = useMemo(() => {
+    if (!sortConfig.field || !sortConfig.direction) {
+      return data;
+    }
+
+    return [...data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortConfig.field) {
+        case 'name':
+          if (userRole === 'super_admin') {
+            aValue = `${(a as BusinessOwner).first_name || ''} ${(a as BusinessOwner).last_name || ''}`.trim();
+            bValue = `${(b as BusinessOwner).first_name || ''} ${(b as BusinessOwner).last_name || ''}`.trim();
+          } else {
+            aValue = (a as Buyer).contactName || '';
+            bValue = (b as Buyer).contactName || '';
+          }
+          break;
+        case 'email':
+          aValue = a.email || '';
+          bValue = b.email || '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        case 'businessName':
+          if (userRole === 'super_admin') {
+            aValue = (a as BusinessOwner).businessName || '';
+            bValue = (b as BusinessOwner).businessName || '';
+          } else {
+            aValue = (a as Buyer).buyersCompanyName || '';
+            bValue = (b as Buyer).buyersCompanyName || '';
+          }
+          break;
+        case 'phone':
+          aValue = a.phoneNumber || '';
+          bValue = b.phoneNumber || '';
+          break;
+        case 'registration':
+          if (userRole === 'super_admin') {
+            aValue = (a as BusinessOwner).registrationNumber || '';
+            bValue = (b as BusinessOwner).registrationNumber || '';
+          } else {
+            // Buyers don't have registration numbers, use empty string
+            aValue = '';
+            bValue = '';
+          }
+          break;
+        case 'product':
+          aValue = (a as Buyer).productName || '';
+          bValue = (b as Buyer).productName || '';
+          break;
+        case 'location':
+          aValue = (a as Buyer).locationName || '';
+          bValue = (b as Buyer).locationName || '';
+          break;
+        case 'contactPhone':
+          aValue = (a as Buyer).contactPhone || '';
+          bValue = (b as Buyer).contactPhone || '';
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      // Handle null/undefined values
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      if (!bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+
+      // Convert to strings for comparison (except dates)
+      const aStr = sortConfig.field === 'createdAt' ? aValue : String(aValue).toLowerCase();
+      const bStr = sortConfig.field === 'createdAt' ? bValue : String(bValue).toLowerCase();
+
+      if (aStr < bStr) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aStr > bStr) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [data, sortConfig, userRole]);
+
+  const handleSort = (field: SortField) => {
+    setSortConfig(prev => {
+      if (prev.field === field) {
+        // Same field: cycle through asc -> desc -> null
+        if (prev.direction === 'asc') {
+          return { field, direction: 'desc' };
+        } else if (prev.direction === 'desc') {
+          return { field: null, direction: null };
+        } else {
+          return { field, direction: 'asc' };
+        }
+      } else {
+        // Different field: start with asc
+        return { field, direction: 'asc' };
+      }
+    });
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortConfig.field !== field) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    
+    if (sortConfig.direction === 'asc') {
+      return <ArrowUp className="ml-2 h-4 w-4" />;
+    } else if (sortConfig.direction === 'desc') {
+      return <ArrowDown className="ml-2 h-4 w-4" />;
+    } else {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+  };
+
+  const SortableHeader = ({ 
+    field, 
+    children 
+  }: { 
+    field: SortField; 
+    children: React.ReactNode;
+  }) => (
+    <Button
+      variant="ghost"
+      onClick={() => handleSort(field)}
+      className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+    >
+      {children}
+      {getSortIcon(field)}
+    </Button>
+  );
 
   return (
     <>
@@ -472,9 +701,9 @@ export function UsersTable({
       <div className="lg:hidden">
         {isLoading ? (
           <MobileSkeleton />
-        ) : data.length > 0 ? (
+        ) : sortedData.length > 0 ? (
           <div className="space-y-3 sm:space-y-4">
-            {data.map((user) => (
+            {sortedData.map((user) => (
               <MobileCard 
                 key={user.id} 
                 user={user} 
@@ -516,26 +745,20 @@ export function UsersTable({
             </div>
           )}
 
+          {/* Table Refresh Indicator */}
+          <div className="mb-4">
+            <TableRefreshIndicator 
+              isRefreshing={isRefreshing || (isLoading && !searchLoading)} 
+              message={isRefreshing ? "Updating data..." : "Loading data..."}
+            />
+          </div>
+
           {/* Empty state for business owners with no buyers */}
           {userRole === 'business_owner' && totalItems === 0 && !isLoading && (
             <div className="text-center py-12">
               <div className="space-y-4">
                 <div className="text-muted-foreground">
                   <h3 className="text-lg font-semibold mb-2">No Buyers Found</h3>
-                  <p className="text-sm">
-                    {data?.length === 0 ? 
-                      "The buyers table needs to be set up in your database." :
-                      "You don't have any buyers yet."
-                    }
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    To set up the buyers table, run this command in your terminal:
-                  </p>
-                  <code className="block bg-muted p-2 rounded text-xs">
-                    node setup-buyers-table.js
-                  </code>
                 </div>
               </div>
             </div>
@@ -548,31 +771,51 @@ export function UsersTable({
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="min-w-[150px]">Name</TableHead>
-                      <TableHead className="min-w-[200px]">Email</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[150px]">
+                        <SortableHeader field="name">Name</SortableHeader>
+                      </TableHead>
+                      <TableHead className="min-w-[200px]">
+                        <SortableHeader field="email">Email</SortableHeader>
+                      </TableHead>
+                      <TableHead className="min-w-[100px]">
+                        <SortableHeader field="status">Status</SortableHeader>
+                      </TableHead>
                       {userRole === 'super_admin' ? (
                         <>
-                          <TableHead className="min-w-[150px]">Business Name</TableHead>
-                          <TableHead className="min-w-[120px]">Phone</TableHead>
-                          <TableHead className="min-w-[120px]">Registration</TableHead>
+                          <TableHead className="min-w-[150px]">
+                            <SortableHeader field="businessName">Business Name</SortableHeader>
+                          </TableHead>
+                          <TableHead className="min-w-[120px]">
+                            <SortableHeader field="phone">Phone</SortableHeader>
+                          </TableHead>
+                          <TableHead className="min-w-[120px]">
+                            <SortableHeader field="registration">Registration</SortableHeader>
+                          </TableHead>
                         </>
                       ) : (
                         <>
-                          <TableHead className="min-w-[150px]">Product</TableHead>
-                          <TableHead className="min-w-[120px]">Location</TableHead>
-                          <TableHead className="min-w-[120px]">Contact Phone</TableHead>
+                          <TableHead className="min-w-[150px]">
+                            <SortableHeader field="product">Product</SortableHeader>
+                          </TableHead>
+                          <TableHead className="min-w-[120px]">
+                            <SortableHeader field="location">Location</SortableHeader>
+                          </TableHead>
+                          <TableHead className="min-w-[120px]">
+                            <SortableHeader field="contactPhone">Contact Phone</SortableHeader>
+                          </TableHead>
                         </>
                       )}
-                      <TableHead className="min-w-[100px]">Created</TableHead>
+                      <TableHead className="min-w-[100px]">
+                        <SortableHeader field="createdAt">Created</SortableHeader>
+                      </TableHead>
                       <TableHead className="w-12">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableSkeleton columnsCount={userRole === 'super_admin' ? 8 : 8} />
-                    ) : data.length > 0 ? (
-                      data.map((user) => {
+                    ) : sortedData.length > 0 ? (
+                      sortedData.map((user) => {
                         const getName = () => {
                           if (userRole === 'super_admin') {
                             const businessOwner = user as BusinessOwner;

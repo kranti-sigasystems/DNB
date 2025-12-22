@@ -41,10 +41,9 @@ export interface CreateBuyerData {
 }
 
 export interface Product {
-  _id: string;
   id: string;
-  productName: string;
   code: string;
+  productName: string;
   species: string[];
   size?: string[];
   sku?: string;
@@ -54,15 +53,14 @@ export interface Product {
 }
 
 export interface Location {
-  _id: string;
   id: string;
   locationName: string;
+  code: string;
   city: string;
   state: string;
   country: string;
   address: string;
   postalCode: string;
-  code: string;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
@@ -89,11 +87,6 @@ export interface PlanUsage {
     limit: number;
   };
   products: {
-    used: number;
-    remaining: number;
-    limit: number;
-  };
-  offers: {
     used: number;
     remaining: number;
     limit: number;

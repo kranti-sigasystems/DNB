@@ -94,7 +94,7 @@ export default function Layout({ children }: LayoutProps) {
         <main
           className={cn(
             "flex-1 overflow-x-hidden",
-            shouldHavePadding && "px-2 sm:px-4 lg:pt-4 lg:pl-4 lg:pb-10",
+            shouldHavePadding && "pt-4 px-8",
             !shouldHavePadding && "px-0"
           )}
         >
