@@ -5,9 +5,14 @@
 
 import { getauthToken, getRefreshToken, getStoredSession, persistSession, clearSession } from './auth';
 import { apiClient } from '@/utils/apiClient';
+import { isTokenExpiringSoonClient } from './token-utils';
 
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+
+function isTokenExpiredOrExpiringSoon(token: string, bufferMinutes: number = 5): boolean {
+  return isTokenExpiringSoonClient(token, bufferMinutes);
+}
 
 /**
  * Get a valid access token, refreshing if necessary
@@ -20,29 +25,13 @@ export async function getValidToken(): Promise<string | null> {
     return null;
   }
 
-  // Check if token is expired by trying to decode it
-  try {
-    const tokenParts = currentToken.split('.');
-    if (tokenParts.length !== 3) {
-      return null;
-    }
+  // Check if token is expired or will expire soon
+  if (isTokenExpiredOrExpiringSoon(currentToken, 5)) {
 
-    const payload = JSON.parse(atob(tokenParts[1]));
-    const expirationTime = payload.exp * 1000; // Convert to milliseconds
-    const currentTime = Date.now();
-    const timeUntilExpiry = expirationTime - currentTime;
-
-    // If token expires in less than 5 minutes, refresh it
-    if (timeUntilExpiry < 5 * 60 * 1000) {
-      return await refreshAccessToken();
-    }
-
-    return currentToken;
-  } catch (error) {
-    console.error('❌ Error checking token validity:', error);
-    // If we can't decode the token, try to refresh it
+    
     return await refreshAccessToken();
   }
+  return currentToken;
 }
 
 /**
@@ -79,11 +68,18 @@ async function performRefresh(): Promise<string | null> {
       clearSession();
       return null;
     }
+    
     const response = await apiClient.post('/auth/refresh-token', {
       refreshToken,
     });
 
-    const refreshedData = response?.data?.data ?? {};
+    if (!response?.data?.success) {
+      console.error('❌ Refresh token API returned error:', response?.data?.error);
+      clearSession();
+      return null;
+    }
+
+    const refreshedData = response.data.data;
     const newAccessToken = refreshedData?.authToken || refreshedData?.accessToken;
     const newRefreshToken = refreshedData?.refreshToken;
 
@@ -99,20 +95,39 @@ async function performRefresh(): Promise<string | null> {
       const nextSession = {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken ?? existingSession.refreshToken,
-        user: existingSession.user,
+        user: {
+          ...existingSession.user,
+          // Update user data from token payload if available
+          ...(refreshedData.tokenPayload && {
+            id: refreshedData.tokenPayload.id,
+            email: refreshedData.tokenPayload.email,
+            userRole: refreshedData.tokenPayload.userRole,
+            name: refreshedData.tokenPayload.name,
+            businessOwnerId: refreshedData.tokenPayload.businessOwnerId,
+            businessName: refreshedData.tokenPayload.businessName,
+          }),
+        },
         remember: existingSession.remember,
       };
       persistSession(nextSession, { remember: existingSession.remember });
     }
 
     return newAccessToken;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Token refresh failed:', error);
-    clearSession();
     
-    // Redirect to login if we're in the browser
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+    // Check if it's a network error vs auth error
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      clearSession();
+      
+      // Redirect to login if we're in the browser
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+      // Don't clear session on network errors, allow retry
+    } else {
+      clearSession();
     }
     
     return null;
@@ -131,4 +146,17 @@ export async function ensureAuthenticated(): Promise<string> {
   }
   
   return token;
+}
+export async function forceRefreshToken(): Promise<string | null> {
+  return await refreshAccessToken();
+}
+
+export function isCurrentTokenValid(): boolean {
+  const currentToken = getauthToken();
+  
+  if (!currentToken) {
+    return false;
+  }
+
+  return !isTokenExpiredOrExpiringSoon(currentToken, 0);
 }
