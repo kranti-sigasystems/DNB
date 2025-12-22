@@ -39,11 +39,13 @@ import {
   ArrowDown,
   Download,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Trash2
 } from "lucide-react";
 import { User, Buyer, SearchFilters } from "@/types/dashboard";
 import { updateUserStatus } from "@/actions/dashboard.actions";
 import { toast } from "react-hot-toast";
+import { useAlertDialog } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -123,61 +125,116 @@ const ActionMenu = ({
   onRefresh?: () => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { showAlert, AlertDialog } = useAlertDialog();
 
   const handleAction = async (action: 'activate' | 'deactivate' | 'delete') => {
-    setIsLoading(true);
-    try {
-      // Import token manager dynamically to avoid SSR issues
-      const { ensureAuthenticated } = await import('@/utils/tokenManager');
-      
-      // Get valid token (will refresh if needed)
-      const authToken = await ensureAuthenticated();
+    const actionMessages = {
+      activate: {
+        title: 'Activate User',
+        description: 'Are you sure you want to activate this user? They will be able to access the system.',
+      },
+      deactivate: {
+        title: 'Deactivate User',
+        description: 'Are you sure you want to deactivate this user? They will lose access to the system.',
+      },
+      delete: {
+        title: 'Delete User',
+        description: 'Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.',
+      },
+    };
 
-      const result = await updateUserStatus(userRole, item.id, action, authToken);
-      if (result.success) {
-        toast.success(`Successfully ${action}d user`);
-        onRefresh?.();
-      } else {
-        toast.error(result.error || `Failed to ${action} user`);
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('Authentication required')) {
-        toast.error('Session expired. Please login again.');
-        window.location.href = '/login';
-      } else {
-        toast.error(`Failed to ${action} user`);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    const config = actionMessages[action];
+    
+    showAlert({
+      title: config.title,
+      description: config.description,
+      action: action,
+      itemName: item.name,
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          // Import token manager dynamically to avoid SSR issues
+          const { ensureAuthenticated } = await import('@/utils/tokenManager');
+          
+          // Get valid token (will refresh if needed)
+          const authToken = await ensureAuthenticated();
+
+          const result = await updateUserStatus(userRole, item.id, action, authToken);
+          if (result.success) {
+            toast.success(`Successfully ${action}d user`);
+            onRefresh?.();
+          } else {
+            toast.error(result.error || `Failed to ${action} user`);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('Authentication required')) {
+            toast.error('Session expired. Please login again.');
+            window.location.href = '/login';
+          } else {
+            toast.error(`Failed to ${action} user`);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={isLoading}>
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {item.status !== 'active' && (
-          <DropdownMenuItem onClick={() => handleAction('activate')}>
-            Activate
-          </DropdownMenuItem>
-        )}
-        {item.status === 'active' && (
-          <DropdownMenuItem onClick={() => handleAction('deactivate')}>
-            Deactivate
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem 
-          onClick={() => handleAction('delete')}
-          className="text-red-600"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            disabled={isLoading}
+            className="h-8 w-8 p-0 hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className="w-48 p-1 shadow-lg border border-border/50 bg-popover/95 backdrop-blur-sm"
         >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {item.status !== 'active' && (
+            <DropdownMenuItem 
+              onClick={() => handleAction('activate')}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-green-50 focus:bg-green-50 dark:hover:bg-green-900/20 dark:focus:bg-green-900/20 rounded-sm transition-colors text-green-700 dark:text-green-400"
+            >
+              <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+              </div>
+              <span>Activate</span>
+            </DropdownMenuItem>
+          )}
+          
+          {item.status === 'active' && (
+            <DropdownMenuItem 
+              onClick={() => handleAction('deactivate')}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 focus:bg-orange-50 dark:hover:bg-orange-900/20 dark:focus:bg-orange-900/20 rounded-sm transition-colors text-orange-700 dark:text-orange-400"
+            >
+              <div className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+              </div>
+              <span>Deactivate</span>
+            </DropdownMenuItem>
+          )}
+          
+          <div className="h-px bg-border/50 my-1" />
+          
+          <DropdownMenuItem 
+            onClick={() => handleAction('delete')}
+            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 dark:hover:bg-red-900/20 dark:focus:bg-red-900/20 rounded-sm transition-colors text-red-600 dark:text-red-400"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog />
+    </>
   );
 };
 

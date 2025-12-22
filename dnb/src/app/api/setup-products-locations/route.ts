@@ -3,10 +3,8 @@ import prisma from '@/lib/prisma-client';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Setting up products and locations tables via API...');
     
     // Create products table
-    console.log('📦 Creating products table...');
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS "products" (
         "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
@@ -47,10 +45,6 @@ export async function POST(request: NextRequest) {
       // Constraint might already exist
     }
     
-    console.log('✅ Products table created successfully!');
-    
-    // Create locations table
-    console.log('📍 Creating locations table...');
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS "locations" (
         "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
@@ -93,7 +87,6 @@ export async function POST(request: NextRequest) {
       // Constraint might already exist
     }
     
-    console.log('✅ Locations table created successfully!');
     
     return NextResponse.json({ 
       success: true, 

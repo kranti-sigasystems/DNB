@@ -18,7 +18,6 @@ export default function TestActionsPage() {
     try {
       const result = await checkUniqueField("email", email);
       setResult(result);
-      console.log("Unique check result:", result);
     } catch (error) {
       console.error("Error:", error);
       setResult({ error: error.message });

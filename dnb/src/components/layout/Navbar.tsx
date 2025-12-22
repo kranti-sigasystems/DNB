@@ -87,11 +87,13 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
     <>
       <header
         className={cn(
-          "w-full h-16 bg-background border-b border-border sticky top-0 z-50 transition-colors duration-300",
-          isNoSidebarRoute ? "px-4 sm:px-6 lg:px-8" : "px-4 sm:px-6 lg:px-10"
+          "w-full h-16 bg-background border-b border-border sticky top-0 z-50 transition-colors duration-300"
         )}
       >
-        <div className="w-full h-full mx-auto flex items-center justify-between">
+        <div className={cn(
+          "h-full flex items-center justify-between",
+          isNoSidebarRoute ? "app-container" : "px-4 sm:px-6 lg:px-8"
+        )}>
           {/* LEFT: Logo and menu button */}
           <div className="flex items-center">
             {showSidebarButton && (

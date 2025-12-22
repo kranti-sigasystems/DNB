@@ -38,20 +38,15 @@ export async function getAllBuyers(params: {
   country?: string;
   isVerified?: boolean;
 } = {}, authToken?: string) {
-  console.log('🔍 getAllBuyers called with params:', params);
-  console.log('🔑 authToken provided:', !!authToken);
   
   try {
     if (!authToken) {
-      console.log('❌ No authToken provided');
       return { success: false, error: 'Authentication token required' };
     }
     
     const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    console.log('🏢 businessOwnerId from token:', businessOwnerId);
     
     if (!businessOwnerId) {
-      console.log('❌ No businessOwnerId found');
       return { success: false, error: 'Business owner not found' };
     }
     
@@ -59,7 +54,6 @@ export async function getAllBuyers(params: {
     const pageSize = params.pageSize || 10;
     const skip = pageIndex * pageSize;
     
-    console.log('📄 Pagination:', { pageIndex, pageSize, skip });
     
     // Build where clause
     const where: any = {
@@ -77,7 +71,6 @@ export async function getAllBuyers(params: {
       where.country = params.country;
     }
     
-    console.log('🔍 Where clause:', where);
     
     // Get buyers with pagination
     const [buyers, totalCount] = await Promise.all([
@@ -98,25 +91,13 @@ export async function getAllBuyers(params: {
       prisma.buyer.count({ where })
     ]);
     
-    console.log('📊 Query results:');
-    console.log('  - Total buyers found:', totalCount);
-    console.log('  - Buyers returned:', buyers.length);
-    console.log('  - Buyers data:', buyers.map(b => ({ 
-      id: b.id, 
-      name: b.contactName, 
-      email: b.email, 
-      company: b.buyersCompanyName,
-      status: b.status 
-    })));
-    
     // Get status counts
     const [activeCount, inactiveCount, deletedCount] = await Promise.all([
       prisma.buyer.count({ where: { ...where, status: 'active' } }),
       prisma.buyer.count({ where: { ...where, status: 'inactive' } }),
       prisma.buyer.count({ where: { businessOwnerId, is_deleted: true } })
     ]);
-    
-    console.log('📈 Status counts:', { activeCount, inactiveCount, deletedCount });
+
     
     const totalPages = Math.ceil(totalCount / pageSize);
     
@@ -139,12 +120,6 @@ export async function getAllBuyers(params: {
       }
     };
     
-    console.log('✅ getAllBuyers returning result structure:', {
-      success: result.success,
-      dataKeys: Object.keys(result.data),
-      dataDataKeys: Object.keys(result.data.data),
-      buyersCount: result.data.data.data.length
-    });
     
     return result;
   } catch (error) {
@@ -326,7 +301,6 @@ export async function deactivateBuyer(buyerId: string, authToken?: string) {
 
 // Delete buyer - matches your frontend deleteBuyer endpoint
 export async function deleteBuyer(buyerId: string, authToken?: string) {
-  
   try {
     if (!authToken) {
       return { success: false, error: 'Authentication token required' };
@@ -627,6 +601,153 @@ export async function checkUnique(params: Record<string, any>, authToken?: strin
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to check unique fields' 
+    };
+  }
+}
+
+// Get products for business owner
+export async function getProducts(authToken?: string, pageIndex = 0, pageSize = 100) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    const skip = pageIndex * pageSize;
+    
+    // Get products for this business owner (using ownerId to match existing table)
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where: { ownerId: businessOwnerId },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.product.count({ where: { ownerId: businessOwnerId } })
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    return {
+      success: true,
+      data: {
+        data: products,
+        totalItems: totalCount,
+        totalPages,
+        pageIndex,
+        pageSize
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch products' 
+    };
+  }
+}
+
+// Get locations for business owner
+export async function getLocations(authToken?: string, pageIndex = 0, pageSize = 100) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    const skip = pageIndex * pageSize;
+    
+    // Get locations for this business owner (using ownerId to match existing table)
+    const [locations, totalCount] = await Promise.all([
+      prisma.location.findMany({
+        where: { ownerId: businessOwnerId },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.location.count({ where: { ownerId: businessOwnerId } })
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    return {
+      success: true,
+      data: {
+        data: locations,
+        totalItems: totalCount,
+        totalPages,
+        pageIndex,
+        pageSize
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch locations' 
+    };
+  }
+}
+
+// Get plan usage for business owner
+export async function getPlanUsage(authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    // Get current usage counts (using correct field names)
+    const [buyersCount, productsCount, locationsCount] = await Promise.all([
+      prisma.buyer.count({ where: { businessOwnerId, is_deleted: false } }),
+      prisma.product.count({ where: { ownerId: businessOwnerId } }),
+      prisma.location.count({ where: { ownerId: businessOwnerId } })
+    ]);
+    
+    // Default limits (these could come from a plan table in the future)
+    const limits = {
+      buyers: 50,
+      products: 100,
+      locations: 25
+    };
+    
+    return {
+      success: true,
+      data: {
+        buyers: {
+          used: buyersCount,
+          limit: limits.buyers,
+          remaining: Math.max(0, limits.buyers - buyersCount)
+        },
+        products: {
+          used: productsCount,
+          limit: limits.products,
+          remaining: Math.max(0, limits.products - productsCount)
+        },
+        locations: {
+          used: locationsCount,
+          limit: limits.locations,
+          remaining: Math.max(0, limits.locations - locationsCount)
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching plan usage:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch plan usage' 
     };
   }
 }

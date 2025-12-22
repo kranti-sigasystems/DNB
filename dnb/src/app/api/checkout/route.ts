@@ -290,14 +290,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log('plan log from route.ts......', plan);
 
     if (!plan)
       return NextResponse.json({ success: false, message: 'Plan not available' }, { status: 404 });
 
     const amount = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-
-    console.log('amount in route.ts.....', amount);
     if (amount <= 0) {
       return NextResponse.json(
         { success: false, message: 'Free plan does not require payment' },
@@ -329,8 +326,6 @@ export async function POST(req: NextRequest) {
       metadata: { userId, planId: plan.id, billingCycle },
     });
 
-    // Save pending payment
-    console.log('Coming in checkout route.....');
     await prisma.payment.create({
       data: {
         userId: user.id,

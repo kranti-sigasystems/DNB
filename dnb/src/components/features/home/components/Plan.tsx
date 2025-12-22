@@ -90,8 +90,6 @@ export default function Plans() {
   const isActivePlan = (planId: string): boolean => planId === currentPlanId;
 
   const handlePlanSelect = (plan: Plan): void => {
-    console.log('Plan selected:', plan);
-    console.log('Billing cycle:', billingCycle);
 
     // Store plan data for checkout page
     const planData = {
@@ -103,7 +101,6 @@ export default function Plans() {
       },
       billingCycle,
     };
-    console.log('Storing plan data:', planData);
     sessionStorage.setItem('selectedPlanData', JSON.stringify(planData));
     // Also store for payment processing
     sessionStorage.setItem(
@@ -116,7 +113,6 @@ export default function Plans() {
       })
     );
 
-    console.log('Navigating to checkout...');
     router.push('/checkout');
   };
 

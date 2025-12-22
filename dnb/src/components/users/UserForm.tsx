@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { createUser, updateUser } from '@/actions/users.actions';
+import { useAlertDialog } from '@/components/ui/alert-dialog';
 import type { BusinessOwner, Buyer } from '@/types/users';
 
 interface UserFormProps {
@@ -32,6 +33,7 @@ type FormData = Partial<BusinessOwner | Buyer>;
 export function UserForm({ userRole, authToken, initialData, mode }: UserFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { showAlert, AlertDialog } = useAlertDialog();
 
   const {
     register,
@@ -46,24 +48,41 @@ export function UserForm({ userRole, authToken, initialData, mode }: UserFormPro
   const watchedStatus = watch('status');
 
   const onSubmit = async (data: FormData) => {
-    try {
-      setLoading(true);
+    const actionTitle = mode === 'create' ? 'Create User' : 'Update User';
+    const actionDescription = mode === 'create' 
+      ? `Are you sure you want to create this ${userRole === 'super_admin' ? 'business owner' : 'buyer'}?`
+      : `Are you sure you want to update this ${userRole === 'super_admin' ? 'business owner' : 'buyer'}?`;
+    
+    const userName = mode === 'create' 
+      ? `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'New User'
+      : `${initialData?.first_name || ''} ${initialData?.last_name || ''}`.trim() || 'User';
 
-      if (mode === 'create') {
-        await createUser(userRole, data, authToken);
-        toast.success(`${userRole === 'super_admin' ? 'Business Owner' : 'Buyer'} created successfully`);
-      } else if (initialData?.id) {
-        await updateUser(userRole, initialData.id, data, authToken);
-        toast.success(`${userRole === 'super_admin' ? 'Business Owner' : 'Buyer'} updated successfully`);
-      }
+    showAlert({
+      title: actionTitle,
+      description: actionDescription,
+      action: mode === 'create' ? 'add' : 'update',
+      itemName: userName,
+      onConfirm: async () => {
+        try {
+          setLoading(true);
 
-      router.push('/users');
-    } catch (error: any) {
-      console.error('Failed to save user:', error);
-      toast.error(error.message || 'Failed to save user');
-    } finally {
-      setLoading(false);
-    }
+          if (mode === 'create') {
+            await createUser(userRole, data, authToken);
+            toast.success(`${userRole === 'super_admin' ? 'Business Owner' : 'Buyer'} created successfully`);
+          } else if (initialData?.id) {
+            await updateUser(userRole, initialData.id, data, authToken);
+            toast.success(`${userRole === 'super_admin' ? 'Business Owner' : 'Buyer'} updated successfully`);
+          }
+
+          router.push('/users');
+        } catch (error) {
+          console.error('Form submission error:', error);
+          toast.error(`Failed to ${mode} user. Please try again.`);
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleBack = () => {
@@ -295,6 +314,7 @@ export function UserForm({ userRole, authToken, initialData, mode }: UserFormPro
           </Button>
         </div>
       </form>
+      <AlertDialog />
     </div>
   );
 }

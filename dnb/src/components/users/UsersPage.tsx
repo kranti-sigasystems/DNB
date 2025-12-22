@@ -30,6 +30,7 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
     loading,
     searchLoading,
     paginationLoading,
+    actionLoading,
     fetchUsers,
     handleActivate,
     handleDeactivate,
@@ -233,6 +234,8 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
         onSearch={handleSearch}
         onClearSearch={handleClearSearch}
         searchLoading={searchLoading}
+        // Pass action loading state
+        isRefreshing={actionLoading}
       />
     </div>
   );

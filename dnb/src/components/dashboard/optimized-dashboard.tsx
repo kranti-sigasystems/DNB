@@ -12,6 +12,8 @@ import { toast } from "react-hot-toast";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/data-table/status-badge";
 import { StatCards, ActivityCard, SimpleStatCard } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { useAlertDialog } from "@/components/ui/alert-dialog";
 import { getDashboardData, searchDashboardData, updateUserStatus } from "@/actions/dashboard.actions";
 import { ensureAuthenticated } from "@/utils/tokenManager";
 import { debugAuthState } from "@/utils/debugAuth";
@@ -33,6 +35,7 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
+  const { showAlert, AlertDialog } = useAlertDialog();
 
   const userRole = user?.userRole || USER_ROLES.GUEST;
   const userLabel = getUserRoleLabel(userRole);
@@ -48,50 +51,25 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
   // Fetch dashboard data
   const fetchDashboardData = useCallback(
     async (filters: SearchFilters = {}, pageIndex = 0, pageSize = 10) => {
-      console.log('🎯 fetchDashboardData called with:', { userRole, filters, pageIndex, pageSize });
       
       if (userRole === USER_ROLES.GUEST) {
-        console.log('👤 User role is GUEST, skipping fetch');
         return;
       }
 
       setIsLoading(true);
       try {
-        console.log('🔑 Getting auth token...');
         const authToken = await ensureAuthenticated();
-        console.log('🔑 Auth token obtained:', !!authToken);
         
         const params = { pageIndex, pageSize, ...filters };
-        console.log('📦 Request params:', params);
 
         const result = hasActiveFilters(filters)
           ? await searchDashboardData(userRole, params, authToken)
           : await getDashboardData(userRole, params, authToken);
 
-        console.log('📊 Dashboard data result:', {
-          success: result.success,
-          hasData: !!result.data,
-          error: result.error
-        });
-
         if (result.success && result.data) {
-          console.log('✅ Setting dashboard data:', {
-            dataCount: result.data.data?.length || 0,
-            stats: result.data.stats,
-            totalPages: result.data.totalPages
-          });
-          
-          console.log('📋 First few data items:', result.data.data?.slice(0, 3).map(item => ({
-            id: item.id,
-            contactName: item.contactName,
-            email: item.email,
-            buyersCompanyName: item.buyersCompanyName,
-            status: item.status
-          })));
           
           setDashboardData(result.data);
         } else {
-          console.log('❌ Dashboard data fetch failed:', result.error);
           toast.error(result.error || 'Failed to fetch dashboard data');
         }
       } catch (error) {
@@ -120,24 +98,51 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
     [fetchDashboardData, pagination]
   );
 
-  // Handle user actions
+  // Handle user actions with confirmation
   const handleUserAction = useCallback(
-    async (userId: string, action: 'activate' | 'deactivate' | 'delete') => {
-      try {
-        const authToken = await ensureAuthenticated();
-        const result = await updateUserStatus(userRole, userId, action, authToken);
+    (userId: string, action: 'activate' | 'deactivate' | 'delete', userName: string) => {
+      
+      const actionMessages = {
+        activate: {
+          title: 'Activate User',
+          description: 'Are you sure you want to activate this user? They will be able to access the system.',
+        },
+        deactivate: {
+          title: 'Deactivate User',
+          description: 'Are you sure you want to deactivate this user? They will lose access to the system.',
+        },
+        delete: {
+          title: 'Delete User',
+          description: 'Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.',
+        },
+      };
 
-        if (result.success) {
-          toast.success(`Successfully ${action}d user`);
-          fetchDashboardData(searchFilters, pagination.currentPage, pagination.pageSize);
-        } else {
-          toast.error(result.error || `Failed to ${action} user`);
-        }
-      } catch (error) {
-        toast.error(`Failed to ${action} user`);
-      }
+      const config = actionMessages[action];
+      
+      showAlert({
+        title: config.title,
+        description: config.description,
+        action: action,
+        itemName: userName,
+        onConfirm: async () => {
+          try {
+            const authToken = await ensureAuthenticated();
+            const result = await updateUserStatus(userRole, userId, action, authToken);
+
+            if (result.success) {
+              toast.success(`Successfully ${action}d user`);
+              fetchDashboardData(searchFilters, pagination.currentPage, pagination.pageSize);
+            } else {
+              toast.error(result.error || `Failed to ${action} user`);
+            }
+          } catch (error) {
+            console.error('🎯 Action execution failed:', error);
+            toast.error(`Failed to ${action} user`);
+          }
+        },
+      });
     },
-    [userRole, searchFilters, pagination, fetchDashboardData]
+    [userRole, searchFilters, pagination, fetchDashboardData, showAlert]
   );
 
   // Table columns configuration
@@ -188,19 +193,19 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
     {
       label: 'Activate',
       icon: UserCheck,
-      onClick: (item) => handleUserAction(item.id, 'activate'),
+      onClick: (item) => handleUserAction(item.id, 'activate', formatUserName(item)),
       hidden: (item) => item.status === 'active',
     },
     {
       label: 'Deactivate',
       icon: UserX,
-      onClick: (item) => handleUserAction(item.id, 'deactivate'),
+      onClick: (item) => handleUserAction(item.id, 'deactivate', formatUserName(item)),
       hidden: (item) => item.status !== 'active',
     },
     {
       label: 'Delete',
       icon: Trash2,
-      onClick: (item) => handleUserAction(item.id, 'delete'),
+      onClick: (item) => handleUserAction(item.id, 'delete', formatUserName(item)),
       variant: 'destructive' as const,
     },
   ], [handleUserAction]);
@@ -303,7 +308,7 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+      <div className="dashboard-container">
         {/* Page Header - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -314,6 +319,26 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
               Welcome back! Here's what's happening with your {getUserRoleLabel(userRole, true).toLowerCase()}.
             </p>
           </div>
+          
+          {/* Test Button - Remove this after testing */}
+          <Button
+            onClick={() => {
+              showAlert({
+                title: 'Test Alert',
+                description: 'This is a test alert dialog to verify it works.',
+                action: 'delete',
+                itemName: 'Test Item',
+                onConfirm: async () => {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  toast.success('Test completed!');
+                },
+              });
+            }}
+            variant="outline"
+            size="sm"
+          >
+            Test Alert
+          </Button>
         </div>
 
         {/* Stats Grid - Mobile Responsive */}
@@ -324,18 +349,6 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
         {/* Data Table - Mobile Optimized */}
         <div className="transition-opacity duration-300 ease-in-out">
           {(() => {
-            console.log('🎨 Rendering DataTable with:', {
-              dataLength: dashboardData?.data?.length || 0,
-              isLoading,
-              totalItems: dashboardData?.stats.totalItems || 0,
-              sampleData: dashboardData?.data?.slice(0, 2).map(item => ({
-                id: item?.id,
-                contactName: item?.contactName,
-                email: item?.email,
-                buyersCompanyName: item?.buyersCompanyName,
-                status: item?.status
-              }))
-            });
             return null;
           })()}
           <DataTable
@@ -383,6 +396,9 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
           />
         </div>
       </div>
+      
+      {/* Alert Dialog */}
+      <AlertDialog />
     </div>
   );
 }

@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .app-container {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .page-content {
+    @apply app-container py-4 sm:py-6 lg:py-8;
+  }
+  
+  .page-content-spaced {
+    @apply page-content space-y-4 sm:space-y-6;
+  }
+}
+
 :root {
   --base-50: oklch(0.985 0.0013 286.84);
   --base-100: oklch(0.967 0.0027 286.38);

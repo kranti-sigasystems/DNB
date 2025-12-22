@@ -39,19 +39,6 @@ export function DataTable<T extends Record<string, any>>({
   emptyState,
   className,
 }: DataTableProps<T>) {
-  console.log('🎨 DataTable component received:', {
-    dataLength: data?.length || 0,
-    isLoading,
-    hasColumns: columns?.length || 0,
-    hasActions: actions?.length || 0,
-    hasPagination: !!pagination,
-    sampleData: data?.slice(0, 2).map(item => ({
-      id: item?.id,
-      keys: Object.keys(item || {}),
-      contactName: item?.contactName,
-      email: item?.email
-    }))
-  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -70,14 +57,8 @@ export function DataTable<T extends Record<string, any>>({
 
   // Filter data based on search
   const filteredData = useMemo(() => {
-    console.log('🔍 DataTable filtering:', {
-      originalDataLength: data?.length || 0,
-      searchQuery,
-      hasOnSearch: !!onSearch
-    });
     
     if (!searchQuery || onSearch) {
-      console.log('✅ Using original data (no search or external search)');
       return data; // If onSearch is provided, filtering is handled externally
     }
     
@@ -88,25 +69,12 @@ export function DataTable<T extends Record<string, any>>({
       })
     );
     
-    console.log('🔍 Filtered data length:', filtered.length);
     return filtered;
   }, [data, searchQuery, columns, onSearch]);
 
   // Sort functionality
   const { sortedData, sortConfig, actions: sortActions, getSortIcon } = useTableSort({
     data: filteredData,
-  });
-  
-  console.log('📊 DataTable final data:', {
-    filteredDataLength: filteredData?.length || 0,
-    sortedDataLength: sortedData?.length || 0,
-    sortConfig,
-    finalSampleData: sortedData?.slice(0, 2).map(item => ({
-      id: item?.id,
-      contactName: item?.contactName,
-      email: item?.email,
-      status: item?.status
-    }))
   });
 
   // Row selection

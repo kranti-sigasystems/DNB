@@ -11,7 +11,6 @@ export function attemptSessionRestore(): boolean {
   }
 
   try {
-    console.log('🔄 Attempting session restore...');
     
     // Check if we have individual storage items but no complete session
     const authToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
@@ -19,14 +18,13 @@ export function attemptSessionRestore(): boolean {
     const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
     
     if (!authToken || !userStr) {
-      console.log('❌ Missing required auth data for restore');
       return false;
     }
 
     // Check if session is already properly stored
     const existingSession = getStoredSession();
     if (existingSession && existingSession.user && existingSession.accessToken) {
-      console.log('✅ Session already exists and is valid');
+      
       return true;
     }
 
@@ -41,18 +39,10 @@ export function attemptSessionRestore(): boolean {
       remember: true,
     };
 
-    console.log('🔧 Restoring session with data:', {
-      hasToken: !!authToken,
-      hasRefreshToken: !!refreshToken,
-      hasUser: !!user,
-      userRole: user?.userRole
-    });
-
     // Persist the session
     const restoredSession = persistSession(sessionData, { remember: true });
     
     if (restoredSession) {
-      console.log('✅ Session restored successfully');
       
       // Trigger a storage event to notify other components
       window.dispatchEvent(new StorageEvent('storage', {
@@ -63,7 +53,6 @@ export function attemptSessionRestore(): boolean {
       
       return true;
     } else {
-      console.log('❌ Failed to restore session');
       return false;
     }
   } catch (error) {
@@ -97,7 +86,6 @@ export function shouldRedirectToLogin(): boolean {
       const currentTime = Date.now();
       
       if (currentTime > expirationTime) {
-        console.log('⏰ Token is expired, should redirect to login');
         return true;
       }
     }
