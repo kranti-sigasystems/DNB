@@ -11,23 +11,23 @@ const prisma = new PrismaClient({ adapter });
 async function setupDatabase() {
   try {
     console.log('🚀 Setting up database safely...');
-    
+
     // Test connection
     await prisma.$connect();
     console.log('✅ Database connected successfully');
-    
+
     // Check if our tables exist by trying to count users
     try {
       const userCount = await prisma.user.count();
       console.log(`✅ Found ${userCount} users in database`);
-      
+
       const planCount = await prisma.plan.count();
       console.log(`✅ Found ${planCount} plans in database`);
-      
+
       // If we have no plans, create some basic ones
       if (planCount === 0) {
         console.log('📦 Creating basic plans...');
-        
+
         await prisma.plan.createMany({
           data: [
             {
@@ -45,14 +45,14 @@ async function setupDatabase() {
                 'Up to 50 products',
                 'Up to 100 offers',
                 'Basic analytics',
-                'Email support'
+                'Email support',
               ]),
               isActive: true,
-              sortOrder: 1
+              sortOrder: 1,
             },
             {
               key: 'advanced',
-              name: 'Advanced',
+              name: 'Advanchhfhed',
               description: 'Perfect for growing businesses',
               currency: 'INR',
               priceMonthly: 4999, // ₹49.99 in paise
@@ -66,10 +66,10 @@ async function setupDatabase() {
                 'Up to 500 offers',
                 'Advanced analytics',
                 'Priority support',
-                'Team collaboration'
+                'Team collaboration',
               ]),
               isActive: true,
-              sortOrder: 2
+              sortOrder: 2,
             },
             {
               key: 'pro',
@@ -88,20 +88,19 @@ async function setupDatabase() {
                 'Premium analytics',
                 '24/7 phone support',
                 'Advanced team features',
-                'Custom integrations'
+                'Custom integrations',
               ]),
               isActive: true,
-              sortOrder: 3
-            }
-          ]
+              sortOrder: 3,
+            },
+          ],
         });
-        
+
         console.log('✅ Created 3 basic plans');
       }
-      
+
       console.log('🎉 Database setup complete!');
       console.log('🎯 You can now test the checkout flow');
-      
     } catch (error) {
       if (error.code === 'P2021' || error.code === 'P2022') {
         console.log('❌ Tables do not exist. Please run database migration:');
@@ -110,7 +109,6 @@ async function setupDatabase() {
       }
       throw error;
     }
-    
   } catch (error) {
     console.error('❌ Database setup failed:', error);
     console.log('\n🔧 Try these steps:');

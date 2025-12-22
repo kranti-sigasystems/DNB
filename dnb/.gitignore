@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+stripe
 
 # .gitignore
 # Don't commit the generated schema if you're keeping separate model files
