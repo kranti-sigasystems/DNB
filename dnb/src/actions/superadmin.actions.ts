@@ -35,7 +35,7 @@ export async function getAllBusinessOwners(params: {
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin getAllBusinessOwners error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to fetch business owners' 
@@ -80,7 +80,7 @@ export async function searchBusinessOwners(filters: {
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin searchBusinessOwners error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to search business owners' 
@@ -101,7 +101,7 @@ export async function activateBusinessOwner(businessOwnerId: string, authToken?:
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin activateBusinessOwner error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to activate business owner' 
@@ -122,7 +122,7 @@ export async function deactivateBusinessOwner(businessOwnerId: string, authToken
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin deactivateBusinessOwner error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to deactivate business owner' 
@@ -143,7 +143,7 @@ export async function deleteBusinessOwner(businessOwnerId: string, authToken?: s
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin deleteBusinessOwner error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to delete business owner' 
@@ -164,7 +164,7 @@ export async function getBusinessOwnerById(businessOwnerId: string, authToken?: 
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin getBusinessOwnerById error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to get business owner' 
@@ -190,7 +190,7 @@ export async function updateBusinessOwner(businessOwnerId: string, updateData: {
     
     return result;
   } catch (error) {
-    console.error('💥 SuperAdmin updateBusinessOwner error:', error);
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to update business owner' 

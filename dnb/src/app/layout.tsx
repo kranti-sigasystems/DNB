@@ -1,11 +1,14 @@
 'use client';
 
 import './globals.css';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
+import { ToastProvider } from '@/providers/ToastProvider';
+import { useToastContext } from '@/providers/ToastProvider';
+import { setGlobalToastFunctions } from '@/utils/toast';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -17,6 +20,16 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+function ToastInitializer() {
+  const toastFunctions = useToastContext();
+
+  useEffect(() => {
+    setGlobalToastFunctions(toastFunctions);
+  }, [toastFunctions]);
+
+  return null;
+}
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   // Keep QueryClient stable across renders
   const [queryClient] = useState(() => new QueryClient());
@@ -26,7 +39,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <ToastProvider>
+              <ToastInitializer />
+              <AuthProvider>{children}</AuthProvider>
+            </ToastProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </body>

@@ -1,8 +1,33 @@
 'use server';
 
-import { apiClient } from '@/utils/apiClient';
+import { prisma } from '@/lib/prisma';
+import jwt from 'jsonwebtoken';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://digital-negotiation-book-server.vercel.app/api';
+// Helper function to decode JWT and get business owner ID
+async function getBusinessOwnerFromToken(authToken: string) {
+  try {
+    const decoded = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET || 'fallback_secret') as any;
+    
+    // If the token has businessOwnerId, use it directly
+    if (decoded.businessOwnerId) {
+      return decoded.businessOwnerId;
+    }
+    
+    // Otherwise, find business owner by user ID
+    if (decoded.id) {
+      const businessOwner = await prisma.businessOwner.findFirst({
+        where: { userId: decoded.id },
+        select: { id: true }
+      });
+      return businessOwner?.id;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+}
 
 // Get all buyers for business owner
 export async function getAllBuyers(params: {
@@ -13,27 +38,117 @@ export async function getAllBuyers(params: {
   country?: string;
   isVerified?: boolean;
 } = {}, authToken?: string) {
+  console.log('🔍 getAllBuyers called with params:', params);
+  console.log('🔑 authToken provided:', !!authToken);
+  
   try {
     if (!authToken) {
+      console.log('❌ No authToken provided');
       return { success: false, error: 'Authentication token required' };
     }
     
-    const queryParams = new URLSearchParams();
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    console.log('🏢 businessOwnerId from token:', businessOwnerId);
     
-    // Match your exact API parameter names
-    if (params.pageIndex !== undefined) queryParams.append('pageIndex', params.pageIndex.toString());
-    if (params.pageSize !== undefined) queryParams.append('pageSize', params.pageSize.toString());
-    if (params.email) queryParams.append('email', params.email);
-    if (params.status) queryParams.append('status', params.status);
-    if (params.country) queryParams.append('country', params.country);
-    if (params.isVerified !== undefined) queryParams.append('isVerified', params.isVerified.toString());
-
-    const url = `/business-owner/get-all-buyers?${queryParams}`;
-    const result = await apiClient.get(url, authToken);
+    if (!businessOwnerId) {
+      console.log('❌ No businessOwnerId found');
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    const pageIndex = params.pageIndex || 0;
+    const pageSize = params.pageSize || 10;
+    const skip = pageIndex * pageSize;
+    
+    console.log('📄 Pagination:', { pageIndex, pageSize, skip });
+    
+    // Build where clause
+    const where: any = {
+      businessOwnerId: businessOwnerId,
+      is_deleted: false,
+    };
+    
+    if (params.email) {
+      where.email = { contains: params.email, mode: 'insensitive' };
+    }
+    if (params.status) {
+      where.status = params.status;
+    }
+    if (params.country) {
+      where.country = params.country;
+    }
+    
+    console.log('🔍 Where clause:', where);
+    
+    // Get buyers with pagination
+    const [buyers, totalCount] = await Promise.all([
+      prisma.buyer.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          businessOwner: {
+            select: {
+              businessName: true,
+              email: true
+            }
+          }
+        }
+      }),
+      prisma.buyer.count({ where })
+    ]);
+    
+    console.log('📊 Query results:');
+    console.log('  - Total buyers found:', totalCount);
+    console.log('  - Buyers returned:', buyers.length);
+    console.log('  - Buyers data:', buyers.map(b => ({ 
+      id: b.id, 
+      name: b.contactName, 
+      email: b.email, 
+      company: b.buyersCompanyName,
+      status: b.status 
+    })));
+    
+    // Get status counts
+    const [activeCount, inactiveCount, deletedCount] = await Promise.all([
+      prisma.buyer.count({ where: { ...where, status: 'active' } }),
+      prisma.buyer.count({ where: { ...where, status: 'inactive' } }),
+      prisma.buyer.count({ where: { businessOwnerId, is_deleted: true } })
+    ]);
+    
+    console.log('📈 Status counts:', { activeCount, inactiveCount, deletedCount });
+    
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    const result = {
+      success: true,
+      data: {
+        data: {
+          data: buyers,
+          totalItems: totalCount,
+          totalActive: activeCount,
+          totalInactive: inactiveCount,
+          totalDeleted: deletedCount,
+          totalPending: 0,
+          totalPages,
+          pageIndex,
+          pageSize,
+          revenueGrowth: 0,
+          userGrowth: 0,
+        }
+      }
+    };
+    
+    console.log('✅ getAllBuyers returning result structure:', {
+      success: result.success,
+      dataKeys: Object.keys(result.data),
+      dataDataKeys: Object.keys(result.data.data),
+      buyersCount: result.data.data.data.length
+    });
     
     return result;
   } catch (error) {
-    console.error('💥 BusinessOwner getAllBuyers error:', error);
+    console.error('❌ Error in getAllBuyers:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to fetch buyers' 
@@ -60,23 +175,78 @@ export async function searchBuyers(filters: {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const queryParams = new URLSearchParams();
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    // Match your exact frontend parameter structure
-    if (filters.country) queryParams.append('country', filters.country);
-    if (filters.productName) queryParams.append('productName', filters.productName);
-    if (filters.locationName) queryParams.append('locationName', filters.locationName);
-    if (filters.status) queryParams.append('status', filters.status);
-    if (filters.isVerified !== undefined) queryParams.append('isVerified', filters.isVerified.toString());
-    if (filters.page !== undefined) queryParams.append('page', filters.page.toString());
-    if (filters.limit !== undefined) queryParams.append('limit', filters.limit.toString());
-
-    const url = `/business-owner/buyers/search?${queryParams}`;
-    const result = await apiClient.get(url, authToken);
+    const pageIndex = filters.page || 0;
+    const pageSize = filters.limit || 10;
+    const skip = pageIndex * pageSize;
     
-    return result;
+    // Build where clause
+    const where: any = {
+      businessOwnerId: businessOwnerId,
+      is_deleted: false,
+    };
+    
+    if (filters.email) {
+      where.email = { contains: filters.email, mode: 'insensitive' };
+    }
+    if (filters.status) {
+      where.status = filters.status;
+    }
+    if (filters.country) {
+      where.country = filters.country;
+    }
+    if (filters.contactName) {
+      where.contactName = { contains: filters.contactName, mode: 'insensitive' };
+    }
+    if (filters.buyersCompanyName) {
+      where.buyersCompanyName = { contains: filters.buyersCompanyName, mode: 'insensitive' };
+    }
+    if (filters.productName) {
+      where.productName = { contains: filters.productName, mode: 'insensitive' };
+    }
+    if (filters.locationName) {
+      where.locationName = { contains: filters.locationName, mode: 'insensitive' };
+    }
+    
+    // Get buyers with pagination
+    const [buyers, totalCount] = await Promise.all([
+      prisma.buyer.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          businessOwner: {
+            select: {
+              businessName: true,
+              email: true
+            }
+          }
+        }
+      }),
+      prisma.buyer.count({ where })
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    return {
+      success: true,
+      data: {
+        data: {
+          buyers: buyers,
+          totalItems: totalCount,
+          totalPages,
+          pageIndex,
+          pageSize,
+        }
+      }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner searchBuyers error:', error);
+    console.error('Error searching buyers:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to search buyers' 
@@ -92,12 +262,26 @@ export async function activateBuyer(buyerId: string, authToken?: string) {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/activate-buyer/${buyerId}/activate`;
-    const result = await apiClient.patch(url, undefined, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    // Update buyer status
+    const buyer = await prisma.buyer.update({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
+      },
+      data: { status: 'active' }
+    });
+    
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner activateBuyer error:', error);
+    console.error('Error activating buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to activate buyer' 
@@ -113,12 +297,26 @@ export async function deactivateBuyer(buyerId: string, authToken?: string) {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/deactivate-buyer/${buyerId}/deactivate`;
-    const result = await apiClient.patch(url, undefined, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    // Update buyer status
+    const buyer = await prisma.buyer.update({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
+      },
+      data: { status: 'inactive' }
+    });
+    
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner deactivateBuyer error:', error);
+    console.error('Error deactivating buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to deactivate buyer' 
@@ -134,12 +332,26 @@ export async function deleteBuyer(buyerId: string, authToken?: string) {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/delete-buyer/${buyerId}`;
-    const result = await apiClient.delete(url, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    // Soft delete buyer
+    const buyer = await prisma.buyer.update({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
+      },
+      data: { is_deleted: true }
+    });
+    
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner deleteBuyer error:', error);
+    console.error('Error deleting buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to delete buyer' 
@@ -155,12 +367,37 @@ export async function getBuyerById(buyerId: string, authToken?: string) {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/get-buyer/${buyerId}`;
-    const result = await apiClient.get(url, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    const buyer = await prisma.buyer.findFirst({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId,
+        is_deleted: false
+      },
+      include: {
+        businessOwner: {
+          select: {
+            businessName: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    if (!buyer) {
+      return { success: false, error: 'Buyer not found' };
+    }
+    
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner getBuyerById error:', error);
+    console.error('Error getting buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to get buyer' 
@@ -182,18 +419,32 @@ export async function updateBuyer(buyerId: string, updateData: {
       return { success: false, error: 'Authentication token required' };
     }
     
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
     // Clean the data like your frontend does
     const sanitizedData = { ...updateData };
     delete sanitizedData.createdAt;
     delete sanitizedData.updatedAt;
     delete sanitizedData.id;
+    delete sanitizedData.businessOwnerId; // Don't allow changing business owner
     
-    const url = `/business-owner/edit-buyer/${buyerId}/edit`;
-    const result = await apiClient.patch(url, sanitizedData, authToken);
+    const buyer = await prisma.buyer.update({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId
+      },
+      data: sanitizedData
+    });
     
-    return result;
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner updateBuyer error:', error);
+    console.error('Error updating buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to update buyer' 
@@ -215,12 +466,40 @@ export async function createBuyer(buyerData: {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/add-buyer`;
-    const result = await apiClient.post(url, buyerData, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    // Check if buyer with same email already exists for this business owner
+    const existingBuyer = await prisma.buyer.findFirst({
+      where: {
+        email: buyerData.contactEmail,
+        businessOwnerId: businessOwnerId,
+        is_deleted: false
+      }
+    });
+    
+    if (existingBuyer) {
+      return { success: false, error: 'Buyer with this email already exists' };
+    }
+    
+    const buyer = await prisma.buyer.create({
+      data: {
+        ...buyerData,
+        email: buyerData.contactEmail, // Map contactEmail to email
+        businessOwnerId: businessOwnerId,
+        status: 'active',
+        is_deleted: false
+      }
+    });
+    
+    return {
+      success: true,
+      data: { buyer }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner createBuyer error:', error);
+    console.error('Error creating buyer:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to create buyer' 
@@ -236,12 +515,32 @@ export async function getBuyersList(authToken?: string) {
       return { success: false, error: 'Authentication token required' };
     }
     
-    const url = `/business-owner/get-buyers-list`;
-    const result = await apiClient.get(url, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    const buyers = await prisma.buyer.findMany({
+      where: {
+        businessOwnerId: businessOwnerId,
+        is_deleted: false,
+        status: 'active'
+      },
+      select: {
+        id: true,
+        contactName: true,
+        email: true,
+        buyersCompanyName: true
+      },
+      orderBy: { contactName: 'asc' }
+    });
+    
+    return {
+      success: true,
+      data: { buyers }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner getBuyersList error:', error);
+    console.error('Error getting buyers list:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to get buyers list' 
@@ -261,12 +560,28 @@ export async function checkRegistrationNumber(registrationNumber: string, authTo
       return { success: false, error: 'Registration number is required' };
     }
     
-    const url = `/business-owner/check-registration/${registrationNumber}`;
-    const result = await apiClient.get(url, authToken);
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
-    return result;
+    const existingBuyer = await prisma.buyer.findFirst({
+      where: {
+        registrationNumber: registrationNumber,
+        businessOwnerId: businessOwnerId,
+        is_deleted: false
+      }
+    });
+    
+    return {
+      success: true,
+      data: { 
+        isUnique: !existingBuyer,
+        exists: !!existingBuyer
+      }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner checkRegistrationNumber error:', error);
+    console.error('Error checking registration number:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to check registration number' 
@@ -281,20 +596,34 @@ export async function checkUnique(params: Record<string, any>, authToken?: strin
       return { success: false, error: 'Authentication token required' };
     }
     
-    const queryParams = new URLSearchParams();
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
     
+    const where: any = {
+      businessOwnerId: businessOwnerId,
+      is_deleted: false
+    };
+    
+    // Build where clause from params
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
-        queryParams.append(key, value.toString());
+        where[key] = value;
       }
     });
     
-    const url = `/business-owner/check-unique?${queryParams}`;
-    const result = await apiClient.get(url, authToken);
+    const existingBuyer = await prisma.buyer.findFirst({ where });
     
-    return result;
+    return {
+      success: true,
+      data: { 
+        isUnique: !existingBuyer,
+        exists: !!existingBuyer
+      }
+    };
   } catch (error) {
-    console.error('💥 BusinessOwner checkUnique error:', error);
+    console.error('Error checking unique fields:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to check unique fields' 

@@ -331,14 +331,14 @@ export async function POST(req: NextRequest) {
 
     // Save pending payment
     console.log('Coming in checkout route.....');
-    // billingCycle: billingCycle === 'yearly' ? 'yearly' : 'monthly',
     await prisma.payment.create({
       data: {
         userId: user.id,
         planId: plan.id,
         amount,
         status: 'pending',
-        transactionId: `temp_${Date.now()}`, // ✅ REQUIRED
+        transactionId: `temp_${Date.now()}`, // ✅ Temporary transaction ID
+        paymentMethod: 'card',
       },
     });
 

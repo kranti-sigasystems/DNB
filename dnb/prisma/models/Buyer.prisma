@@ -1,0 +1,21 @@
+// prisma/models/Buyer.prisma
+model Buyer {
+  id                  String      @id @default(uuid())
+  contactName         String      @map("contactName")
+  email               String      @map("email")
+  contactEmail        String?     @map("contactEmail")
+  contactPhone        String?     @map("contactPhone")
+  buyersCompanyName   String?     @map("buyersCompanyName")
+  productName         String?     @map("productName")
+  locationName        String?     @map("locationName")
+  businessOwnerId     String      @map("businessOwnerId")
+  status              String      @default("active")
+  is_deleted          Boolean     @default(false) @map("is_deleted")
+  createdAt           DateTime    @default(now()) @map("createdAt")
+  updatedAt           DateTime    @updatedAt @map("updatedAt")
+  
+  // Relations
+  businessOwner       BusinessOwner @relation(fields: [businessOwnerId], references: [id], onDelete: Cascade)
+  
+  @@map("buyers")
+}
