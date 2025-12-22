@@ -148,11 +148,103 @@
 //   return NextResponse.json({ success: false, message: 'Method not allowed' }, { status: 405 });
 // }
 
-// app/api/checkout/route.ts
+// // app/api/checkout/route.ts
+// import { NextRequest, NextResponse } from 'next/server';
+// import { prisma } from '@/lib/prisma';
+// import Stripe from 'stripe';
+// import jwt from 'jsonwebtoken';
+
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+//   apiVersion: '2025-02-24.acacia',
+// });
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     /* ---------- AUTH ---------- */
+//     const authHeader = req.headers.get('authorization');
+//     const token = authHeader?.replace('Bearer ', '');
+
+//     if (!token) {
+//       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+//     /* ---------- BODY ---------- */
+//     const { planKey, billingCycle } = await req.json();
+
+//     if (!planKey || !billingCycle) {
+//       return NextResponse.json(
+//         { success: false, message: 'planKey and billingCycle are required from checkout route' },
+//         { status: 400 }
+//       );
+//     }
+
+//     /* ---------- PLAN ---------- */
+//     const plan = await prisma.plan.findUnique({
+//       where: { key: planKey },
+//     });
+
+//     if (!plan || !plan.isActive) {
+//       return NextResponse.json({ success: false, message: 'Plan not available' }, { status: 404 });
+//     }
+
+//     const amount = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+
+//     if (amount <= 0) {
+//       return NextResponse.json(
+//         { success: false, message: 'Free plan does not require payment' },
+//         { status: 400 }
+//       );
+//     }
+
+//     /* ---------- STRIPE ---------- */
+//     const session = await stripe.checkout.sessions.create({
+//       mode: 'subscription',
+//       payment_method_types: ['card'],
+//       customer_email: decoded.email,
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: plan.currency.toLowerCase(),
+//             unit_amount: amount * 100,
+//             recurring: {
+//               interval: billingCycle === 'yearly' ? 'year' : 'month',
+//             },
+//             product_data: {
+//               name: plan.name,
+//               description: plan.description || undefined,
+//             },
+//           },
+//           quantity: 1,
+//         },
+//       ],
+//       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+//       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
+//       metadata: {
+//         userId: decoded.id,
+//         planKey,
+//         billingCycle,
+//       },
+//     });
+
+//     return NextResponse.json({
+//       success: true,
+//       checkoutUrl: session.url,
+//       sessionId: session.id,
+//     });
+//   } catch (error: any) {
+//     console.error('Checkout API error:', error);
+//     return NextResponse.json(
+//       { success: false, message: 'Checkout failed from checkout route.' },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
-import jwt from 'jsonwebtoken';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -160,44 +252,52 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: NextRequest) {
   try {
-    /* ---------- AUTH ---------- */
-    const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    const { userId, planKey } = await req.json();
 
-    if (!token) {
+    const billingCycle = 'yearly';
+    if (!userId || !planKey) {
       return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
-    /* ---------- BODY ---------- */
-    const { planKey, billingCycle } = await req.json();
-
-    if (!planKey || !billingCycle) {
-      return NextResponse.json(
-        { success: false, message: 'planKey and billingCycle are required' },
+        { success: false, message: 'userId, planKey and billingCycle are required' },
         { status: 400 }
       );
     }
 
-    /* ---------- PLAN ---------- */
-    const plan = await prisma.plan.findUnique({
-      where: { key: planKey },
-    });
-
-    if (!plan || !plan.isActive) {
+    if (!['monthly', 'yearly'].includes(billingCycle)) {
       return NextResponse.json(
-        { success: false, message: 'Plan not available' },
-        { status: 404 }
+        { success: false, message: 'Invalid billing cycle' },
+        { status: 400 }
       );
     }
 
-    const amount =
-      billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
 
+    if (!user)
+      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+
+    const plan = await prisma.plan.findFirst({
+      where: { key: planKey, isActive: true },
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        description: true,
+        priceMonthly: true,
+        priceYearly: true,
+        currency: true,
+      },
+    });
+
+    console.log('plan log from route.ts......', plan);
+
+    if (!plan)
+      return NextResponse.json({ success: false, message: 'Plan not available' }, { status: 404 });
+
+    const amount = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+
+    console.log('amount in route.ts.....', amount);
     if (amount <= 0) {
       return NextResponse.json(
         { success: false, message: 'Free plan does not require payment' },
@@ -205,45 +305,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    /* ---------- STRIPE ---------- */
+    // Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: decoded.email,
+      customer_email: user.email,
       line_items: [
         {
           price_data: {
             currency: plan.currency.toLowerCase(),
             unit_amount: amount * 100,
-            recurring: {
-              interval: billingCycle === 'yearly' ? 'year' : 'month',
-            },
+            recurring: { interval: billingCycle === 'yearly' ? 'year' : 'month' },
             product_data: {
-              name: plan.name,
-              description: plan.description || undefined,
+              name: plan.name || plan.key,
+              description: plan.description?.trim() || `Subscription for ${plan.name || plan.key}`,
             },
           },
           quantity: 1,
         },
       ],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
-      metadata: {
-        userId: decoded.id,
-        planKey,
-        billingCycle,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+      metadata: { userId, planId: plan.id, billingCycle },
+    });
+
+    // Save pending payment
+    console.log('Coming in checkout route.....');
+    // billingCycle: billingCycle === 'yearly' ? 'yearly' : 'monthly',
+    await prisma.payment.create({
+      data: {
+        userId: user.id,
+        planId: plan.id,
+        amount,
+        status: 'pending',
+        transactionId: `temp_${Date.now()}`, // ✅ REQUIRED
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      checkoutUrl: session.url,
-      sessionId: session.id,
-    });
+    return NextResponse.json({ success: true, checkoutUrl: session.url, sessionId: session.id });
   } catch (error: any) {
     console.error('Checkout API error:', error);
     return NextResponse.json(
-      { success: false, message: 'Checkout failed' },
+      { success: false, message: error.message || 'Checkout failed' },
       { status: 500 }
     );
   }
