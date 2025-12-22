@@ -1,4 +1,4 @@
-import { apiClient } from "@/utils/apiClient";
+import { apiClient } from '@/utils/apiClient';
 
 export interface Plan {
   id: string;
@@ -28,10 +28,10 @@ export interface Plan {
 export const plansService = {
   getAllPlans: async (): Promise<Plan[]> => {
     try {
-      const response = await apiClient.get<Plan[]>("/plans");
+      const response = await apiClient.get<Plan[]>('/plans');
       return response.data;
     } catch (error) {
-      console.error("Error fetching plans:", error);
+      console.error('Error fetching plans:', error);
       throw error;
     }
   },
@@ -41,8 +41,10 @@ export const plansService = {
       const response = await apiClient.get<Plan>(`/plans/${planId}`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching plan:", error);
+      console.error('Error fetching plan:', error);
       throw error;
     }
   },
 };
+
+export const { getAllPlans, getPlanById } = plansService;

@@ -39,34 +39,34 @@ model BusinessOwner {
   // Relations
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions Subscription[]
-  buyers        Buyer[]        // Add buyers relation
+  buyers        Buyer[] // Add buyers relation
 
   @@map("business_owners")
 }
 
 // ========== Buyer.prisma ==========
 model Buyer {
-  id                  String   @id @default(uuid())
-  contactName         String
-  email               String   @unique
-  contactEmail        String?
-  contactPhone        String?
-  phoneNumber         String?
-  buyersCompanyName   String?
-  businessName        String?
-  productName         String?
-  locationName        String?
-  registrationNumber  String?  @unique
-  address             String?
-  city                String?
-  state               String?
-  country             String   @default("India")
-  postalCode          String?
-  businessOwnerId     String
-  status              String   @default("active")
-  is_deleted          Boolean  @default(false) @map("is_deleted")
-  createdAt           DateTime @default(now()) @map("createdAt")
-  updatedAt           DateTime @updatedAt @map("updatedAt")
+  id                 String   @id @default(uuid())
+  contactName        String
+  email              String   @unique
+  contactEmail       String?
+  contactPhone       String?
+  phoneNumber        String?
+  buyersCompanyName  String?
+  businessName       String?
+  productName        String?
+  locationName       String?
+  registrationNumber String?  @unique
+  address            String?
+  city               String?
+  state              String?
+  country            String   @default("India")
+  postalCode         String?
+  businessOwnerId    String
+  status             String   @default("active")
+  is_deleted         Boolean  @default(false) @map("is_deleted")
+  createdAt          DateTime @default(now()) @map("createdAt")
+  updatedAt          DateTime @updatedAt @map("updatedAt")
 
   // Relations
   businessOwner BusinessOwner @relation(fields: [businessOwnerId], references: [id], onDelete: Cascade)
@@ -108,8 +108,8 @@ model Payment {
   // MERN ENUM → String
   paymentMethod String? @default("card")
 
-  transactionId String?  @unique
-  invoicePdf    String?
+  transactionId String? @unique
+  // invoicePdf    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

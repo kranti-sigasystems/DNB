@@ -5,9 +5,6 @@ import { AxiosError } from "axios";
 
 import apiClient from "@/actions/apiClient";
 
-import { AxiosError } from "axios";
-
-import apiClient from "@/actions/apiClient";
 
 export interface LoginCredentials {
   first_name?: string;

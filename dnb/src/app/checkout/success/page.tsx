@@ -1,44 +1,48 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { getPaymentStatus } from "@/actions/payment";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { getPaymentStatus } from '@/actions/payment';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const sessionId = searchParams.get("session_id");
+  const sessionId = searchParams.get('session_id');
 
   const [loading, setLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('session id log from success page.....', sessionId);
   useEffect(() => {
+    console.log('Log session id...', sessionId);
     if (!sessionId) {
-      setError("No session ID provided");
+      setError('No session ID provided');
       setLoading(false);
       return;
     }
 
     const checkPayment = async () => {
       try {
+        setLoading(true);
+        console.log('coming incheckPayment......');
         const result = await getPaymentStatus(sessionId);
-        
+        console.log('Payment verification result:', result);
         if (result.success) {
           setPaymentData(result);
           // Clear checkout data from session storage
-          sessionStorage.removeItem("selectedPlanData");
-          sessionStorage.removeItem("checkoutFormData");
-          sessionStorage.removeItem("pendingBusinessData");
+          sessionStorage.removeItem('selectedPlanData');
+          sessionStorage.removeItem('checkoutFormData');
+          sessionStorage.removeItem('pendingBusinessData');
         } else {
-          setError(result.message || "Payment verification failed");
+          setError(result.message || 'Payment verification failed');
         }
       } catch (err) {
-        console.error("Payment verification error:", err);
-        setError("Failed to verify payment");
+        console.error('Payment verification error:', err);
+        setError('Failed to verify payment');
       } finally {
         setLoading(false);
       }
@@ -54,7 +58,7 @@ export default function CheckoutSuccessPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Verifying Payment</h2>
+              <h2 className="text-xl font-semibold mb-2 text-blue-700">Verifying Payment</h2>
               <p className="text-gray-600">Please wait while we confirm your payment...</p>
             </div>
           </CardContent>
@@ -70,9 +74,9 @@ export default function CheckoutSuccessPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2 text-red-600">Payment Error</h2>
+              <h2 className="text-xl font-semibold mb-2 text-blue-600">Paymednt Error</h2>
               <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={() => router.push("/plans")} variant="outline">
+              <Button onClick={() => router.push('/plans')} variant="outline">
                 Back to Plans
               </Button>
             </div>
@@ -94,7 +98,7 @@ export default function CheckoutSuccessPage() {
           <CardTitle className="text-2xl text-green-600">Payment Successful!</CardTitle>
           <p className="text-gray-600">Your subscription has been activated</p>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-semibold mb-3">Payment Details</h3>
@@ -131,17 +135,13 @@ export default function CheckoutSuccessPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              onClick={() => router.push("/dashboard")} 
+            <Button
+              onClick={() => router.push('/dashboard')}
               className="flex-1 bg-indigo-600 hover:bg-indigo-700"
             >
               Go to Dashboard
             </Button>
-            <Button 
-              onClick={() => router.push("/profile")} 
-              variant="outline"
-              className="flex-1"
-            >
+            <Button onClick={() => router.push('/profile')} variant="outline" className="flex-1">
               View Profile
             </Button>
           </div>
