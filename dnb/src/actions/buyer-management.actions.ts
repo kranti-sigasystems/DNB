@@ -4,6 +4,29 @@ import prisma from '@/lib/prisma-client';
 import { revalidatePath } from 'next/cache';
 import type { Buyer, SearchParams } from '@/types/users';
 
+// Helper function to transform buyer data
+function transformBuyer(buyer: any): Buyer {
+  return {
+    id: buyer.id,
+    contactName: buyer.contactName,
+    email: buyer.email,
+    phoneNumber: buyer.phoneNumber || undefined,
+    businessName: buyer.businessName || undefined,
+    registrationNumber: buyer.registrationNumber || undefined,
+    address: buyer.address || undefined,
+    city: buyer.city || undefined,
+    state: buyer.state || undefined,
+    country: buyer.country,
+    postalCode: buyer.postalCode || undefined,
+    businessOwnerId: buyer.businessOwnerId,
+    status: buyer.status,
+    isDeleted: buyer.is_deleted,
+    createdAt: buyer.createdAt.toISOString(),
+    updatedAt: buyer.updatedAt.toISOString(),
+    userRole: 'buyer',
+  };
+}
+
 /**
  * Add new buyer
  * Equivalent to: POST /add-buyer
@@ -47,27 +70,7 @@ export async function addBuyer(
     revalidatePath('/buyers');
     revalidatePath('/users');
 
-    const transformedBuyer: Buyer = {
-      id: buyer.id,
-      contactName: buyer.contactName,
-      email: buyer.email,
-      phoneNumber: buyer.phoneNumber,
-      businessName: buyer.businessName,
-      registrationNumber: buyer.registrationNumber,
-      address: buyer.address,
-      city: buyer.city,
-      state: buyer.state,
-      country: buyer.country,
-      postalCode: buyer.postalCode,
-      businessOwnerId: buyer.businessOwnerId,
-      status: buyer.status,
-      isDeleted: buyer.is_deleted,
-      createdAt: buyer.createdAt.toISOString(),
-      updatedAt: buyer.updatedAt.toISOString(),
-      userRole: 'buyer',
-    };
-
-    return transformedBuyer;
+    return transformBuyer(buyer);
   } catch (error: any) {
     
     throw new Error(error.message || 'Failed to create buyer');
@@ -213,27 +216,7 @@ export async function editBuyer(
     revalidatePath('/buyers');
     revalidatePath('/users');
 
-    const transformedBuyer: Buyer = {
-      id: buyer.id,
-      contactName: buyer.contactName,
-      email: buyer.email,
-      phoneNumber: buyer.phoneNumber,
-      businessName: buyer.businessName,
-      registrationNumber: buyer.registrationNumber,
-      address: buyer.address,
-      city: buyer.city,
-      state: buyer.state,
-      country: buyer.country,
-      postalCode: buyer.postalCode,
-      businessOwnerId: buyer.businessOwnerId,
-      status: buyer.status,
-      isDeleted: buyer.is_deleted,
-      createdAt: buyer.createdAt.toISOString(),
-      updatedAt: buyer.updatedAt.toISOString(),
-      userRole: 'buyer',
-    };
-
-    return transformedBuyer;
+    return transformBuyer(buyer);
   } catch (error: any) {
     
     throw new Error(error.message || 'Failed to update buyer');
@@ -291,25 +274,7 @@ export async function searchBuyers(
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
-    const transformedBuyers: Buyer[] = buyers.map(buyer => ({
-      id: buyer.id,
-      contactName: buyer.contactName,
-      email: buyer.email,
-      phoneNumber: buyer.phoneNumber,
-      businessName: buyer.businessName,
-      registrationNumber: buyer.registrationNumber,
-      address: buyer.address,
-      city: buyer.city,
-      state: buyer.state,
-      country: buyer.country,
-      postalCode: buyer.postalCode,
-      businessOwnerId: buyer.businessOwnerId,
-      status: buyer.status,
-      isDeleted: buyer.is_deleted,
-      createdAt: buyer.createdAt.toISOString(),
-      updatedAt: buyer.updatedAt.toISOString(),
-      userRole: 'buyer',
-    }));
+    const transformedBuyers: Buyer[] = buyers.map(transformBuyer);
 
     return {
       data: transformedBuyers,
@@ -342,27 +307,7 @@ export async function getAllBuyers(
       orderBy: { createdAt: 'desc' },
     });
 
-    const transformedBuyers: Buyer[] = buyers.map(buyer => ({
-      id: buyer.id,
-      contactName: buyer.contactName,
-      email: buyer.email,
-      phoneNumber: buyer.phoneNumber,
-      businessName: buyer.businessName,
-      registrationNumber: buyer.registrationNumber,
-      address: buyer.address,
-      city: buyer.city,
-      state: buyer.state,
-      country: buyer.country,
-      postalCode: buyer.postalCode,
-      businessOwnerId: buyer.businessOwnerId,
-      status: buyer.status,
-      isDeleted: buyer.is_deleted,
-      createdAt: buyer.createdAt.toISOString(),
-      updatedAt: buyer.updatedAt.toISOString(),
-      userRole: 'buyer',
-    }));
-
-    return transformedBuyers;
+    return buyers.map(transformBuyer);
   } catch (error: any) {
     
     throw new Error(error.message || 'Failed to fetch buyers');
@@ -417,27 +362,7 @@ export async function getBuyerById(
       throw new Error('Buyer not found');
     }
 
-    const transformedBuyer: Buyer = {
-      id: buyer.id,
-      contactName: buyer.contactName,
-      email: buyer.email,
-      phoneNumber: buyer.phoneNumber,
-      businessName: buyer.businessName,
-      registrationNumber: buyer.registrationNumber,
-      address: buyer.address,
-      city: buyer.city,
-      state: buyer.state,
-      country: buyer.country,
-      postalCode: buyer.postalCode,
-      businessOwnerId: buyer.businessOwnerId,
-      status: buyer.status,
-      isDeleted: buyer.is_deleted,
-      createdAt: buyer.createdAt.toISOString(),
-      updatedAt: buyer.updatedAt.toISOString(),
-      userRole: 'buyer',
-    };
-
-    return transformedBuyer;
+    return transformBuyer(buyer);
   } catch (error: any) {
     
     throw new Error(error.message || 'Failed to fetch buyer');
@@ -524,4 +449,6 @@ export async function becomeBusinessOwner(
     };
   } catch (error: any) {
     
-    throw new Error(error.message || 'Failed to create business owner account
+    throw new Error(error.message || 'Failed to create business owner account');
+  }
+}

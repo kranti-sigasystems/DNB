@@ -1,12 +1,6 @@
 import { PrismaClient } from '../src/generated/prisma';
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  }
-});
+const prisma = new PrismaClient();
 
 async function main() {
   const existingPlans = await prisma.plan.findMany();

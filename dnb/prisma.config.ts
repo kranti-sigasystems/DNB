@@ -14,6 +14,5 @@ export default defineConfig({
   // Database connection configuration
   datasource: {
     url: env('DATABASE_URL'),
-    directUrl: env('DIRECT_URL'),
   },
 })
