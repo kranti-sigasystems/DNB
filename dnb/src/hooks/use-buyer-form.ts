@@ -109,7 +109,14 @@ export function useBuyerForm(): UseBuyerFormReturn {
         const productsResponse = await getProducts(validToken, 0, 100);
         
         if (productsResponse.success && productsResponse.data) {
-          setProducts(productsResponse.data.data);
+          // Type cast to handle null vs undefined differences
+          const products = productsResponse.data.data.map(product => ({
+            ...product,
+            sku: product.sku || null,
+            createdAt: typeof product.createdAt === 'string' ? product.createdAt : product.createdAt.toISOString(),
+            updatedAt: typeof product.updatedAt === 'string' ? product.updatedAt : product.updatedAt.toISOString(),
+          }));
+          setProducts(products);
         } else {
           console.error('❌ useBuyerForm - Failed to load products:', productsResponse.error);
         }
@@ -120,7 +127,13 @@ export function useBuyerForm(): UseBuyerFormReturn {
         const locationsResponse = await getLocations(validToken, 0, 100);
         
         if (locationsResponse.success && locationsResponse.data) {
-          setLocations(locationsResponse.data.data);
+          // Type cast to handle Date vs string differences
+          const locations = locationsResponse.data.data.map(location => ({
+            ...location,
+            createdAt: typeof location.createdAt === 'string' ? location.createdAt : location.createdAt.toISOString(),
+            updatedAt: typeof location.updatedAt === 'string' ? location.updatedAt : location.updatedAt.toISOString(),
+          }));
+          setLocations(locations);
         } else {
           console.error('❌ useBuyerForm - Failed to load locations:', locationsResponse.error);
         }

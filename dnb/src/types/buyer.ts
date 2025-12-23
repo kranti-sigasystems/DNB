@@ -45,11 +45,11 @@ export interface Product {
   code: string;
   productName: string;
   species: string[];
-  size?: string[];
-  sku?: string;
+  size: string[];
+  sku: string | null;
   ownerId: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface Location {
@@ -62,8 +62,8 @@ export interface Location {
   address: string;
   postalCode: string;
   ownerId: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface BuyerFormField {

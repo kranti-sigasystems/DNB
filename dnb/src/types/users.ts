@@ -40,6 +40,7 @@ export interface UsersResponse {
 }
 
 export interface SearchFilters {
+  query?: string;
   first_name?: string;
   last_name?: string;
   email?: string;
@@ -49,6 +50,11 @@ export interface SearchFilters {
   status?: 'active' | 'inactive';
   productName?: string;
   locationName?: string;
+  contactName?: string;
+  buyersCompanyName?: string;
+  city?: string;
+  state?: string;
+  country?: string;
 }
 
 export interface PaginationParams {
@@ -68,7 +74,8 @@ export interface UserAction {
 export interface SearchField {
   name: keyof SearchFilters;
   label: string;
-  type: 'text' | 'select';
+  type: 'text' | 'select' | 'email' | 'date' | 'number';
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
+  required?: boolean;
 }
