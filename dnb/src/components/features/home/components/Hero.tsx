@@ -172,7 +172,9 @@ export default function Hero() {
                       <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent">
                         98%
                       </div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-1">Success Rate</div>
+                      <div className="text-sm font-semibold text-muted-foreground mt-1">
+                        Success Rate
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center text-white p-3">
@@ -199,15 +201,17 @@ export default function Hero() {
                         <CheckCircle2 className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <div className="text-base font-semibold text-foreground">Deal Closed</div>
-                        <div className="text-sm text-muted-foreground font-medium">
+                        <div className="text-base text-white font-semibold text-foreground ">
+                          Deal Closed
+                        </div>
+                        <div className="text-sm text-muted-foreground font-medium text-white">
                           ₹2,45,000 negotiated
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500" />
-                      <span className="text-xl font-bold text-foreground">+15%</span>
+                      <span className="text-xl font-bold text-foreground text-white">+15%</span>
                     </div>
                   </div>
                 </div>
