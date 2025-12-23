@@ -2,10 +2,7 @@
  * Dashboard Utility Functions
  * Pure functions for data transformation and calculations
  */
-
 import { USER_ROLES } from '@/lib/constants/dashboard';
-import type { UserRole } from '@/lib/constants/dashboard';
-
 /**
  * Get user-friendly label for different user roles
  */
@@ -67,12 +64,12 @@ export function hasActiveFilters(filters: Record<string, any>): boolean {
  */
 export function formatUserName(firstName?: string, lastName?: string, fallback?: string): string {
   const name = `${firstName || ''} ${lastName || ''}`.trim();
-  
+
   // If no name provided, return fallback or a more user-friendly default
   if (!name) {
     return fallback || 'Unknown User';
   }
-  
+
   return name;
 }
 

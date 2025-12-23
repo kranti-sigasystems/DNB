@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import LogoutDialog from "../common/LogoutModal";
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import LogoutDialog from '../common/LogoutModal';
 import {
   LayoutDashboard,
   Users,
@@ -16,17 +16,12 @@ import {
   Tag,
   Globe,
   User,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import useAuth from "@/hooks/use-auth";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import useAuth from '@/hooks/use-auth';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -42,41 +37,40 @@ export default function Sidebar({ collapsed, setCollapsed, onClose }: SidebarPro
 
   const toggleCollapse = () => setCollapsed(!collapsed);
 
-  const userRole = user?.userRole || "guest";
+  const userRole = user?.userRole || 'guest';
 
-  if (userRole === "buyer") {
+  if (userRole === 'buyer') {
     return null;
   }
 
-  const businessName = user?.businessName || "";
+  const businessName = user?.businessName || '';
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push('/login');
     if (onClose) onClose();
   };
 
   const navItems = [
-    { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    ...(userRole === "super_admin"
-      ? [{ name: "Business Owners", icon: Users, path: "/users" }]
-      : userRole === "business_owner"
-      ? [{ name: "Buyers", icon: Users, path: "/users" }]
-      : []),
-    ...(userRole === "business_owner"
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    ...(userRole === 'super_admin'
+      ? [{ name: 'Business Owners', icon: Users, path: '/users' }]
+      : userRole === 'business_owner'
+        ? [{ name: 'Buyers', icon: Users, path: '/users' }]
+        : []),
+    ...(userRole === 'business_owner'
       ? [
-          { name: "Products", icon: Fish, path: "/products" },
-          { name: "Offer Drafts", icon: ClipboardList, path: "/offer-draft" },
-          { name: "Offers", icon: Tag, path: "/offers" },
-          { name: "Locations", icon: Globe, path: "/location" },
-          { name: "Profile", icon: User, path: "/profile" },
+          { name: 'Products', icon: Fish, path: '/products' },
+          { name: 'Offer Drafts', icon: ClipboardList, path: '/offer-draft' },
+          { name: 'Offers', icon: Tag, path: '/offers' },
+          { name: 'Locations', icon: Globe, path: '/location' },
+          { name: 'Profile', icon: User, path: '/profile' },
         ]
       : []),
-    ...(userRole === "super_admin"
-      ? [
-          { name: "Payment List", icon: CreditCard, path: "/payments-list" },
-        ]
+    ...(userRole === 'super_admin'
+      ? [{ name: 'Payment List', icon: CreditCard, path: '/payments-list' }]
       : []),
+    { name: 'Profile', icon: Globe, path: '/profile' },
   ];
 
   return (
@@ -84,17 +78,15 @@ export default function Sidebar({ collapsed, setCollapsed, onClose }: SidebarPro
       <TooltipProvider>
         <aside
           className={cn(
-            "fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col transition-all duration-300 z-40",
-            collapsed ? "w-16" : "w-64"
+            'fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col transition-all duration-300 z-40',
+            collapsed ? 'w-16' : 'w-64'
           )}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-[0.8rem] h-16 border-b border-sidebar-border select-none">
             {!collapsed && (
               <div className="flex flex-col max-w-[180px] truncate">
-                <h2 className="text-2xl font-extrabold text-sidebar-primary truncate">
-                  DNB
-                </h2>
+                <h2 className="text-2xl font-extrabold text-sidebar-primary truncate">DNB</h2>
                 {businessName && (
                   <span className="text-sm font-medium text-sidebar-foreground truncate">
                     {businessName}
@@ -107,13 +99,13 @@ export default function Sidebar({ collapsed, setCollapsed, onClose }: SidebarPro
               size="icon"
               onClick={toggleCollapse}
               className="hidden lg:flex cursor-pointer p-2 hover:bg-sidebar-accent rounded focus-visible:ring focus-visible:ring-sidebar-ring"
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               type="button"
             >
               <ChevronRight
                 className={cn(
-                  "w-5 h-5 text-sidebar-foreground transition-transform",
-                  collapsed ? "rotate-0" : "rotate-180"
+                  'w-5 h-5 text-sidebar-foreground transition-transform',
+                  collapsed ? 'rotate-0' : 'rotate-180'
                 )}
                 strokeWidth={2.5}
               />
@@ -135,9 +127,9 @@ export default function Sidebar({ collapsed, setCollapsed, onClose }: SidebarPro
           {/* Navigation */}
           <nav
             className={cn(
-              "flex-1 overflow-y-auto py-4",
-              "scrollbar-dark px-3",
-              collapsed ? "flex flex-col items-center space-y-4" : "space-y-1"
+              'flex-1 overflow-y-auto py-4',
+              'scrollbar-dark px-3',
+              collapsed ? 'flex flex-col items-center space-y-4' : 'space-y-1'
             )}
           >
             {navItems.map(({ name, icon: Icon, path }) => {
@@ -148,14 +140,20 @@ export default function Sidebar({ collapsed, setCollapsed, onClose }: SidebarPro
                   href={path}
                   onClick={() => onClose && onClose()}
                   className={cn(
-                    "flex items-center rounded-lg text-sm font-medium w-full transition-all duration-200 select-none cursor-pointer",
-                    collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
+                    'flex items-center rounded-lg text-sm font-medium w-full transition-all duration-200 select-none cursor-pointer',
+                    collapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5',
                     isActive
-                      ? "bg-sidebar-primary/20 text-sidebar-primary border-r-2 border-sidebar-primary font-semibold"
-                      : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+                      ? 'bg-sidebar-primary/20 text-sidebar-primary border-r-2 border-sidebar-primary font-semibold'
+                      : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
                   )}
                 >
-                  <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-sidebar-primary" : "text-sidebar-foreground")} strokeWidth={2} />
+                  <Icon
+                    className={cn(
+                      'w-5 h-5 shrink-0',
+                      isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground'
+                    )}
+                    strokeWidth={2}
+                  />
                   {!collapsed && <span className="truncate">{name}</span>}
                 </Link>
               );

@@ -188,6 +188,21 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         body: JSON.stringify({
           planKey: selectedPlan.key,
           userId: tokenPayload.id,
+          businessData: {
+            businessName: latestFormData.businessName,
+            first_name: latestFormData.first_name,
+            last_name: latestFormData.last_name,
+            email: latestFormData.email,
+            phoneNumber: latestFormData.phoneNumber,
+            registrationNumber: latestFormData.registrationNumber,
+            country: latestFormData.country,
+            state: latestFormData.state,
+            city: latestFormData.city,
+            address: latestFormData.address,
+            postalCode: latestFormData.postalCode,
+            taxId: latestFormData.taxId,
+            website: latestFormData.website,
+          },
         }),
       }).then((res) => res.json());
 

@@ -1,148 +1,7 @@
-// import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '@/lib/prisma';
-// import jwt from 'jsonwebtoken';
-// import Stripe from 'stripe';
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-//   apiVersion: '2025-06-30',
-// });
-
-// interface CheckoutPayload {
-//   planKey: string;
-//   billingCycle: 'monthly' | 'yearly';
-// }
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     /* -------------------- AUTH -------------------- */
-//     const authHeader = req.headers.get('authorization');
-//     const token = authHeader?.replace('Bearer ', '');
-
-//     if (!token) {
-//       return NextResponse.json(
-//         { success: false, message: 'Authentication required' },
-//         { status: 401 }
-//       );
-//     }
-
-//     let userId: string;
-//     try {
-//       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-//       userId = decoded.id;
-//     } catch {
-//       return NextResponse.json(
-//         { success: false, message: 'Invalid or expired token' },
-//         { status: 401 }
-//       );
-//     }
-
-//     /* -------------------- BODY -------------------- */
-//     const { planKey, billingCycle } = (await req.json()) as CheckoutPayload;
-
-//     if (!planKey || !billingCycle) {
-//       return NextResponse.json(
-//         { success: false, message: 'planKey and billingCycle are required' },
-//         { status: 400 }
-//       );
-//     }
-
-//     /* -------------------- USER -------------------- */
-//     const user = await prisma.user.findUnique({
-//       where: { id: userId },
-//       include: { businessOwner: true },
-//     });
-
-//     if (!user) {
-//       return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
-//     }
-
-//     /* -------------------- PLAN -------------------- */
-//     const plan = await prisma.plan.findUnique({
-//       where: { key: planKey },
-//     });
-
-//     if (!plan || !plan.isActive) {
-//       return NextResponse.json({ success: false, message: 'Plan not available' }, { status: 404 });
-//     }
-
-//     /* -------------------- PRICE -------------------- */
-//     const amountInRupees = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-
-//     if (amountInRupees <= 0) {
-//       return NextResponse.json(
-//         { success: false, message: 'Free plan does not require payment' },
-//         { status: 400 }
-//       );
-//     }
-
-//     const amountInPaise = amountInRupees * 100;
-
-//     /* -------------------- STRIPE -------------------- */
-//     const session = await stripe.checkout.sessions.create({
-//       mode: 'subscription',
-//       payment_method_types: ['card'],
-//       customer_email: user.email,
-//       line_items: [
-//         {
-//           price_data: {
-//             currency: plan.currency.toLowerCase(),
-//             unit_amount: amountInPaise,
-//             recurring: {
-//               interval: billingCycle === 'yearly' ? 'year' : 'month',
-//             },
-//             product_data: {
-//               name: plan.name,
-//               description: plan.description || undefined,
-//             },
-//           },
-//           quantity: 1,
-//         },
-//       ],
-//       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-//       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
-//       metadata: {
-//         userId: user.id,
-//         planKey: plan.key,
-//         billingCycle,
-//         businessOwnerId: user.businessOwner?.id ?? '',
-//       },
-//       allow_promotion_codes: true,
-//     });
-
-//     /* -------------------- PAYMENT RECORD -------------------- */
-//     await prisma.payment.create({
-//       data: {
-//         userId: user.id,
-//         planId: plan.id,
-//         amount: amountInPaise,
-//         currency: plan.currency,
-//         status: 'PENDING',
-//         billingCycle: billingCycle.toUpperCase() as any,
-//         stripeSessionId: session.id,
-//         metadata: {
-//           planKey,
-//           billingCycle,
-//         },
-//       },
-//     });
-
-//     return NextResponse.json({
-//       success: true,
-//       checkoutUrl: session.url,
-//       sessionId: session.id,
-//     });
-//   } catch (error: any) {
-//     console.error('Checkout Error:', error);
-//     return NextResponse.json(
-//       { success: false, message: 'Checkout failed from webhook .' },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
+import { sendPaymentSuccessEmail } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -159,7 +18,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const rawBody = await req.text();
-
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
@@ -167,54 +25,134 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    /* ---------------- EVENT HANDLING ---------------- */
+    console.log('Processing webhook event:', event.type);
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log('Checkout session completed:', session.id);
 
-      if (!session.subscription || !session.customer) return NextResponse.json({ received: true });
+      if (!session.subscription || !session.customer) {
+        console.log('No subscription or customer found in session');
+        return NextResponse.json({ received: true });
+      }
 
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+      const { userId, planId, billingCycle, businessOwnerId } = session.metadata!;
 
-      const { userId, planKey, billingCycle } = session.metadata!;
+      console.log('Processing subscription for user:', userId, 'plan:', planId, 'businessOwner:', businessOwnerId);
 
-      /* ---- Save Subscription ---- */
-      await prisma.subscription.upsert({
+      // Get user and plan details
+      const [user, plan] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, first_name: true, last_name: true },
+        }),
+        prisma.plan.findUnique({
+          where: { id: planId },
+          select: { id: true, name: true, currency: true },
+        }),
+      ]);
+
+      if (!user || !plan) {
+        console.error('User or plan not found:', { userId, planId });
+        return NextResponse.json({ error: 'User or plan not found' }, { status: 404 });
+      }
+
+      // Calculate subscription dates
+      const currentPeriodStart = new Date(subscription.current_period_start * 1000);
+      const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+
+      // Create or update subscription with correct schema
+      const subscriptionData = await prisma.subscription.upsert({
         where: {
           stripeSubscriptionId: subscription.id,
         },
         update: {
           status: subscription.status,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart,
+          currentPeriodEnd,
         },
         create: {
           userId,
-          planKey,
-          billingCycle,
+          subscriptionId: subscription.id, // Use Stripe subscription ID
+          planName: plan.name,
+          status: subscription.status,
+          paymentStatus: 'paid',
+          startDate: currentPeriodStart,
+          endDate: currentPeriodEnd,
           stripeSubscriptionId: subscription.id,
           stripeCustomerId: subscription.customer as string,
-          status: subscription.status,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart,
+          currentPeriodEnd,
         },
       });
 
-      /* ---- Mark Payment Success ---- */
-      await prisma.payment.update({
+      // Update payment record
+      const payment = await prisma.payment.findFirst({
         where: { stripeSessionId: session.id },
-        data: {
-          status: 'SUCCESS',
-          transactionId: `temp_${Date.now()}`, // ✅ REQUIRED
-        },
       });
+
+      if (payment) {
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'success',
+            stripePaymentId: session.payment_intent as string,
+            stripeCustomerId: subscription.customer as string,
+          },
+        });
+
+        // Update business owner if exists
+        if (businessOwnerId && businessOwnerId !== '') {
+          try {
+            await prisma.businessOwner.update({
+              where: { id: businessOwnerId },
+              data: {
+                planId: planId,
+                paymentId: payment.id,
+                is_verified: true, // Mark as verified after successful payment
+                updatedAt: new Date(),
+              },
+            });
+            console.log('Business owner updated with payment info');
+          } catch (error) {
+            console.error('Failed to update business owner:', error);
+          }
+        }
+
+        // Send success email
+        try {
+          const customerName =
+            `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Customer';
+
+          await sendPaymentSuccessEmail(user.email, {
+            customerName,
+            planName: plan.name,
+            amount: Number(payment.amount), // Convert Decimal to number for email
+            currency: plan.currency,
+            billingCycle: billingCycle || 'yearly',
+            paymentId: payment.id,
+            subscriptionStartDate: currentPeriodStart.toLocaleDateString(),
+            subscriptionEndDate: currentPeriodEnd.toLocaleDateString(),
+          });
+
+          console.log('Payment success email sent to:', user.email);
+        } catch (emailError) {
+          console.error('Failed to send payment success email:', emailError);
+          // Don't fail the webhook for email errors
+        }
+      }
+
+      console.log('Subscription created/updated successfully');
     }
 
-    /* ---------- PAYMENT SUCCESS ---------- */
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
+      console.log('Invoice payment succeeded:', invoice.id);
 
-      if (!invoice.subscription) return NextResponse.json({ received: true });
+      if (!invoice.subscription) {
+        return NextResponse.json({ received: true });
+      }
 
       await prisma.subscription.update({
         where: {
@@ -222,22 +160,44 @@ export async function POST(req: NextRequest) {
         },
         data: {
           status: 'active',
+          paymentStatus: 'paid',
         },
       });
+
+      console.log('Subscription status updated to active');
     }
 
-    /* ---------- SUBSCRIPTION CANCEL ---------- */
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
+      console.log('Subscription deleted:', subscription.id);
 
       await prisma.subscription.update({
         where: {
           stripeSubscriptionId: subscription.id,
         },
         data: {
-          status: 'canceled',
+          status: 'cancelled',
+          paymentStatus: 'cancelled',
         },
       });
+
+      console.log('Subscription marked as cancelled');
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      console.log('Invoice payment failed:', invoice.id);
+
+      if (invoice.subscription) {
+        await prisma.subscription.update({
+          where: {
+            stripeSubscriptionId: invoice.subscription as string,
+          },
+          data: {
+            status: 'payment_failed',
+          },
+        });
+      }
     }
 
     return NextResponse.json({ received: true });

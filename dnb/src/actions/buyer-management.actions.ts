@@ -47,7 +47,6 @@ export async function addBuyer(
   },
   authToken: string
 ): Promise<Buyer> {
-
   try {
     const buyer = await prisma.buyer.create({
       data: {
@@ -72,7 +71,6 @@ export async function addBuyer(
 
     return transformBuyer(buyer);
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to create buyer');
   }
 }
@@ -85,17 +83,15 @@ export async function checkBuyerRegistrationNumber(
   registrationNumber: string,
   authToken: string
 ): Promise<{ isUnique: boolean }> {
-
   try {
     const existing = await prisma.buyer.findUnique({
       where: { registrationNumber },
     });
 
     const isUnique = !existing;
-    
+
     return { isUnique };
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to check registration number');
   }
 }
@@ -104,11 +100,7 @@ export async function checkBuyerRegistrationNumber(
  * Delete buyer (soft delete)
  * Equivalent to: DELETE /delete-buyer/:id
  */
-export async function deleteBuyer(
-  buyerId: string,
-  authToken: string
-): Promise<void> {
-
+export async function deleteBuyer(buyerId: string, authToken: string): Promise<void> {
   try {
     await prisma.buyer.update({
       where: { id: buyerId },
@@ -117,9 +109,7 @@ export async function deleteBuyer(
 
     revalidatePath('/buyers');
     revalidatePath('/users');
-
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to delete buyer');
   }
 }
@@ -128,11 +118,7 @@ export async function deleteBuyer(
  * Activate buyer
  * Equivalent to: PATCH /activate-buyer/:id/activate
  */
-export async function activateBuyer(
-  buyerId: string,
-  authToken: string
-): Promise<void> {
-
+export async function activateBuyer(buyerId: string, authToken: string): Promise<void> {
   try {
     await prisma.buyer.update({
       where: { id: buyerId },
@@ -141,9 +127,7 @@ export async function activateBuyer(
 
     revalidatePath('/buyers');
     revalidatePath('/users');
-
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to activate buyer');
   }
 }
@@ -152,11 +136,7 @@ export async function activateBuyer(
  * Deactivate buyer
  * Equivalent to: PATCH /deactivate-buyer/:id/deactivate
  */
-export async function deactivateBuyer(
-  buyerId: string,
-  authToken: string
-): Promise<void> {
-
+export async function deactivateBuyer(buyerId: string, authToken: string): Promise<void> {
   try {
     await prisma.buyer.update({
       where: { id: buyerId },
@@ -165,9 +145,7 @@ export async function deactivateBuyer(
 
     revalidatePath('/buyers');
     revalidatePath('/users');
-
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to deactivate buyer');
   }
 }
@@ -193,7 +171,6 @@ export async function editBuyer(
   }>,
   authToken: string
 ): Promise<Buyer> {
-
   try {
     const buyer = await prisma.buyer.update({
       where: { id: buyerId },
@@ -218,7 +195,6 @@ export async function editBuyer(
 
     return transformBuyer(buyer);
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to update buyer');
   }
 }
@@ -238,10 +214,9 @@ export async function searchBuyers(
   pageIndex: number;
   pageSize: number;
 }> {
-
   try {
     const { pageIndex, pageSize, ...filters } = searchParams;
-    
+
     // Build where clause
     const whereClause: any = {
       businessOwnerId: ownerId,
@@ -284,7 +259,6 @@ export async function searchBuyers(
       pageSize,
     };
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to search buyers');
   }
 }
@@ -293,11 +267,7 @@ export async function searchBuyers(
  * Get all buyers for a business owner
  * Equivalent to: GET /get-all-buyers
  */
-export async function getAllBuyers(
-  businessOwnerId: string,
-  authToken: string
-): Promise<Buyer[]> {
-
+export async function getAllBuyers(businessOwnerId: string, authToken: string): Promise<Buyer[]> {
   try {
     const buyers = await prisma.buyer.findMany({
       where: {
@@ -309,7 +279,6 @@ export async function getAllBuyers(
 
     return buyers.map(transformBuyer);
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to fetch buyers');
   }
 }
@@ -322,7 +291,6 @@ export async function getBuyersList(
   businessOwnerId: string,
   authToken: string
 ): Promise<Array<{ id: string; contactName: string; email: string }>> {
-
   try {
     const buyers = await prisma.buyer.findMany({
       where: {
@@ -339,7 +307,6 @@ export async function getBuyersList(
 
     return buyers;
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to fetch buyers list');
   }
 }
@@ -348,11 +315,7 @@ export async function getBuyersList(
  * Get buyer by ID
  * Equivalent to: GET /get-buyer/:id
  */
-export async function getBuyerById(
-  buyerId: string,
-  authToken: string
-): Promise<Buyer> {
-
+export async function getBuyerById(buyerId: string, authToken: string): Promise<Buyer> {
   try {
     const buyer = await prisma.buyer.findUnique({
       where: { id: buyerId },
@@ -364,7 +327,6 @@ export async function getBuyerById(
 
     return transformBuyer(buyer);
   } catch (error: any) {
-    
     throw new Error(error.message || 'Failed to fetch buyer');
   }
 }
@@ -373,23 +335,20 @@ export async function getBuyerById(
  * Become business owner (user registration as business owner)
  * Equivalent to: POST /become-business-owner
  */
-export async function becomeBusinessOwner(
-  userData: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    businessName: string;
-    phoneNumber?: string;
-    registrationNumber?: string;
-    country?: string;
-    state?: string;
-    city?: string;
-    address?: string;
-    postalCode?: string;
-  }
-): Promise<{ user: any; businessOwner: any; message: string }> {
-
+export async function becomeBusinessOwner(userData: {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  businessName: string;
+  phoneNumber?: string;
+  registrationNumber?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
+}): Promise<{ user: any; businessOwner: any; message: string }> {
   try {
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
