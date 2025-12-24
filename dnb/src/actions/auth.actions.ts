@@ -1,8 +1,3 @@
-/**
- * Authentication Server Actions
- * Handles token refresh and authentication operations
- */
-
 'use server';
 
 import jwt from 'jsonwebtoken';

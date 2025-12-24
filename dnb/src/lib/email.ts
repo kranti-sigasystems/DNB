@@ -346,7 +346,7 @@ export async function sendPaymentSuccessEmail(
 
     const result = await sendEmail({
       to: email,
-      subject: `🎉 Payment Successful - Welcome to ${data.planName}!`,
+      subject: `🎉 Payment Successful - Welcome to ${data.customerName}!`,
       html,
       text,
     });
