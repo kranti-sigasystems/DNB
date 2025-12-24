@@ -1,32 +1,22 @@
 'use client';
 
-import React, { useEffect, useState, ReactNode } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  CreditCard,
-  Package,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  BriefcaseBusiness,
-  LocationEdit,
-  BringToFront,
-  CombineIcon,
-  PercentSquareIcon,
-  ImportIcon,
   ArrowLeft,
+  Edit,
+  Download,
+  Shield,
+  Check,
+  Loader2,
+  AlertCircle,
+  Package,
 } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-/* ===================== TYPES ===================== */
 
 interface SessionUser {
   name?: string;
@@ -51,6 +41,8 @@ interface Plan {
   maxProducts?: number;
   maxOffers?: number;
   maxBuyers?: number;
+  maxUsers?: number;
+  features?: string[] | string;
 }
 
 interface Payment {
@@ -58,19 +50,12 @@ interface Payment {
   amount?: string | number;
   paymentMethod?: string;
   createdAt?: string;
-  Plan?: Plan;
+  Plan?: Plan & { maxUsers?: number; features?: string[] | string };
   User?: BackendUser;
 }
 
-interface InfoFieldProps {
-  icon: ReactNode;
-  label: string;
-  value?: string | number | null;
-}
-
-/* ===================== COMPONENT ===================== */
-
 const Profile: React.FC = () => {
+  const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [paymentData, setPaymentData] = useState<Payment | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -92,7 +77,6 @@ const Profile: React.FC = () => {
 
         if (storedUser.paymentId && process.env.VITE_API_URL) {
           const res = await fetch(`${process.env.VITE_API_URL}/payments/${storedUser.paymentId}`);
-
           if (res.ok) {
             const response = await res.json();
             setPaymentData(response?.data ?? null);
@@ -110,10 +94,10 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="text-slate-600 font-medium">Loading profile details...</p>
+          <p className="text-gray-600">Loading profile details...</p>
         </div>
       </div>
     );
@@ -121,7 +105,7 @@ const Profile: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6">
             <Alert variant="destructive">
@@ -149,133 +133,237 @@ const Profile: React.FC = () => {
     .join('')
     .toUpperCase();
 
+  const memberSince = backendUser?.created_at
+    ? new Date(backendUser.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'N/A';
   return (
-    <div className="min-h-screen px-[24.5px] pb-24 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      <header className="sticky top-17 bg-white border-b shadow-sm rounded-lg z-20">
-        <div className="px-6 py-4 flex items-center gap-3 dark:text-black">
-          <Button variant="ghost" onClick={() => window.history.back()}>
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-xl font-bold dark:text-black">Account Overview</h1>
-            <p className="text-sm text-slate-600">Manage your profile and subscription details</p>
+            <h1 className="text-2xl font-semibold text-gray-900">My Account</h1>
+            <p className="text-sm text-gray-500 mt-1">View and manage your account information</p>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto py-4">
-        <div className="bg-white rounded-2xl border shadow-lg p-6">
-          <Tabs defaultValue="profile">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="subscription">Subscription</TabsTrigger>
-            </TabsList>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white border border-gray-200 rounded-lg mb-8">
+          <div className="px-6 sm:px-8 py-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-semibold">
+                  {avatarInitials}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{fullName}</h2>
+                  <p className="text-gray-500 text-sm mt-1">{backendUser?.email}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Active Account</span>
+                  </div>
+                </div>
+              </div>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                <Edit className="w-4 h-4" />
+                Edit Profile
+              </Button>
+            </div>
+          </div>
+        </div>
 
-            {/* PROFILE */}
-            <TabsContent value="profile" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center text-white text-xl font-semibold">
-                        {avatarInitials}
-                      </div>
-                      <div>
-                        <CardTitle>{fullName}</CardTitle>
-                        <Badge variant="secondary" className="mt-1">
-                          {user.accountType ?? 'Standard'}
-                        </Badge>
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <Tabs defaultValue="profile" className="w-full">
+            <div className="border-b border-gray-200 px-6 sm:px-8">
+              <TabsList className="bg-transparent border-b-0 w-full justify-start gap-8 h-auto p-0">
+                <TabsTrigger
+                  value="profile"
+                  className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 rounded-none px-0 py-4 font-medium text-sm"
+                >
+                  Personal Information
+                </TabsTrigger>
+                <TabsTrigger
+                  value="subscription"
+                  className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 rounded-none px-0 py-4 font-medium text-sm"
+                >
+                  Subscription & Plan
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="profile" className="p-6 sm:p-8">
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h3>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Email Address</p>
+                      <p className="text-gray-900 font-medium">{backendUser?.email || 'Not provided'}</p>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Phone Number</p>
+                      <p className="text-gray-900 font-medium">{user.phone || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Business Information</h3>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Business Name</p>
+                      <p className="text-gray-900 font-medium">{user.businessName || 'Not provided'}</p>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Account Type</p>
+                      <p className="text-gray-900 font-medium">{user.accountType || 'Standard'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Details</h3>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Member Since</p>
+                      <p className="text-gray-900 font-medium">{memberSince}</p>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <p className="text-sm text-gray-500 mb-2">Account Status</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <p className="text-gray-900 font-medium">Active</p>
                       </div>
                     </div>
-
-                    {payment?.status && (
-                      <Badge className="bg-green-50 text-green-700">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {payment.status}
-                      </Badge>
-                    )}
                   </div>
-                </CardHeader>
-
-                <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <InfoField
-                    icon={<Mail className="w-4 h-4" />}
-                    label="Email"
-                    value={backendUser?.email}
-                  />
-                  <InfoField
-                    icon={<Phone className="w-4 h-4" />}
-                    label="Phone Number"
-                    value={user.phone}
-                  />
-                  <InfoField
-                    icon={<BriefcaseBusiness className="w-4 h-4" />}
-                    label="Business Name"
-                    value={user.businessName}
-                  />
-                  <InfoField
-                    icon={<Calendar className="w-4 h-4" />}
-                    label="Member Since"
-                    value={backendUser?.created_at}
-                  />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </TabsContent>
 
-            {/* SUBSCRIPTION */}
-            <TabsContent value="subscription">
+            <TabsContent value="subscription" className="p-6 sm:p-8">
               {plan ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription className="text-green-600 text-lg">
-                      {payment?.amount} / {plan.billingCycle}
-                    </CardDescription>
-                  </CardHeader>
+                <div className="space-y-8">
+                  <div className="border border-blue-200 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-blue-100">
+                    <div className="flex items-start justify-between mb-8">
+                      <div>
+                        <h3 className="text-3xl font-semibold text-gray-900">{plan.name}</h3>
+                        <p className="text-gray-600 text-sm mt-2">Your current subscription plan</p>
+                      </div>
+                      <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                        <Check className="w-4 h-4" />
+                        Active
+                      </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-bold text-gray-900">{payment?.amount}</span>
+                      <span className="text-gray-600 text-lg">per {plan.billingCycle}</span>
+                    </div>
+                  </div>
 
-                  <CardContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <InfoField
-                      icon={<CreditCard className="w-4 h-4" />}
-                      label="Payment Method"
-                      value={payment?.paymentMethod}
-                    />
-                    <InfoField
-                      icon={<ImportIcon className="w-4 h-4" />}
-                      label="Stripe Product ID"
-                      value={plan.stripeProductId}
-                    />
-                    <InfoField
-                      icon={<LocationEdit className="w-4 h-4" />}
-                      label="Max Locations"
-                      value={plan.maxLocations}
-                    />
-                    <InfoField
-                      icon={<BringToFront className="w-4 h-4" />}
-                      label="Max Products"
-                      value={plan.maxProducts}
-                    />
-                    <InfoField
-                      icon={<CombineIcon className="w-4 h-4" />}
-                      label="Max Offers"
-                      value={plan.maxOffers}
-                    />
-                    <InfoField
-                      icon={<PercentSquareIcon className="w-4 h-4" />}
-                      label="Max Buyers"
-                      value={plan.maxBuyers}
-                    />
-                  </CardContent>
-                </Card>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Plan Features</h3>
+                    <div className="border border-gray-200 rounded-lg p-6 bg-white">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {payment?.Plan?.features ? (
+                          (() => {
+                            const features = typeof payment.Plan.features === 'string' 
+                              ? JSON.parse(payment.Plan.features) 
+                              : payment.Plan.features;
+                            return Array.isArray(features) && features.length > 0 ? (
+                              features.map((feature: string, index: number) => (
+                                <div key={index} className="flex items-start gap-3">
+                                  <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                  <span className="text-gray-700">{feature}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="col-span-2 text-gray-500">No features available</div>
+                            );
+                          })()
+                        ) : (
+                          <div className="col-span-2 text-gray-500">Features information not available</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Resource Limits</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                        <p className="text-sm text-gray-500 mb-3">Maximum Products</p>
+                        <p className="text-3xl font-bold text-gray-900">{plan.maxProducts || 'Unlimited'}</p>
+                      </div>
+                      <div className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                        <p className="text-sm text-gray-500 mb-3">Maximum Offers</p>
+                        <p className="text-3xl font-bold text-gray-900">{plan.maxOffers || 'Unlimited'}</p>
+                      </div>
+                      <div className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                        <p className="text-sm text-gray-500 mb-3">Maximum Buyers</p>
+                        <p className="text-3xl font-bold text-gray-900">{plan.maxBuyers || 'Unlimited'}</p>
+                      </div>
+                      <div className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                        <p className="text-sm text-gray-500 mb-3">Maximum Users</p>
+                        <p className="text-3xl font-bold text-gray-900">{payment?.Plan?.maxUsers || 'Unlimited'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Payment Information</h3>
+                    <div className="border border-gray-200 rounded-lg divide-y bg-white">
+                      <div className="px-6 py-4 flex justify-between items-center">
+                        <span className="text-gray-600">Payment Method</span>
+                        <span className="text-gray-900 font-medium">{payment?.paymentMethod || 'Stripe'}</span>
+                      </div>
+                      <div className="px-6 py-4 flex justify-between items-center">
+                        <span className="text-gray-600">Billing Cycle</span>
+                        <span className="text-gray-900 font-medium capitalize">{plan.billingCycle}</span>
+                      </div>
+                      <div className="px-6 py-4 flex justify-between items-center">
+                        <span className="text-gray-600">Subscription Status</span>
+                        <span className="text-gray-900 font-medium">Active</span>
+                      </div>
+                      <div className="px-6 py-4 flex justify-between items-center">
+                        <span className="text-gray-600">Auto-Renewal</span>
+                        <span className="text-gray-900 font-medium">Enabled</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 flex-1">
+                      <Download className="w-4 h-4" />
+                      Download Invoice
+                    </Button>
+                    <Button variant="outline" className="flex-1 gap-2 border-gray-300 text-gray-700 hover:bg-gray-50">
+                      <Shield className="w-4 h-4" />
+                      Manage Subscription
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <Package className="h-16 w-16 mx-auto text-slate-400 mb-4" />
-                    <p className="text-slate-600 dark:text-white">
-                      You don't have an active subscription yet.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center py-16">
+                  <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Subscription</h3>
+                  <p className="text-gray-500 mb-6">You do not have an active subscription at this time.</p>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    View Available Plans
+                  </Button>
+                </div>
               )}
             </TabsContent>
           </Tabs>
@@ -284,19 +372,5 @@ const Profile: React.FC = () => {
     </div>
   );
 };
-
-/* ===================== INFO FIELD ===================== */
-
-const InfoField: React.FC<InfoFieldProps> = ({ icon, label, value }) => (
-  <div className="flex items-start gap-3">
-    <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center">{icon}</div>
-    <div>
-      <p className="text-sm text-slate-600 dark:text-white">{label}</p>
-      <p className="text-sm font-medium text-slate-900 dark:text-white">
-        {value ?? 'Not provided'}
-      </p>
-    </div>
-  </div>
-);
 
 export default Profile;
