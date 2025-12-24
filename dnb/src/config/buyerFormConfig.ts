@@ -42,12 +42,13 @@ export const BUYER_FORM_FIELDS: BuyerFormFields = {
     { 
       name: 'countryCode', 
       label: 'Country Code', 
-      required: true,
+      required: false, // Make this optional for now
       placeholder: 'e.g., +1, +91'
     },
     { 
       name: 'contactPhone', 
       label: 'Phone Number',
+      required: true, // Make this required
       type: 'tel',
       placeholder: 'Enter phone number'
     },
@@ -56,16 +57,19 @@ export const BUYER_FORM_FIELDS: BuyerFormFields = {
     { 
       name: 'state', 
       label: 'State/Province',
+      required: true, // Make this required
       placeholder: 'Enter state or province'
     },
     { 
       name: 'city', 
       label: 'City',
+      required: true, // Make this required
       placeholder: 'Enter city'
     },
     { 
       name: 'postalCode', 
       label: 'Postal Code',
+      required: true, // Make this required
       placeholder: 'Enter postal code'
     },
   ],

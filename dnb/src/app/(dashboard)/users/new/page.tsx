@@ -31,7 +31,7 @@ import { ToastContainer } from '@/components/ui/toast';
 import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { BUYER_FORM_FIELDS } from '@/config/buyerFormConfig';
-import { validateBuyerData } from '@/utils/validation';
+import { validateBuyerData, ValidationMessages } from '@/utils/validation';
 
 export default function AddBuyerPage() {
   const router = useRouter();
@@ -60,10 +60,50 @@ export default function AddBuyerPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Debug: Log form data to see what's being validated
+    console.log('🔍 Form data being validated:', formData);
+    
     // Validate form
     const validation = validateBuyerData(formData);
+    console.log('🔍 Validation result:', validation);
+    
     if (!validation.isValid) {
-      const errorMessage = validation.errors.map(e => e.message).join(', ');
+      // Create a more user-friendly error message
+      const requiredFieldsCount = validation.errors.filter(e => e.message === ValidationMessages.required).length;
+      const otherErrors = validation.errors.filter(e => e.message !== ValidationMessages.required);
+      
+      // Debug: Log specific errors
+      console.log('🔍 Required field errors:', validation.errors.filter(e => e.message === ValidationMessages.required));
+      console.log('🔍 Other validation errors:', otherErrors);
+      
+      let errorMessage = '';
+      if (requiredFieldsCount > 0) {
+        const missingFields = validation.errors
+          .filter(e => e.message === ValidationMessages.required)
+          .map(e => {
+            // Convert field names to user-friendly labels
+            const fieldLabels: Record<string, string> = {
+              contactName: 'Contact Name',
+              email: 'Email Address',
+              contactPhone: 'Phone Number',
+              buyersCompanyName: 'Company Name',
+              address: 'Street Address',
+              city: 'City',
+              state: 'State/Province',
+              country: 'Country',
+              postalCode: 'Postal Code',
+            };
+            return fieldLabels[e.field] || e.field;
+          })
+          .join(', ');
+        errorMessage = `Please fill in required fields: ${missingFields}`;
+        if (otherErrors.length > 0) {
+          errorMessage += ` and fix ${otherErrors.length} validation error${otherErrors.length > 1 ? 's' : ''}`;
+        }
+      } else if (otherErrors.length > 0) {
+        errorMessage = `Please fix validation errors: ${otherErrors.map(e => `${e.field} - ${e.message}`).join(', ')}`;
+      }
+      
       showError(errorMessage);
       return;
     }

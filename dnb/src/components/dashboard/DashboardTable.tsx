@@ -56,14 +56,6 @@ interface SortConfig {
   direction: SortDirection;
 }
 
-// Export button component
-const ExportButton = ({ className }: { className?: string }) => (
-  <Button variant="outline" size="sm" className={className}>
-    <Download className="w-4 h-4 mr-2" />
-    Export
-  </Button>
-);
-
 // Card action wrapper
 const CardAction = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <div className={className}>
@@ -644,7 +636,6 @@ export function DashboardTable({
       <Card className="lg:hidden">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 pb-3 sm:pb-4">
           <CardTitle className="text-base sm:text-lg">{userLabel}</CardTitle>
-          <ExportButton className="self-start sm:self-auto" />
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
           <Input
@@ -684,9 +675,6 @@ export function DashboardTable({
       <Card className="hidden lg:block">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg xl:text-xl">{userLabel}</CardTitle>
-          <CardAction className="relative">
-            <ExportButton className="absolute end-0 top-0" />
-          </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input

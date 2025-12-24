@@ -52,7 +52,7 @@ export async function GET() {
     return NextResponse.json(
       { 
         message: 'Failed to fetch plans',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
       }, 
       { status: 500 }
     );

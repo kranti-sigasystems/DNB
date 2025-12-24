@@ -3,14 +3,14 @@ import { z } from 'zod';
 // Common validation patterns
 export const ValidationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^[\+]?[1-9][\d]{0,15}$/,
+  phone: /^[\+]?[0-9\s\-\(\)]{7,20}$/,
   name: /^[a-zA-Z\s\-'\.]{2,50}$/,
   businessName: /^[a-zA-Z0-9\s\-'\.&,]{2,100}$/,
   productCode: /^[A-Z0-9\-_]{2,20}$/,
   sku: /^[A-Z0-9\-_]{1,50}$/,
   species: /^[a-zA-Z\s\-'\.]{2,50}$/,
   size: /^[a-zA-Z0-9\s\-\/\+\*\.]{1,20}$/, // Allows alphanumeric, spaces, and symbols like /, +, *, -
-  zipCode: /^[0-9]{5,10}$/,
+  zipCode: /^[0-9A-Za-z\s\-]{3,15}$/,
   city: /^[a-zA-Z\s\-'\.]{2,50}$/,
   state: /^[a-zA-Z\s\-'\.]{2,50}$/,
   country: /^[a-zA-Z\s\-'\.]{2,50}$/,
@@ -21,14 +21,14 @@ export const ValidationPatterns = {
 export const ValidationMessages = {
   required: 'This field is required',
   email: 'Please enter a valid email address',
-  phone: 'Please enter a valid phone number',
+  phone: 'Please enter a valid phone number (7-20 characters, can include +, spaces, hyphens, parentheses)',
   name: 'Name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
   businessName: 'Business name should contain letters, numbers, spaces, and common symbols (2-100 characters)',
   productCode: 'Product code should contain uppercase letters, numbers, hyphens, and underscores (2-20 characters)',
   sku: 'SKU should contain uppercase letters, numbers, hyphens, and underscores (1-50 characters)',
   species: 'Species name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
   size: 'Size can contain letters, numbers, spaces, and symbols like /, +, *, - (1-20 characters)',
-  zipCode: 'Please enter a valid zip code (5-10 digits)',
+  zipCode: 'Please enter a valid postal code (3-15 characters, letters and numbers allowed)',
   city: 'City name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
   state: 'State name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
   country: 'Country name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
@@ -76,7 +76,7 @@ export const ProductValidationSchema = z.object({
     .min(1, ValidationMessages.minLength(1))
     .max(20, ValidationMessages.maxLength(20))
     .regex(ValidationPatterns.size, ValidationMessages.size)
-  ).default([]), // Default to empty array instead of optional
+  ), // Required array
   
   sku: z.string()
     .max(50, ValidationMessages.maxLength(50))

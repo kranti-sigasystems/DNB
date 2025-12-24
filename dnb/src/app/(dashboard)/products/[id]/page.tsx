@@ -30,7 +30,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       try {
         setLoading(true);
         const result = await handleGetProduct(params.id);
-        if (result.success && result.data) {
+        if (result.success && 'data' in result && result.data) {
           setProduct(result.data);
         } else {
           router.push('/products');

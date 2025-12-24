@@ -8,22 +8,22 @@ import type { Buyer, SearchParams } from '@/types/users';
 function transformBuyer(buyer: any): Buyer {
   return {
     id: buyer.id,
-    contactName: buyer.contactName,
     email: buyer.email,
+    first_name: buyer.contactName || '',
+    last_name: '',
     phoneNumber: buyer.phoneNumber || undefined,
-    businessName: buyer.businessName || undefined,
-    registrationNumber: buyer.registrationNumber || undefined,
-    address: buyer.address || undefined,
-    city: buyer.city || undefined,
-    state: buyer.state || undefined,
-    country: buyer.country,
-    postalCode: buyer.postalCode || undefined,
-    businessOwnerId: buyer.businessOwnerId,
-    status: buyer.status,
+    status: buyer.status as 'active' | 'inactive',
     isDeleted: buyer.is_deleted,
     createdAt: buyer.createdAt.toISOString(),
     updatedAt: buyer.updatedAt.toISOString(),
     userRole: 'buyer',
+    contactName: buyer.contactName,
+    contactEmail: buyer.contactEmail || undefined,
+    contactPhone: buyer.contactPhone || undefined,
+    buyersCompanyName: buyer.businessName || buyer.buyersCompanyName || undefined,
+    productName: buyer.productName || undefined,
+    locationName: buyer.locationName || undefined,
+    businessOwnerId: buyer.businessOwnerId,
   };
 }
 

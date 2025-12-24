@@ -353,22 +353,22 @@ export async function getUserById(
 
         return {
           id: buyer.id,
-          contactName: buyer.contactName,
           email: buyer.email,
-          phoneNumber: buyer.phoneNumber,
-          businessName: buyer.businessName,
-          registrationNumber: buyer.registrationNumber,
-          address: buyer.address,
-          city: buyer.city,
-          state: buyer.state,
-          country: buyer.country,
-          postalCode: buyer.postalCode,
-          businessOwnerId: buyer.businessOwnerId,
-          status: buyer.status,
+          first_name: buyer.contactName || '',
+          last_name: '',
+          phoneNumber: buyer.phoneNumber || undefined,
+          status: buyer.status as 'active' | 'inactive',
           isDeleted: buyer.is_deleted,
           createdAt: buyer.createdAt.toISOString(),
           updatedAt: buyer.updatedAt.toISOString(),
           userRole: 'buyer',
+          contactName: buyer.contactName,
+          contactEmail: buyer.contactEmail || undefined,
+          contactPhone: buyer.contactPhone || undefined,
+          buyersCompanyName: buyer.businessName || buyer.buyersCompanyName || undefined,
+          productName: buyer.productName || undefined,
+          locationName: buyer.locationName || undefined,
+          businessOwnerId: buyer.businessOwnerId,
         } as Buyer;
       } catch (error: any) {
         
@@ -451,17 +451,37 @@ export async function createUser(
       const result = await createBuyer({
         contactName: buyerData.contactName || `${buyerData.first_name || ''} ${buyerData.last_name || ''}`.trim(),
         contactEmail: buyerData.email!,
-        buyersCompanyName: buyerData.buyersCompanyName || buyerData.businessName || '',
-        country: buyerData.country || 'India',
+        buyersCompanyName: buyerData.buyersCompanyName || '',
         ...buyerData
       }, authToken);
       
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create buyer');
       }
       
       revalidatePath('/users');
-      return result.data.buyer as Buyer;
+      
+      // Transform the buyer data to match the Buyer interface
+      const createdBuyer = result.data.buyer;
+      return {
+        id: createdBuyer.id,
+        email: createdBuyer.email,
+        first_name: createdBuyer.contactName || '',
+        last_name: '',
+        phoneNumber: createdBuyer.phoneNumber || undefined,
+        status: createdBuyer.status as 'active' | 'inactive',
+        isDeleted: createdBuyer.is_deleted || false,
+        createdAt: createdBuyer.createdAt instanceof Date ? createdBuyer.createdAt.toISOString() : createdBuyer.createdAt,
+        updatedAt: createdBuyer.updatedAt instanceof Date ? createdBuyer.updatedAt.toISOString() : createdBuyer.updatedAt,
+        userRole: 'buyer',
+        contactName: createdBuyer.contactName,
+        contactEmail: createdBuyer.contactEmail || undefined,
+        contactPhone: createdBuyer.contactPhone || undefined,
+        buyersCompanyName: createdBuyer.businessName || createdBuyer.buyersCompanyName || undefined,
+        productName: createdBuyer.productName || undefined,
+        locationName: createdBuyer.locationName || undefined,
+        businessOwnerId: createdBuyer.businessOwnerId,
+      } as Buyer;
     }
   } catch (error: any) {
     
@@ -536,17 +556,38 @@ export async function updateUser(
       const result = await updateBuyer(userId, {
         contactName: buyerData.contactName,
         contactEmail: buyerData.email,
-        buyersCompanyName: buyerData.buyersCompanyName || buyerData.businessName,
+        buyersCompanyName: buyerData.buyersCompanyName,
         status: buyerData.status,
         ...buyerData
       }, authToken);
       
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update buyer');
       }
       
       revalidatePath('/users');
-      return result.data.buyer as Buyer;
+      
+      // Transform the buyer data to match the Buyer interface
+      const updatedBuyer = result.data.buyer;
+      return {
+        id: updatedBuyer.id,
+        email: updatedBuyer.email,
+        first_name: updatedBuyer.contactName || '',
+        last_name: '',
+        phoneNumber: updatedBuyer.phoneNumber || undefined,
+        status: updatedBuyer.status as 'active' | 'inactive',
+        isDeleted: updatedBuyer.is_deleted || false,
+        createdAt: updatedBuyer.createdAt instanceof Date ? updatedBuyer.createdAt.toISOString() : updatedBuyer.createdAt,
+        updatedAt: updatedBuyer.updatedAt instanceof Date ? updatedBuyer.updatedAt.toISOString() : updatedBuyer.updatedAt,
+        userRole: 'buyer',
+        contactName: updatedBuyer.contactName,
+        contactEmail: updatedBuyer.contactEmail || undefined,
+        contactPhone: updatedBuyer.contactPhone || undefined,
+        buyersCompanyName: updatedBuyer.businessName || updatedBuyer.buyersCompanyName || undefined,
+        productName: updatedBuyer.productName || undefined,
+        locationName: updatedBuyer.locationName || undefined,
+        businessOwnerId: updatedBuyer.businessOwnerId,
+      } as Buyer;
     }
   } catch (error: any) {
     

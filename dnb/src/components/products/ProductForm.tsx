@@ -105,7 +105,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         code: data.code.trim(),
         productName: data.productName.trim(),
         species: data.species,
-        size: data.size?.length ? data.size : undefined,
+        size: data.size || [], // Always provide an array
         sku: data.sku?.trim() || null,
       };
 

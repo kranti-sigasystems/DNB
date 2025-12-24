@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
             is_approved: false,
           },
         });
-        console.log('Business owner created:', businessOwner.id);
       } catch (error: any) {
         // If business owner already exists, get it
         if (error.code === 'P2002') {
@@ -138,6 +137,7 @@ export async function POST(req: NextRequest) {
         amount: amount,
         currency: plan.currency,
         status: 'pending',
+        transactionId: session.id, // ✅ Store session ID as transaction ID
         paymentMethod: 'card',
         stripeSessionId: session.id,
         transactionId: `stripe_${session.id}`,
@@ -151,11 +151,6 @@ export async function POST(req: NextRequest) {
         data: { paymentId: payment.id },
       });
     }
-
-    // Email will be sent after payment confirmation via webhook
-    console.log('Payment record created:', payment.id);
-    console.log('Stripe session created:', session.id);
-    console.log('Business owner ID:', businessOwner?.id || 'None');
 
     return NextResponse.json({
       success: true,

@@ -70,6 +70,7 @@ export default function CheckoutPage() {
       // Ensure the plan has all required properties
       const planWithPrice = {
         ...plan,
+        key: plan.key || plan.id, // Use key if available, otherwise use id
         price: parsed.billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly,
         currency: plan.currency || "INR",
         maxUsers: plan.maxUsers || plan.maxBuyers || 50,

@@ -25,21 +25,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log('Processing webhook event:', event.type);
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log('Checkout session completed:', session.id);
 
       if (!session.subscription || !session.customer) {
-        console.log('No subscription or customer found in session');
         return NextResponse.json({ received: true });
       }
 
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
       const { userId, planId, billingCycle, businessOwnerId } = session.metadata!;
-
-      console.log('Processing subscription for user:', userId, 'plan:', planId, 'businessOwner:', businessOwnerId);
 
       // Get user and plan details
       const [user, plan] = await Promise.all([
@@ -65,90 +60,47 @@ export async function POST(req: NextRequest) {
       // Create or update subscription with correct schema
       const subscriptionData = await prisma.subscription.upsert({
         where: {
-          stripeSubscriptionId: subscription.id,
+          id: subscription.id, // Use the subscription ID directly
         },
         update: {
-          status: subscription.status,
-          currentPeriodStart,
-          currentPeriodEnd,
+          status: subscription.status === 'active' ? 'active' : subscription.status === 'canceled' ? 'cancelled' : 'inactive',
+          startDate: new Date(subscription.current_period_start * 1000),
+          endDate: new Date(subscription.current_period_end * 1000),
         },
         create: {
+          id: subscription.id,
           userId,
-          subscriptionId: subscription.id, // Use Stripe subscription ID
-          planName: plan.name,
-          status: subscription.status,
-          paymentStatus: 'paid',
-          startDate: currentPeriodStart,
-          endDate: currentPeriodEnd,
-          stripeSubscriptionId: subscription.id,
-          stripeCustomerId: subscription.customer as string,
-          currentPeriodStart,
-          currentPeriodEnd,
+          planId: planKey, // Assuming planKey maps to planId
+          status: subscription.status === 'active' ? 'active' : subscription.status === 'canceled' ? 'cancelled' : 'inactive',
+          billingCycle: billingCycle as 'monthly' | 'yearly',
+          startDate: new Date(subscription.current_period_start * 1000),
+          endDate: new Date(subscription.current_period_end * 1000),
+          autoRenew: true,
         },
       });
 
-      // Update payment record
-      const payment = await prisma.payment.findFirst({
-        where: { stripeSessionId: session.id },
+      /* ---- Update User with Stripe Customer ID ---- */
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          stripeCustomerId: subscription.customer as string,
+          subscriptionId: subscription.id,
+        },
       });
 
-      if (payment) {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'success',
-            stripePaymentId: session.payment_intent as string,
-            stripeCustomerId: subscription.customer as string,
-          },
-        });
-
-        // Update business owner if exists
-        if (businessOwnerId && businessOwnerId !== '') {
-          try {
-            await prisma.businessOwner.update({
-              where: { id: businessOwnerId },
-              data: {
-                planId: planId,
-                paymentId: payment.id,
-                is_verified: true, // Mark as verified after successful payment
-                updatedAt: new Date(),
-              },
-            });
-            console.log('Business owner updated with payment info');
-          } catch (error) {
-            console.error('Failed to update business owner:', error);
-          }
-        }
-
-        // Send success email
-        try {
-          const customerName =
-            `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Customer';
-
-          await sendPaymentSuccessEmail(user.email, {
-            customerName,
-            planName: plan.name,
-            amount: Number(payment.amount), // Convert Decimal to number for email
-            currency: plan.currency,
-            billingCycle: billingCycle || 'yearly',
-            paymentId: payment.id,
-            subscriptionStartDate: currentPeriodStart.toLocaleDateString(),
-            subscriptionEndDate: currentPeriodEnd.toLocaleDateString(),
-          });
-
-          console.log('Payment success email sent to:', user.email);
-        } catch (emailError) {
-          console.error('Failed to send payment success email:', emailError);
-          // Don't fail the webhook for email errors
-        }
-      }
-
-      console.log('Subscription created/updated successfully');
+      /* ---- Mark Payment Success ---- */
+      await prisma.payment.update({
+        where: { transactionId: session.id },
+        data: {
+          status: 'completed',
+          transactionId: session.id, // Keep the session ID as transaction ID
+        },
+      });
     }
 
+    /* ---------- PAYMENT SUCCESS ---------- */
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
-      console.log('Invoice payment succeeded:', invoice.id);
 
       if (!invoice.subscription) {
         return NextResponse.json({ received: true });
@@ -156,7 +108,7 @@ export async function POST(req: NextRequest) {
 
       await prisma.subscription.update({
         where: {
-          stripeSubscriptionId: invoice.subscription as string,
+          id: invoice.subscription as string,
         },
         data: {
           status: 'active',
@@ -164,29 +116,24 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log('Subscription status updated to active');
     }
 
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
-      console.log('Subscription deleted:', subscription.id);
 
       await prisma.subscription.update({
         where: {
-          stripeSubscriptionId: subscription.id,
+          id: subscription.id,
         },
         data: {
           status: 'cancelled',
-          paymentStatus: 'cancelled',
         },
       });
 
-      console.log('Subscription marked as cancelled');
     }
 
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object as Stripe.Invoice;
-      console.log('Invoice payment failed:', invoice.id);
 
       if (invoice.subscription) {
         await prisma.subscription.update({
