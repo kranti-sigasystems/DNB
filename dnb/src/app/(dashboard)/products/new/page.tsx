@@ -35,7 +35,7 @@ import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ProductValidationSchema, ValidationPatterns, ValidationMessages, getValidationClass } from '@/utils/validation';
 import { ensureAuthenticated } from '@/utils/tokenManager';
-import type { ProductFormData } from '@/types/product';
+import type { ProductFormData as ProductFormDataType } from '@/types/product';
 
 // Simple debounce utility
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
@@ -46,7 +46,38 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
   };
 }
 
-type ProductFormValues = z.infer<typeof ProductValidationSchema>;
+// Custom validation schema for the form
+const ProductFormSchema = z.object({
+  code: z.string()
+    .min(2, ValidationMessages.minLength(2))
+    .max(20, ValidationMessages.maxLength(20))
+    .regex(ValidationPatterns.productCode, ValidationMessages.productCode),
+  
+  productName: z.string()
+    .min(2, ValidationMessages.minLength(2))
+    .max(200, ValidationMessages.maxLength(200))
+    .regex(/^[a-zA-Z0-9\s\-'\.&,]{2,200}$/, 'Product name should contain letters, numbers, spaces, and common symbols (2-200 characters)'),
+  
+  species: z.array(z.string()
+    .min(2, ValidationMessages.minLength(2))
+    .max(50, ValidationMessages.maxLength(50))
+    .regex(ValidationPatterns.species, ValidationMessages.species)
+  ).min(1, 'At least one species is required'),
+  
+  size: z.array(z.string()
+    .min(1, ValidationMessages.minLength(1))
+    .max(20, ValidationMessages.maxLength(20))
+    .regex(ValidationPatterns.size, ValidationMessages.size)
+  ), // Required array, no optional
+  
+  sku: z.string()
+    .max(50, ValidationMessages.maxLength(50))
+    .regex(ValidationPatterns.sku, ValidationMessages.sku)
+    .optional()
+    .or(z.literal('')),
+});
+
+type ProductFormValues = z.infer<typeof ProductFormSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -59,12 +90,12 @@ export default function AddProductPage() {
   const [codeCheckLoading, setCodeCheckLoading] = React.useState(false);
 
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(ProductValidationSchema),
+    resolver: zodResolver(ProductFormSchema),
     defaultValues: {
       code: '',
       productName: '',
       species: [],
-      size: [],
+      size: [], // This will be optional in the schema but required in the form
       sku: '',
     },
     mode: 'onChange', // Enable real-time validation
@@ -191,11 +222,11 @@ export default function AddProductPage() {
   };
 
   const onSubmit = async (data: ProductFormValues) => {
-    const formData: ProductFormData = {
+    const formData: ProductFormDataType = {
       code: data.code.trim().toUpperCase(),
       productName: data.productName.trim(),
       species: data.species,
-      size: data.size && data.size.length > 0 ? data.size : [], // Always provide an array
+      size: data.size, // size is now always an array
       sku: data.sku?.trim().toUpperCase() || null,
     };
 

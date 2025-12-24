@@ -29,8 +29,7 @@ export async function getDashboardData(
       params.locationName
     );
     
-    
-    let result;
+    let result: any;
     
     if (hasSearchFilters) {
       result = await searchDashboardData(userRole, params, authToken);
@@ -61,15 +60,26 @@ export async function getDashboardData(
       }
     }
 
-    if (!result.success) {
-      return result;
+    if (!result || !result.success) {
+      return { 
+        success: false, 
+        error: result?.error || 'Failed to fetch data' 
+      };
     }
 
-    // Match your exact response structure: response.data.data
-    const apiResponse = result.data || {};
-    const apiData = apiResponse.data || {};
+    // Handle different response structures
+    const responseData = result.data || {};
+    let apiData: any = {};
+    
+    // Check if the response has nested data structure
+    if (responseData.data) {
+      apiData = responseData.data;
+    } else {
+      apiData = responseData;
+    }
+
     const dashboardData: DashboardData = {
-      data: apiData?.data || [],
+      data: apiData?.data || apiData?.businessOwners || apiData?.buyers || [],
       stats: {
         totalItems: apiData?.totalItems || 0,
         totalActive: apiData?.totalActive || 0,
@@ -80,8 +90,8 @@ export async function getDashboardData(
         userGrowth: apiData?.userGrowth || 0,
       },
       totalPages: apiData?.totalPages || Math.ceil((apiData?.totalItems || 0) / params.pageSize),
-      pageIndex: apiData?.pageIndex ?? params.pageIndex,
-      pageSize: apiData?.pageSize ?? params.pageSize,
+      pageIndex: apiData?.pageIndex ?? apiData?.page ?? params.pageIndex,
+      pageSize: apiData?.pageSize ?? apiData?.limit ?? params.pageSize,
     };
 
     return { success: true, data: dashboardData };
@@ -105,7 +115,7 @@ export async function searchDashboardData(
       return { success: false, error: 'Authentication token required' };
     }
     
-    let result;
+    let result: any;
     
     switch (userRole) {
       case 'super_admin':
@@ -145,13 +155,23 @@ export async function searchDashboardData(
         return { success: false, error: 'Invalid user role' };
     }
 
-    if (!result.success) {
-      return result;
+    if (!result || !result.success) {
+      return { 
+        success: false, 
+        error: result?.error || 'Failed to search data' 
+      };
     }
 
-    // Match your exact response structure: response.data.data
-    const apiResponse = result.data || {};
-    const apiData = apiResponse.data || {};
+    // Handle different response structures
+    const responseData = result.data || {};
+    let apiData: any = {};
+    
+    // Check if the response has nested data structure
+    if (responseData.data) {
+      apiData = responseData.data;
+    } else {
+      apiData = responseData;
+    }
 
     const dashboardData: DashboardData = {
       data: apiData?.data || apiData?.businessOwners || apiData?.buyers || [],
@@ -164,14 +184,13 @@ export async function searchDashboardData(
         revenueGrowth: apiData?.revenueGrowth || 0,
         userGrowth: apiData?.userGrowth || 0,
       },
-      totalPages: apiData?.totalPages || Math.ceil((apiData?.totalItems || 0) / filters.pageSize),
-      pageIndex: apiData?.pageIndex ?? filters.pageIndex,
-      pageSize: apiData?.pageSize ?? filters.pageSize,
+      totalPages: apiData?.totalPages || Math.ceil((apiData?.totalItems || 0) / (filters.pageSize || 10)),
+      pageIndex: apiData?.pageIndex ?? apiData?.page ?? filters.pageIndex,
+      pageSize: apiData?.pageSize ?? apiData?.limit ?? filters.pageSize,
     };
 
     return { success: true, data: dashboardData };
   } catch (error) {
-    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to search dashboard data' 
@@ -191,7 +210,7 @@ export async function updateUserStatus(
       return { success: false, error: 'Authentication token required' };
     }
     
-    let result;
+    let result: any;
     
     switch (userRole) {
       case 'super_admin':
@@ -234,7 +253,6 @@ export async function updateUserStatus(
 
     return result || { success: false, error: 'No result from action' };
   } catch (error) {
-    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to update user status' 

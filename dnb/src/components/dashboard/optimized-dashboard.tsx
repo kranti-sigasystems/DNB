@@ -1,11 +1,6 @@
-/**
- * Optimized Dashboard Component
- * Clean, reusable dashboard with enterprise-grade architecture
- */
-
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { BarChart3, TrendingUp, Activity, Users, Building2, UserCheck, UserX, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -19,13 +14,13 @@ import { ensureAuthenticated } from "@/utils/tokenManager";
 import { debugAuthState } from "@/utils/debugAuth";
 import { attemptSessionRestore, shouldRedirectToLogin } from "@/utils/sessionRestore";
 
-import { USER_ROLES } from "@/lib/constants/dashboard";
+import { USER_ROLES, type UserRole } from "@/lib/constants/dashboard";
 import { getUserRoleLabel, formatUserName, hasActiveFilters } from "@/lib/utils/dashboard.utils";
 import { usePagination } from "@/lib/hooks/usePagination";
 
 import type { DashboardData, SearchFilters } from "@/types/dashboard";
 import type { DataTableColumn, DataTableAction } from "@/components/ui/data-table/types";
-import type { User } from "@/hooks/use-auth";
+import type { User } from "@/utils/auth";
 
 interface OptimizedDashboardProps {
   user: User | null;
@@ -37,15 +32,36 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
   const { showAlert, AlertDialog } = useAlertDialog();
 
-  const userRole = user?.userRole || USER_ROLES.GUEST;
-  const userLabel = getUserRoleLabel(userRole);
+  const userRole: UserRole = (user?.userRole as UserRole) || USER_ROLES.GUEST;
+
+  const handlePageChange = useCallback(async (page: number, pageSize: number) => {
+    if (userRole === USER_ROLES.GUEST) {
+      return;
+    }
+
+    try {
+      const authToken = await ensureAuthenticated();
+      const params = { pageIndex: page, pageSize, ...searchFilters };
+
+      const result = hasActiveFilters(searchFilters)
+        ? await searchDashboardData(userRole, params, authToken)
+        : await getDashboardData(userRole, params, authToken);
+
+      if (result.success && result.data) {
+        setDashboardData(result.data);
+      } else {
+        toast.error(result.error || 'Failed to fetch dashboard data');
+      }
+    } catch (error) {
+      console.error('❌ Dashboard pagination error:', error);
+      toast.error('Failed to fetch dashboard data');
+    }
+  }, [userRole, searchFilters]);
 
   // Pagination hook
   const pagination = usePagination({
     totalItems: dashboardData?.stats.totalItems || 0,
-    onPageChange: (page, pageSize) => {
-      fetchDashboardData(searchFilters, page, pageSize);
-    },
+    onPageChange: handlePageChange,
   });
 
   // Fetch dashboard data
@@ -56,7 +72,12 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
         return;
       }
 
-      setIsLoading(true);
+      // Don't show full loading if we're just refreshing data
+      setIsLoading(prev => {
+        // Only set loading to true if we don't have data yet
+        return dashboardData === null ? true : prev;
+      });
+      
       try {
         const authToken = await ensureAuthenticated();
         
@@ -84,18 +105,39 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
         setIsLoading(false);
       }
     },
-    [userRole]
+    [userRole] // Remove dashboardData from dependencies to prevent infinite loop
   );
 
   // Handle search
   const handleSearch = useCallback(
-    (query: string) => {
+    async (query: string) => {
       const filters: SearchFilters = query ? { email: query } : {};
       setSearchFilters(filters);
-      pagination.actions.reset();
-      fetchDashboardData(filters, 0, pagination.pageSize);
+      
+      // Reset pagination and fetch data
+      if (userRole === USER_ROLES.GUEST) {
+        return;
+      }
+
+      try {
+        const authToken = await ensureAuthenticated();
+        const params = { pageIndex: 0, pageSize: 10, ...filters };
+
+        const result = hasActiveFilters(filters)
+          ? await searchDashboardData(userRole, params, authToken)
+          : await getDashboardData(userRole, params, authToken);
+
+        if (result.success && result.data) {
+          setDashboardData(result.data);
+        } else {
+          toast.error(result.error || 'Failed to fetch dashboard data');
+        }
+      } catch (error) {
+        console.error('❌ Dashboard search error:', error);
+        toast.error('Failed to fetch dashboard data');
+      }
     },
-    [fetchDashboardData, pagination]
+    [userRole]
   );
 
   // Handle user actions with confirmation
@@ -131,7 +173,15 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
 
             if (result.success) {
               toast.success(`Successfully ${action}d user`);
-              fetchDashboardData(searchFilters, pagination.currentPage, pagination.pageSize);
+              // Refresh data after action
+              const params = { pageIndex: pagination.currentPage, pageSize: pagination.pageSize, ...searchFilters };
+              const refreshResult = hasActiveFilters(searchFilters)
+                ? await searchDashboardData(userRole, params, authToken)
+                : await getDashboardData(userRole, params, authToken);
+
+              if (refreshResult.success && refreshResult.data) {
+                setDashboardData(refreshResult.data);
+              }
             } else {
               toast.error(result.error || `Failed to ${action} user`);
             }
@@ -142,7 +192,7 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
         },
       });
     },
-    [userRole, searchFilters, pagination, fetchDashboardData, showAlert]
+    [userRole, searchFilters, pagination.currentPage, pagination.pageSize, showAlert]
   );
 
   // Table columns configuration
@@ -279,14 +329,24 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
     initDashboard();
   }, [user]);
 
-  // Fetch data when user role changes
+  // Fetch data when user role changes - only run once when component mounts or userRole changes
   useEffect(() => {
-    if (userRole !== USER_ROLES.GUEST) {
-      fetchDashboardData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [userRole, fetchDashboardData]);
+    let isMounted = true;
+    
+    const initializeData = async () => {
+      if (userRole !== USER_ROLES.GUEST && isMounted) {
+        await fetchDashboardData();
+      } else if (isMounted) {
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userRole]); // Remove fetchDashboardData from dependencies
 
   // Loading state
   if (isLoading && !dashboardData) {
@@ -309,9 +369,9 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="dashboard-container">
-        {/* Page Header - Mobile Optimized */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+        {/* Page Header - Mobile Optimized with enhanced light theme */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border/30 shadow-sm">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
               Dashboard
             </h1>
@@ -319,81 +379,66 @@ export function OptimizedDashboard({ user }: OptimizedDashboardProps) {
               Welcome back! Here's what's happening with your {getUserRoleLabel(userRole, true).toLowerCase()}.
             </p>
           </div>
-          
-          {/* Test Button - Remove this after testing */}
-          <Button
-            onClick={() => {
-              showAlert({
-                title: 'Test Alert',
-                description: 'This is a test alert dialog to verify it works.',
-                action: 'delete',
-                itemName: 'Test Item',
-                onConfirm: async () => {
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  toast.success('Test completed!');
-                },
-              });
-            }}
-            variant="outline"
-            size="sm"
-          >
-            Test Alert
-          </Button>
         </div>
 
-        {/* Stats Grid - Mobile Responsive */}
-        <div className="transition-opacity duration-300 ease-in-out">
+        {/* Stats Grid - Mobile Responsive with enhanced styling */}
+        <div className="transition-opacity duration-300 ease-in-out mb-6">
           <StatCards data={statsData} columns={3} />
         </div>
 
-        {/* Data Table - Mobile Optimized */}
-        <div className="transition-opacity duration-300 ease-in-out">
-          {(() => {
-            return null;
-          })()}
-          <DataTable
-            data={dashboardData?.data || []}
-            columns={columns}
-            actions={actions}
-            isLoading={isLoading}
-            searchable
-            searchPlaceholder={`Search ${getUserRoleLabel(userRole, true).toLowerCase()}...`}
-            onSearch={handleSearch}
-            pagination={{
-              totalItems: dashboardData?.stats.totalItems || 0,
-              totalPages: dashboardData?.totalPages || 1,
-              currentPage: pagination.currentPage,
-              pageSize: pagination.pageSize,
-              onPageChange: pagination.actions.goToPage,
-              onPageSizeChange: pagination.actions.changePageSize,
-            }}
-            emptyState={{
-              icon: userRole === USER_ROLES.SUPER_ADMIN ? Building2 : Users,
-              title: `No ${getUserRoleLabel(userRole, true).toLowerCase()} found`,
-              description: "Try adjusting your search query or filters",
-            }}
-          />
+        {/* Data Table - Mobile Optimized with enhanced card styling */}
+        <div className="transition-opacity duration-300 ease-in-out mb-6">
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border/30 shadow-sm overflow-hidden">
+            <DataTable
+              data={dashboardData?.data || []}
+              columns={columns}
+              actions={actions}
+              isLoading={isLoading}
+              searchable
+              searchPlaceholder={`Search ${getUserRoleLabel(userRole, true).toLowerCase()}...`}
+              onSearch={handleSearch}
+              pagination={{
+                totalItems: dashboardData?.stats.totalItems || 0,
+                totalPages: dashboardData?.totalPages || 1,
+                currentPage: pagination.currentPage,
+                pageSize: pagination.pageSize,
+                onPageChange: pagination.actions.goToPage,
+                onPageSizeChange: pagination.actions.changePageSize,
+              }}
+              emptyState={{
+                icon: userRole === USER_ROLES.SUPER_ADMIN ? Building2 : Users,
+                title: `No ${getUserRoleLabel(userRole, true).toLowerCase()} found`,
+                description: "Try adjusting your search query or filters",
+              }}
+            />
+          </div>
         </div>
 
-        {/* Activity Overview Cards - Mobile Responsive Grid */}
+        {/* Activity Overview Cards - Mobile Responsive Grid with enhanced styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 transition-opacity duration-300 ease-in-out">
-          <ActivityCard
-            title="Recent Activity"
-            icon={TrendingUp}
-            activities={recentActivities}
-          />
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border/30 shadow-sm overflow-hidden">
+            <ActivityCard
+              title="Recent Activity"
+              icon={TrendingUp}
+              activities={recentActivities}
+            />
+          </div>
           
-          <SimpleStatCard
-            title="Growth Rate"
-            icon={BarChart3}
-            items={growthMetrics}
-          />
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border/30 shadow-sm overflow-hidden">
+            <SimpleStatCard
+              title="Growth Rate"
+              icon={BarChart3}
+              items={growthMetrics}
+            />
+          </div>
           
-          <SimpleStatCard
-            title="Quick Stats"
-            icon={Activity}
-            items={quickStats}
-          />
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border/30 shadow-sm overflow-hidden">
+            <SimpleStatCard
+              title="Quick Stats"
+              icon={Activity}
+              items={quickStats}
+            />
+          </div>
         </div>
       </div>
       

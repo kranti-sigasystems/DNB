@@ -54,7 +54,7 @@ export default function Layout({ children }: LayoutProps) {
       {shouldShowSidebar && (
         <div
           className={cn(
-            "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity lg:hidden",
+            "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity lg:hidden",
             mobileSidebarOpen
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none"
@@ -63,7 +63,7 @@ export default function Layout({ children }: LayoutProps) {
         >
           <div
             className={cn(
-              "absolute top-0 left-0 w-64 h-full bg-sidebar shadow-2xl transform transition-transform duration-300",
+              "absolute top-0 left-0 w-64 h-full bg-sidebar shadow-2xl transform transition-transform duration-300 z-50",
               mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -77,10 +77,10 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content with enhanced light theme styling */}
       <div
         className={cn(
-          "flex flex-col flex-1 w-full transition-all duration-300",
+          "flex flex-col flex-1 w-full transition-all duration-300 bg-background/95",
           shouldShowSidebar && contentPadding
         )}
       >
@@ -93,7 +93,7 @@ export default function Layout({ children }: LayoutProps) {
         )}
         <main
           className={cn(
-            "flex-1 overflow-x-hidden",
+            "flex-1 overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20",
             shouldHavePadding && "pt-4 px-8",
             !shouldHavePadding && "px-0"
           )}

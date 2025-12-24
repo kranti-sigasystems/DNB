@@ -432,7 +432,7 @@ const EnhancedPagination = ({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex flex-col gap-3 sm:gap-4">
+    <div className="flex flex-col gap-3 sm:gap-4 mb-4">
       {/* Items info and page size selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <p className="text-xs sm:text-sm text-muted-foreground">

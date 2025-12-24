@@ -164,11 +164,7 @@ export function DataTable<T extends Record<string, any>>({
       {/* Mobile Cards */}
       <Card className="lg:hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Data</CardTitle>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <CardTitle>Businesses</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {searchable && (
@@ -196,11 +192,7 @@ export function DataTable<T extends Record<string, any>>({
       {/* Desktop Table */}
       <Card className="hidden lg:block">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Data</CardTitle>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <CardTitle>Buyers</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {searchable && (

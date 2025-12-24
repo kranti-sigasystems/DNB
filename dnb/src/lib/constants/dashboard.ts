@@ -5,8 +5,8 @@
 
 export const DASHBOARD_CONFIG = {
   PAGINATION: {
-    DEFAULT_PAGE_SIZE: 10,
-    PAGE_SIZE_OPTIONS: [5, 10, 20, 50, 100],
+    DEFAULT_PAGE_SIZE: 50, // Increase from 10 to 50 to show more buyers
+    PAGE_SIZE_OPTIONS: [10, 25, 50, 100, 200],
     MAX_VISIBLE_PAGES: 5,
   },
   ANIMATION: {

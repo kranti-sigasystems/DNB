@@ -29,6 +29,49 @@ async function getBusinessOwnerFromToken(authToken: string) {
   }
 }
 
+// Debug function to check all buyers in database
+export async function debugAllBuyers(authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    
+    // Get all buyers for this business owner (no pagination)
+    const allBuyers = await prisma.buyer.findMany({
+      where: {
+        businessOwnerId: businessOwnerId,
+      },
+      select: {
+        id: true,
+        contactName: true,
+        email: true,
+        status: true,
+        is_deleted: true,
+        businessOwnerId: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return {
+      success: true,
+      data: {
+        businessOwnerId,
+        totalBuyers: allBuyers.length,
+        buyers: allBuyers
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error in debugAllBuyers:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to debug buyers' 
+    };
+  }
+}
+
 // Get all buyers for business owner
 export async function getAllBuyers(params: {
   pageIndex?: number;
@@ -51,65 +94,63 @@ export async function getAllBuyers(params: {
     }
     
     const pageIndex = params.pageIndex || 0;
-    const pageSize = params.pageSize || 10;
-    const skip = pageIndex * pageSize;
+    const pageSize = params.pageSize || 50;
     
-    
-    // Build where clause
+    // Build where clause for filtering (but get ALL buyers first like the old code)
     const where: any = {
       businessOwnerId: businessOwnerId,
       is_deleted: false,
     };
     
-    if (params.email) {
-      where.email = { contains: params.email, mode: 'insensitive' };
-    }
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.country) {
-      where.country = params.country;
-    }
-    
-    
-    // Get buyers with pagination
-    const [buyers, totalCount] = await Promise.all([
-      prisma.buyer.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          businessOwner: {
-            select: {
-              businessName: true,
-              email: true
-            }
+    // Get ALL buyers first (like the old code), then apply pagination in memory
+    const allBuyers = await prisma.buyer.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        businessOwner: {
+          select: {
+            businessName: true,
+            email: true
           }
         }
-      }),
-      prisma.buyer.count({ where })
-    ]);
+      }
+    });
     
-    // Get status counts
-    const [activeCount, inactiveCount, deletedCount] = await Promise.all([
-      prisma.buyer.count({ where: { ...where, status: 'active' } }),
-      prisma.buyer.count({ where: { ...where, status: 'inactive' } }),
-      prisma.buyer.count({ where: { businessOwnerId, is_deleted: true } })
-    ]);
-
+    // Apply filters in memory (like the old code)
+    let filteredBuyers = allBuyers;
     
-    const totalPages = Math.ceil(totalCount / pageSize);
+    if (params.email) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.email?.toLowerCase().includes(params.email!.toLowerCase())
+      );
+    }
+    if (params.status) {
+      filteredBuyers = filteredBuyers.filter(buyer => buyer.status === params.status);
+    }
+    if (params.country) {
+      filteredBuyers = filteredBuyers.filter(buyer => buyer.country === params.country);
+    }
+    
+    // Calculate totals from ALL buyers (not just filtered)
+    const totalItems = filteredBuyers.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const totalActive = allBuyers.filter(b => b.status === 'active' && !b.is_deleted).length;
+    const totalInactive = allBuyers.filter(b => b.status === 'inactive' && !b.is_deleted).length;
+    const totalDeleted = allBuyers.filter(b => b.is_deleted === true).length;
+    
+    // Apply pagination in memory (like the old code)
+    const start = pageIndex * pageSize;
+    const paginatedBuyers = filteredBuyers.slice(start, start + pageSize);
     
     const result = {
       success: true,
       data: {
         data: {
-          data: buyers,
-          totalItems: totalCount,
-          totalActive: activeCount,
-          totalInactive: inactiveCount,
-          totalDeleted: deletedCount,
+          data: paginatedBuyers,
+          totalItems: totalItems,
+          totalActive: totalActive,
+          totalInactive: totalInactive,
+          totalDeleted: totalDeleted,
           totalPending: 0,
           totalPages,
           pageIndex,
@@ -119,8 +160,7 @@ export async function getAllBuyers(params: {
         }
       }
     };
-    
-    
+
     return result;
   } catch (error) {
     console.error('❌ Error in getAllBuyers:', error);
@@ -156,64 +196,73 @@ export async function searchBuyers(filters: {
     }
     
     const pageIndex = filters.page || 0;
-    const pageSize = filters.limit || 10;
-    const skip = pageIndex * pageSize;
+    const pageSize = filters.limit || 50;
     
-    // Build where clause
-    const where: any = {
-      businessOwnerId: businessOwnerId,
-      is_deleted: false,
-    };
-    
-    if (filters.email) {
-      where.email = { contains: filters.email, mode: 'insensitive' };
-    }
-    if (filters.status) {
-      where.status = filters.status;
-    }
-    if (filters.country) {
-      where.country = filters.country;
-    }
-    if (filters.contactName) {
-      where.contactName = { contains: filters.contactName, mode: 'insensitive' };
-    }
-    if (filters.buyersCompanyName) {
-      where.buyersCompanyName = { contains: filters.buyersCompanyName, mode: 'insensitive' };
-    }
-    if (filters.productName) {
-      where.productName = { contains: filters.productName, mode: 'insensitive' };
-    }
-    if (filters.locationName) {
-      where.locationName = { contains: filters.locationName, mode: 'insensitive' };
-    }
-    
-    // Get buyers with pagination
-    const [buyers, totalCount] = await Promise.all([
-      prisma.buyer.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          businessOwner: {
-            select: {
-              businessName: true,
-              email: true
-            }
+    // Get ALL buyers first (like the old code)
+    const allBuyers = await prisma.buyer.findMany({
+      where: {
+        businessOwnerId: businessOwnerId,
+        is_deleted: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        businessOwner: {
+          select: {
+            businessName: true,
+            email: true
           }
         }
-      }),
-      prisma.buyer.count({ where })
-    ]);
+      }
+    });
     
-    const totalPages = Math.ceil(totalCount / pageSize);
+    // Apply filters in memory (like the old code)
+    let filteredBuyers = allBuyers;
+    
+    if (filters.email) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.email?.toLowerCase().includes(filters.email!.toLowerCase())
+      );
+    }
+    if (filters.status) {
+      filteredBuyers = filteredBuyers.filter(buyer => buyer.status === filters.status);
+    }
+    if (filters.country) {
+      filteredBuyers = filteredBuyers.filter(buyer => buyer.country === filters.country);
+    }
+    if (filters.contactName) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.contactName?.toLowerCase().includes(filters.contactName!.toLowerCase())
+      );
+    }
+    if (filters.buyersCompanyName) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.buyersCompanyName?.toLowerCase().includes(filters.buyersCompanyName!.toLowerCase())
+      );
+    }
+    if (filters.productName) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.productName?.toLowerCase().includes(filters.productName!.toLowerCase())
+      );
+    }
+    if (filters.locationName) {
+      filteredBuyers = filteredBuyers.filter(buyer => 
+        buyer.locationName?.toLowerCase().includes(filters.locationName!.toLowerCase())
+      );
+    }
+    
+    
+    // Apply pagination in memory (like the old code)
+    const totalItems = filteredBuyers.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const start = pageIndex * pageSize;
+    const paginatedBuyers = filteredBuyers.slice(start, start + pageSize);
     
     return {
       success: true,
       data: {
         data: {
-          buyers: buyers,
-          totalItems: totalCount,
+          buyers: paginatedBuyers,
+          totalItems: totalItems,
           totalPages,
           pageIndex,
           pageSize,
