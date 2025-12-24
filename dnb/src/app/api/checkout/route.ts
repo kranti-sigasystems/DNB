@@ -1,21 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import Stripe from 'stripe';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
+  apiVersion: "2025-02-24.acacia",
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, planKey, businessData } = await req.json();
+    const { userId, planKey, billingCycle, businessData } = await req.json();
 
     if (!userId || !planKey) {
       return NextResponse.json(
-        { success: false, message: 'userId and planKey are required' },
+        { success: false, message: "userId and planKey are required" },
         { status: 400 }
       );
     }
+
+    // Validate billing cycle
+    const validBillingCycle = billingCycle === "monthly" ? "monthly" : "yearly";
 
     // Get user details
     const user = await prisma.user.findUnique({
@@ -24,7 +27,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
     }
 
     // Get plan details
@@ -42,7 +48,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!plan) {
-      return NextResponse.json({ success: false, message: 'Plan not available' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Plan not available" },
+        { status: 404 }
+      );
     }
 
     // Create or get business owner
@@ -66,14 +75,14 @@ export async function POST(req: NextRequest) {
             address: businessData.address,
             postalCode: businessData.postalCode,
             planId: plan.id,
-            status: 'active',
+            status: "active",
             is_verified: false,
             is_approved: false,
           },
         });
       } catch (error: any) {
         // If business owner already exists, get it
-        if (error.code === 'P2002') {
+        if (error.code === "P2002") {
           businessOwner = await prisma.businessOwner.findUnique({
             where: { userId: user.id },
           });
@@ -88,31 +97,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // For now, default to yearly billing - you can modify this based on your needs
-    const billingCycle = 'yearly';
-    const amount = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+    // Calculate correct amount based on billing cycle
+    const amount =
+      validBillingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
 
     if (amount <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Free plan does not require payment' },
+        { success: false, message: "Free plan does not require payment" },
         { status: 400 }
       );
     }
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
+      mode: "subscription",
+      payment_method_types: ["card"],
       customer_email: user.email,
       line_items: [
         {
           price_data: {
             currency: plan.currency.toLowerCase(),
             unit_amount: amount * 100, // Convert to smallest currency unit
-            recurring: { interval: billingCycle === 'yearly' ? 'year' : 'month' },
+            recurring: {
+              interval: validBillingCycle === "yearly" ? "year" : "month",
+            },
             product_data: {
-              name: plan.name || plan.key,
-              description: plan.description?.trim() || `Subscription for ${plan.name || plan.key}`,
+              name: `${plan.name} - ${validBillingCycle.charAt(0).toUpperCase() + validBillingCycle.slice(1)} Plan`,
+              description:
+                plan.description?.trim() ||
+                `${validBillingCycle.charAt(0).toUpperCase() + validBillingCycle.slice(1)} subscription for ${plan.name}`,
             },
           },
           quantity: 1,
@@ -123,8 +136,8 @@ export async function POST(req: NextRequest) {
       metadata: {
         userId: user.id,
         planId: plan.id,
-        billingCycle,
-        businessOwnerId: businessOwner?.id || '',
+        billingCycle: validBillingCycle,
+        businessOwnerId: businessOwner?.id || "",
       },
     });
 
@@ -136,11 +149,11 @@ export async function POST(req: NextRequest) {
         planId: plan.id,
         amount: amount,
         currency: plan.currency,
-        status: 'pending',
+        status: "pending",
         transactionId: session.id, // ✅ Store session ID as transaction ID
-        paymentMethod: 'card',
+        paymentMethod: "card",
         stripeSessionId: session.id,
-        transactionId: `stripe_${session.id}`,
+        // transactionId: `stripe_${session.id}`,
       },
     });
 
@@ -158,11 +171,13 @@ export async function POST(req: NextRequest) {
       sessionId: session.id,
       paymentId: payment.id,
       businessOwnerId: businessOwner?.id || null,
+      billingCycle: validBillingCycle,
+      amount: amount,
+      planName: plan.name,
     });
   } catch (error: any) {
-    console.error('Checkout API error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Checkout failed' },
+      { success: false, message: error.message || "Checkout failed" },
       { status: 500 }
     );
   }

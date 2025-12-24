@@ -81,7 +81,6 @@ const Profile: React.FC = () => {
     const initializeProfile = async (): Promise<void> => {
       try {
         const userString = sessionStorage.getItem('user');
-        console.log('userString logs.....', userString);
         setBackendUser(userString ? JSON.parse(userString) : null);
         if (!userString) {
           setError('No user data found. Please log in again.');
@@ -89,7 +88,6 @@ const Profile: React.FC = () => {
         }
 
         const storedUser: SessionUser = JSON.parse(userString);
-        console.log('storedUser.....', storedUser);
         setUser(storedUser);
 
         if (storedUser.paymentId && process.env.VITE_API_URL) {

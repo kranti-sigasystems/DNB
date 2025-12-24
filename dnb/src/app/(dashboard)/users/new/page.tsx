@@ -60,12 +60,9 @@ export default function AddBuyerPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Debug: Log form data to see what's being validated
-    console.log('🔍 Form data being validated:', formData);
     
     // Validate form
     const validation = validateBuyerData(formData);
-    console.log('🔍 Validation result:', validation);
     
     if (!validation.isValid) {
       // Create a more user-friendly error message
@@ -73,8 +70,6 @@ export default function AddBuyerPage() {
       const otherErrors = validation.errors.filter(e => e.message !== ValidationMessages.required);
       
       // Debug: Log specific errors
-      console.log('🔍 Required field errors:', validation.errors.filter(e => e.message === ValidationMessages.required));
-      console.log('🔍 Other validation errors:', otherErrors);
       
       let errorMessage = '';
       if (requiredFieldsCount > 0) {
