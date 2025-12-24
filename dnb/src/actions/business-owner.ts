@@ -54,9 +54,10 @@ export async function getBusinessOwnerByUserId(userId: string) {
     const businessOwner = await prisma.businessOwner.findFirst({
       where: { userId },
       include: {
-        user: true,
-        subscriptions: {
-          include: { plan: true }
+        user: {
+          include: {
+            subscriptions: true
+          }
         }
       }
     });

@@ -101,48 +101,6 @@ export default function ProductsPage() {
           Add Product
         </Button>
       </div>
-
-      {/* Stats Cards */}
-      {data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="dashboard-card-blue">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{data.totalItems}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="dashboard-card-green">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Current Page</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{data.pageIndex + 1}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="dashboard-card-yellow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Pages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-warning">{data.totalPages}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="dashboard-card-orange">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Page Size</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange">{data.pageSize}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Search */}
       <ProductSearch
         onSearch={handleSearch}

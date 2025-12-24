@@ -3,14 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Performance optimizations */
-.hw-accelerate {
-  /* Enable hardware acceleration for smoother animations */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
 /* Optimize scrolling */
 html {
   scroll-behavior: smooth;
@@ -23,18 +15,47 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Optimize transitions */
+/* Smooth theme transitions - Simplified approach */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 0.1s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Override any existing transitions for theme-related properties */
+html, body, main, header, aside, nav, section, article, div, span, p, h1, h2, h3, h4, h5, h6,
+button, input, textarea, select, label, a, ul, li, table, tr, td, th,
+[class*="bg-"], [class*="border-"], [class*="text-"], [class*="shadow-"] {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: 0.1s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Specific overrides for common UI components */
+.card, .button, .input, .select, .textarea, .dropdown, .modal, .dialog, .popover, .tooltip,
+[role="button"], [role="dialog"], [role="menu"], [role="menuitem"], [role="tab"], [role="tabpanel"] {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: 0.1s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Optimize transitions for interactive elements */
 a, button, [role="button"] {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.1s ease-out !important;
 }
 
-/* Optimize hover states - removed transforms that can interfere with clicks */
-a:hover, button:hover, [role="button"]:hover {
-  /* transform: translateY(-1px); */
+/* Disable any conflicting transitions from component libraries */
+[class*="transition-"], [style*="transition"] {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: 0.1s !important;
+  transition-timing-function: ease-out !important;
 }
 
-a:active, button:active, [role="button"]:active {
-  /* transform: translateY(0); */
+/* Force uniform theme transitions */
+.theme-transition-override {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: 0.1s !important;
+  transition-timing-function: ease-out !important;
 }
 
 @layer components {
@@ -65,24 +86,24 @@ a:active, button:active, [role="button"]:active {
   --base-950: oklch(0.141 0.004 285.83);
   --base-1000: oklch(0.096 0.0027 285.79);
 
-  /* Original light theme - clean white */
-  --background: oklch(1 0 0); /* Pure white background */
+  /* Light theme with beautiful grey shades */
+  --background: oklch(0.98 0.005 240); /* Soft blue-grey background */
   --foreground: var(--base-800);
-  --card: oklch(1 0 0); /* Pure white cards */
+  --card: oklch(0.995 0.003 240); /* Very light blue-grey cards */
   --card-foreground: var(--base-800);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.995 0.003 240);
   --popover-foreground: var(--base-800);
   --primary: oklch(0.5 0.2 240); /* Blue primary color */
   --primary-foreground: var(--color-white);
-  --secondary: oklch(0.96 0.008 240); /* Light blue-grey */
+  --secondary: oklch(0.94 0.015 240); /* Light blue-grey */
   --secondary-foreground: var(--base-700);
   --muted: oklch(0.96 0.01 240); /* Light muted background */
   --muted-foreground: oklch(0.45 0.015 240); /* Muted text */
-  --accent: oklch(0.94 0.015 240); /* Light blue accent */
+  --accent: oklch(0.92 0.02 240); /* Light blue accent */
   --accent-foreground: oklch(0.4 0.2 240); /* Dark blue text */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: var(--color-white);
-  --border: oklch(0.9 0.015 240); /* Soft border */
+  --border: oklch(0.88 0.02 240); /* Soft border */
   --input: oklch(0.97 0.005 240); /* Light input background */
   --ring: oklch(0.5 0.2 240); /* Blue ring color */
   --chart-1: oklch(0.5 0.2 240);
@@ -91,14 +112,16 @@ a:active, button:active, [role="button"]:active {
   --chart-4: oklch(0.45 0.22 260);
   --chart-5: oklch(0.55 0.16 280);
   --radius: 0.5rem;
-  --sidebar: oklch(1 0 0); /* White sidebar */
+  --sidebar: oklch(0.995 0.003 240); /* Light sidebar */
   --sidebar-foreground: var(--base-600);
   --sidebar-primary: oklch(0.5 0.2 240);
   --sidebar-primary-foreground: var(--color-white);
-  --sidebar-accent: oklch(0.94 0.015 240);
+  --sidebar-accent: oklch(0.92 0.02 240);
   --sidebar-accent-foreground: oklch(0.4 0.2 240);
-  --sidebar-border: oklch(0.9 0.01 240); /* Light sidebar border */
+  --sidebar-border: oklch(0.88 0.02 240); /* Light sidebar border */
   --sidebar-ring: oklch(0.5 0.2 240);
+  --sidebar-popover: oklch(0.995 0.003 240);
+  --sidebar-popover-foreground: var(--base-600);
   --display-weight: 700;
   --fc-button-bg-color: var(--primary);
   --fc-button-hover-bg-color: oklch(0.45 0.22 240);
@@ -146,6 +169,8 @@ a:active, button:active, [role="button"]:active {
   --sidebar-accent-foreground: oklch(0.7 0.18 240);
   --sidebar-border: var(--base-800);
   --sidebar-ring: oklch(0.6 0.2 240);
+  --sidebar-popover: var(--base-900);
+  --sidebar-popover-foreground: var(--base-200);
 }
 
 @layer base {
@@ -186,6 +211,8 @@ a:active, button:active, [role="button"]:active {
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-popover: var(--sidebar-popover);
+    --color-sidebar-popover-foreground: var(--sidebar-popover-foreground);
     --font-display: var(--display-family);
     --display-weight: var(--display-weight);
     --font-sans: var(--text-family);
@@ -362,23 +389,6 @@ a:active, button:active, [role="button"]:active {
     @apply bg-amber-50/70 text-amber-700 border border-amber-200/60 shadow-sm;
   }
 
-  /* Sidebar Navigation Active States */
-  .nav-active-light {
-    @apply bg-blue-600 text-white shadow-md border-l-4 border-blue-400;
-  }
-  
-  .nav-active-dark {
-    @apply bg-blue-700 text-blue-100 shadow-md border-l-4 border-blue-300;
-  }
-  
-  .nav-hover-light {
-    @apply hover:bg-blue-500/80 hover:text-white;
-  }
-  
-  .nav-hover-dark {
-    @apply hover:bg-blue-600/80 hover:text-blue-100;
-  }
-
   /* Button Color Utilities */
   .btn-primary {
     @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 border-blue-600;
@@ -469,23 +479,4 @@ a:active, button:active, [role="button"]:active {
 
 .dark .status-pending {
   @apply bg-amber-950/30 text-amber-400 border border-amber-800/30;
-}
-/* Sidebar Fix - Ensure all sidebar elements are clickable */
-aside[class*="bg-sidebar"] {
-  pointer-events: auto !important;
-  z-index: 50 !important;
-}
-
-aside[class*="bg-sidebar"] * {
-  pointer-events: auto !important;
-}
-
-aside[class*="bg-sidebar"] button {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-aside[class*="bg-sidebar"] a {
-  pointer-events: auto !important;
-  cursor: pointer !important;
 }

@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
-  // Add empty turbopack config to silence the warning
-  turbopack: {},
-  
   // Optimize images
   images: {
     formats: ['image/webp', 'image/avif'],
