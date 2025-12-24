@@ -76,51 +76,46 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ReduxProvider>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
-              <ToastProvider>
-                <PerformanceProvider>
-                  <ToastInitializer />
-                  <LoadingBar />
-                  <AuthProvider>{children}</AuthProvider>
-                  {/* React Hot Toast configuration */}
-                  <Toaster
-                    position="top-center"
-                    toastOptions={{
-                      duration: 3000, // Shorter duration for faster UX
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased theme-transition-override`}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <ToastProvider>
+              <PerformanceProvider>
+                <ToastInitializer />
+                <LoadingBar />
+                <AuthProvider>{children}</AuthProvider>
+                {/* React Hot Toast configuration */}
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    duration: 3000, // Shorter duration for faster UX
+                    style: {
+                      background: '#fff',
+                      color: '#333',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    },
+                    success: {
                       style: {
-                        background: "#fff",
-                        color: "#333",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        boxShadow:
-                          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                        background: '#f0fdf4',
+                        color: '#166534',
+                        border: '1px solid #bbf7d0',
                       },
-                      success: {
-                        style: {
-                          background: "#f0fdf4",
-                          color: "#166534",
-                          border: "1px solid #bbf7d0",
-                        },
+                    },
+                    error: {
+                      style: {
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
                       },
-                      error: {
-                        style: {
-                          background: "#fef2f2",
-                          color: "#dc2626",
-                          border: "1px solid #fecaca",
-                        },
-                      },
-                    }}
-                  />
-                </PerformanceProvider>
-              </ToastProvider>
-            </ThemeProvider>
-          </QueryClientProvider>
-        </ReduxProvider>
+                    },
+                  }}
+                />
+              </PerformanceProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -32,15 +32,37 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (mounted) {
       const root = window.document.documentElement;
+      
+      // Apply theme change immediately without requestAnimationFrame
       root.classList.remove('light', 'dark');
       root.classList.add(theme);
+      
+      // Force style recalculation
+      root.offsetHeight;
+      
       localStorage.setItem('theme', theme);
     }
   }, [theme, mounted]);
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  const toggleTheme = useCallback(() => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    
+    // Apply theme immediately for instant feedback
+    if (mounted) {
+      const root = window.document.documentElement;
+      
+      // Force immediate application without animation frame delay
+      root.classList.remove('light', 'dark');
+      root.classList.add(newTheme);
+      
+      // Also force a style recalculation to ensure immediate application
+      root.offsetHeight; // Trigger reflow
+      
+      localStorage.setItem('theme', newTheme);
+    }
+    
+    setTheme(newTheme);
+  }, [theme, mounted]);
 
   if (!mounted) {
     return null;

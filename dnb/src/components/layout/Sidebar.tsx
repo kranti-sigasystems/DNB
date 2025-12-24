@@ -98,65 +98,41 @@ export default function Sidebar({
       <TooltipProvider>
         <aside
           className={cn(
-            "fixed top-0 left-0 h-screen bg-black border-r border-gray-800 shadow-xl flex flex-col transition-all duration-300 z-50",
-            collapsed ? "w-16" : "w-64"
+            'fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col z-50',
+            'transition-all duration-150 ease-out',
+            collapsed ? 'w-16' : 'w-64'
           )}
-          style={{ pointerEvents: "auto" }}
         >
           {/* Header */}
-          <div className="h-16 border-b border-gray-800 select-none relative">
+          <div className="h-16 border-b border-sidebar-border flex items-center justify-between px-4">
             {!collapsed && (
-              <div className="flex items-center justify-between px-4 h-full">
-                <div className="flex flex-col max-w-[180px] truncate">
-                  <h2 className="text-2xl font-extrabold text-blue-400 truncate">
-                    DNB
-                  </h2>
-                  {businessName && (
-                    <span className="text-sm font-medium text-gray-400 truncate">
-                      {businessName as string}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapse}
-                  className="cursor-pointer hover:bg-gray-800 rounded text-gray-400 hover:text-white w-8 h-8  items-center justify-center hidden lg:flex"
-                  aria-label="Collapse sidebar"
-                  type="button"
-                >
-                  <ChevronRight
-                    className="w-4 h-4 transition-transform rotate-180"
-                    strokeWidth={2.5}
-                  />
-                </Button>
+              <div className="flex flex-col max-w-[180px] truncate">
+                <h2 className="text-2xl font-extrabold text-sidebar-primary truncate">DNB</h2>
+                {businessName && typeof businessName === 'string' && businessName.length > 0 && (
+                  <span className="text-sm font-medium text-sidebar-foreground/70 truncate">
+                    {businessName}
+                  </span>
+                )}
               </div>
             )}
-
-            {collapsed && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapse}
-                  className="cursor-pointer hover:bg-gray-800 rounded text-gray-400 hover:text-white w-10 h-10 flex items-center justify-center"
-                  aria-label="Expand sidebar"
-                  type="button"
-                >
-                  <ChevronRight
-                    className="w-5 h-5 transition-transform"
-                    strokeWidth={2.5}
-                  />
-                </Button>
-              </div>
-            )}
-
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleCollapse}
+              className="hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground w-8 h-8"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              type="button"
+            >
+              <ChevronRight className={cn("w-4 h-4 transition-transform", collapsed ? "" : "rotate-180")} strokeWidth={2.5} />
+            </Button>
+            
             {onClose && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="lg:hidden cursor-pointer p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white absolute top-4 right-4"
+                className="lg:hidden hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground"
                 aria-label="Close sidebar"
                 type="button"
               >
@@ -175,29 +151,24 @@ export default function Sidebar({
                   return (
                     <Tooltip key={name} delayDuration={100}>
                       <TooltipTrigger asChild>
-                        <div className="w-16 h-10 flex items-center justify-center">
-                          <Link
-                            href={path}
-                            className={cn(
-                              " items-center justify-center rounded-lg w-10 h-10 transition-all duration-200 select-none cursor-pointer relative block no-underline pl-[10px] pt-[10px]",
-                              isActive
-                                ? "bg-blue-600 text-white shadow-lg"
-                                : "text-gray-400 hover:text-white hover:bg-gray-800"
-                            )}
-                            onClick={() => {
-                              if (onClose) onClose();
-                            }}
-                          >
-                            <Icon
-                              className="w-5 h-5 shrink-0"
-                              strokeWidth={2}
-                            />
-                          </Link>
-                        </div>
+                        <Link
+                          href={path}
+                          className={cn(
+                            "flex items-center justify-center rounded-lg w-10 h-10 transition-all duration-200",
+                            isActive
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                              : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                          )}
+                          onClick={() => {
+                            if (onClose) onClose();
+                          }}
+                        >
+                          <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
+                        </Link>
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
-                        className="bg-gray-900 text-white text-sm px-3 py-1 rounded-md shadow-lg select-none border border-gray-700"
+                        className="bg-sidebar-popover text-sidebar-popover-foreground text-sm px-3 py-1 rounded-md shadow-lg border border-sidebar-border"
                       >
                         {name}
                       </TooltipContent>
@@ -215,27 +186,20 @@ export default function Sidebar({
                       key={name}
                       href={path}
                       className={cn(
-                        " items-center rounded-lg text-sm font-medium w-full h-12 transition-all duration-200 select-none cursor-pointer relative block no-underline",
+                        "flex items-center rounded-lg text-sm font-medium w-full h-12 px-3 transition-all duration-200",
                         isActive
-                          ? "bg-blue-600 text-white shadow-lg"
-                          : "text-gray-300 hover:text-white hover:bg-gray-800"
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                          : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                       )}
                       onClick={() => {
                         if (onClose) onClose();
                       }}
                     >
-                      <div className="flex items-center w-full h-full px-3">
-                        <Icon
-                          className="w-5 h-5 shrink-0 mr-3"
-                          strokeWidth={2}
-                        />
-                        <span className="truncate font-medium flex-1">
-                          {name}
-                        </span>
-                        {isActive && (
-                          <div className="w-2 h-2 bg-blue-300 rounded-full ml-2"></div>
-                        )}
-                      </div>
+                      <Icon className="w-5 h-5 shrink-0 mr-3" strokeWidth={2} />
+                      <span className="truncate font-medium flex-1">{name}</span>
+                      {isActive && (
+                        <div className="w-2 h-2 bg-sidebar-primary-foreground/70 rounded-full ml-2"></div>
+                      )}
                     </Link>
                   );
                 })}
@@ -243,7 +207,7 @@ export default function Sidebar({
             )}
           </nav>
 
-          <Separator className="my-4 bg-gray-800" />
+          <Separator className="my-4 bg-sidebar-border" />
 
           {/* Footer / Logout */}
           <div className="pb-4 pt-2">
@@ -251,22 +215,20 @@ export default function Sidebar({
               <div className="flex items-center justify-center">
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger asChild>
-                    <div className="w-16 h-10 flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        className="w-10 h-10 justify-center text-red-400 hover:bg-red-900/20 hover:text-red-300 cursor-pointer rounded-lg"
-                        onClick={() => {
-                          setLogoutOpen(true);
-                        }}
-                        aria-label="Logout"
-                      >
-                        <LogOut className="w-5 h-5" strokeWidth={2} />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-10 h-10 justify-center text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg"
+                      onClick={() => {
+                        setLogoutOpen(true);
+                      }}
+                      aria-label="Logout"
+                    >
+                      <LogOut className="w-5 h-5" strokeWidth={2} />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent
                     side="right"
-                    className="bg-gray-900 text-white text-sm px-3 py-1 rounded-md shadow-lg select-none border border-gray-700"
+                    className="bg-sidebar-popover text-sidebar-popover-foreground text-sm px-3 py-1 rounded-md shadow-lg border border-sidebar-border"
                   >
                     Logout
                   </TooltipContent>
@@ -276,19 +238,15 @@ export default function Sidebar({
               <div className="px-4">
                 <Button
                   variant="ghost"
-                  className="w-full h-12 justify-start text-red-400 hover:bg-red-900/20 hover:text-red-300 cursor-pointer rounded-lg"
+                  className="w-full h-12 justify-start text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg px-3"
                   onClick={() => {
                     setLogoutOpen(true);
                   }}
                   aria-label="Logout"
                   type="button"
                 >
-                  <div className="flex items-center w-full h-full px-3">
-                    <LogOut className="w-5 h-5 shrink-0 mr-3" strokeWidth={2} />
-                    <span className="select-none font-medium flex-1">
-                      Logout
-                    </span>
-                  </div>
+                  <LogOut className="w-5 h-5 shrink-0 mr-3" strokeWidth={2} />
+                  <span className="font-medium flex-1">Logout</span>
                 </Button>
               </div>
             )}

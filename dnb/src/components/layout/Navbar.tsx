@@ -138,13 +138,22 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150 ease-out"
             >
-              {theme === 'light' ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5" />
-              )}
+              <div className="relative w-5 h-5">
+                <Moon 
+                  className={cn(
+                    "w-5 h-5 absolute inset-0 transition-all duration-150 ease-out",
+                    theme === 'light' ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'
+                  )} 
+                />
+                <Sun 
+                  className={cn(
+                    "w-5 h-5 absolute inset-0 transition-all duration-150 ease-out",
+                    theme === 'dark' ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-90'
+                  )} 
+                />
+              </div>
             </Button>
 
             {/* User Section */}
@@ -249,19 +258,25 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
               <Button
                 variant="ghost"
                 onClick={toggleTheme}
-                className="w-full flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg"
+                className="w-full flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-150 ease-out"
               >
-                {theme === 'light' ? (
-                  <>
-                    <Moon className="w-4 h-4" />
-                    Dark Mode
-                  </>
-                ) : (
-                  <>
-                    <Sun className="w-4 h-4" />
-                    Light Mode
-                  </>
-                )}
+                <div className="relative w-4 h-4">
+                  <Moon 
+                    className={cn(
+                      "w-4 h-4 absolute inset-0 transition-all duration-150 ease-out",
+                      theme === 'light' ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'
+                    )} 
+                  />
+                  <Sun 
+                    className={cn(
+                      "w-4 h-4 absolute inset-0 transition-all duration-150 ease-out",
+                      theme === 'dark' ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-90'
+                    )} 
+                  />
+                </div>
+                <span className="transition-all duration-150 ease-out">
+                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                </span>
               </Button>
             </div>
 

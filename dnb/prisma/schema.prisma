@@ -39,6 +39,8 @@ model BusinessOwner {
   // Relations
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   buyers        Buyer[]        // Add buyers relation
+  products      Product[]      @relation("BusinessOwnerProducts")
+  locations     Location[]     @relation("BusinessOwnerLocations")
 
   @@map("business_owners")
 }
@@ -177,7 +179,7 @@ model Product {
   updatedAt   DateTime @updatedAt @map("updatedAt")
 
   // Relations - using ownerId to match existing table
-  businessOwner BusinessOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  businessOwner BusinessOwner @relation("BusinessOwnerProducts", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("products")
 }
@@ -197,7 +199,7 @@ model Location {
   updatedAt    DateTime @updatedAt @map("updatedAt")
 
   // Relations - using ownerId to match existing table
-  businessOwner BusinessOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  businessOwner BusinessOwner @relation("BusinessOwnerLocations", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("locations")
 }

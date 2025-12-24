@@ -61,6 +61,8 @@ const config: Config = {
           "accent-foreground": "var(--sidebar-accent-foreground)",
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
+          popover: "var(--sidebar-popover)",
+          "popover-foreground": "var(--sidebar-popover-foreground)",
         },
         success: {
           DEFAULT: "var(--success)",
