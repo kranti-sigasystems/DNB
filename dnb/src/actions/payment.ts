@@ -151,7 +151,6 @@ export async function createBusinessOwnerWithPayment(
 /* ---------------------- Payment Status ---------------------- */
 export async function getPaymentStatus(sessionId: string) {
   try {
-    console.log('Getting payment status for session:', sessionId);
     
     // Find payment by Stripe session ID
     const payment = await prisma.payment.findFirst({
@@ -179,7 +178,6 @@ export async function getPaymentStatus(sessionId: string) {
     });
 
     if (!payment) {
-      console.log('Payment not found for session:', sessionId);
       return { success: false, message: 'Payment not found' };
     }
 
@@ -201,21 +199,17 @@ export async function getPaymentStatus(sessionId: string) {
       });
     }
 
-    console.log('Payment found:', payment.id, 'Status:', payment.status);
 
     // Get Stripe session details
     let session;
     try {
       session = await stripe.checkout.sessions.retrieve(sessionId);
-      console.log('Stripe session status:', session.status, 'Payment status:', session.payment_status);
     } catch (stripeError) {
-      console.error('Failed to retrieve Stripe session:', stripeError);
       return { success: false, message: 'Failed to verify payment with Stripe' };
     }
 
     // If Stripe shows payment as paid but our database shows pending, update it
     if (session.payment_status === 'paid' && payment.status === 'pending') {
-      console.log('Updating payment status from pending to success');
       
       try {
         const updatedPayment = await prisma.payment.update({
@@ -274,7 +268,6 @@ export async function getPaymentStatus(sessionId: string) {
               },
             });
             
-            console.log('Subscription created/updated successfully');
           } catch (subError) {
             console.error('Failed to create/update subscription:', subError);
             // Don't fail the payment verification for subscription errors
@@ -288,8 +281,8 @@ export async function getPaymentStatus(sessionId: string) {
             amount: Number(updatedPayment.amount), // Convert Decimal to number
             billingCycle: 'yearly',
             businessOwner,
-          }, 
-          session 
+          }
+          // Remove session object to avoid serialization issues
         };
       } catch (updateError) {
         console.error('Failed to update payment status:', updateError);
@@ -306,8 +299,7 @@ export async function getPaymentStatus(sessionId: string) {
           amount: Number(payment.amount), // Convert Decimal to number for display
           billingCycle: 'yearly', // Default for now, you can store this in payment metadata
           businessOwner,
-        }, 
-        session 
+        }        
       };
     }
 

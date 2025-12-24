@@ -188,6 +188,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         body: JSON.stringify({
           planKey: selectedPlan.key,
           userId: tokenPayload.id,
+          billingCycle: billingCycle, // Add billing cycle to the request
           businessData: {
             businessName: latestFormData.businessName,
             first_name: latestFormData.first_name,

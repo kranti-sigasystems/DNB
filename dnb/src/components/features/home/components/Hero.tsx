@@ -1,5 +1,14 @@
-import { CheckCircle2, Sparkles, Star, Users, TrendingUp, Zap, Shield, Award } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+  CheckCircle2,
+  Sparkles,
+  Star,
+  Users,
+  TrendingUp,
+  Zap,
+  Shield,
+  Award,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface FloatingCard {
   id: number;
@@ -39,8 +48,8 @@ export default function Hero() {
               className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card/80 backdrop-blur-sm rounded-full border border-border shadow-sm hover:shadow-md transition-all duration-300"
               style={{
                 opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(-20px)',
-                transition: 'all 0.6s ease-out',
+                transform: isVisible ? "translateY(0)" : "translateY(-20px)",
+                transition: "all 0.6s ease-out",
               }}
             >
               <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-primary to-primary/80 rounded-full">
@@ -56,8 +65,8 @@ export default function Hero() {
               className="space-y-5"
               style={{
                 opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(-20px)',
-                transition: 'all 0.8s ease-out 0.2s',
+                transform: isVisible ? "translateY(0)" : "translateY(-20px)",
+                transition: "all 0.8s ease-out 0.2s",
               }}
             >
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-none">
@@ -68,8 +77,9 @@ export default function Hero() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl font-normal">
-                Transform your fish-selling business with intelligent negotiation tools. Streamline
-                deals, optimize pricing, and close sales faster with real-time collaboration.
+                Transform your fish-selling business with intelligent
+                negotiation tools. Streamline deals, optimize pricing, and close
+                sales faster with real-time collaboration.
               </p>
             </div>
 
@@ -78,27 +88,33 @@ export default function Hero() {
               className="cursor-pointer flex flex-wrap gap-3"
               style={{
                 opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(-20px)',
-                transition: 'all 1s ease-out 0.4s',
+                transform: isVisible ? "translateY(0)" : "translateY(-20px)",
+                transition: "all 1s ease-out 0.4s",
               }}
             >
               <div className="group flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg group-hover:scale-110 transition-transform">
                   <CheckCircle2 className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Real-time Sync</span>
+                <span className="text-sm font-medium text-foreground">
+                  Real-time Sync
+                </span>
               </div>
               <div className="group flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg group-hover:scale-110 transition-transform">
                   <Zap className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Lightning Fast</span>
+                <span className="text-sm font-medium text-foreground">
+                  Lightning Fast
+                </span>
               </div>
               <div className="group flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Bank-level Security</span>
+                <span className="text-sm font-medium text-foreground">
+                  Bank-level Security
+                </span>
               </div>
             </div>
 
@@ -107,8 +123,8 @@ export default function Hero() {
               className="grid grid-cols-3 gap-6 pt-8 border-t-2 border-border"
               style={{
                 opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(-20px)',
-                transition: 'all 1.4s ease-out 0.8s',
+                transform: isVisible ? "translateY(0)" : "translateY(-20px)",
+                transition: "all 1.4s ease-out 0.8s",
               }}
             >
               <div className="space-y-2">
@@ -118,16 +134,22 @@ export default function Hero() {
                   </div>
                   <div className="text-3xl font-bold text-foreground">50K+</div>
                 </div>
-                <div className="text-sm text-muted-foreground font-medium">Active Users</div>
+                <div className="text-sm text-muted-foreground font-medium">
+                  Active Users
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-foreground">99.9%</div>
+                  <div className="text-3xl font-bold text-foreground">
+                    99.9%
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground font-medium">Uptime</div>
+                <div className="text-sm text-muted-foreground font-medium">
+                  Uptime
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -136,7 +158,9 @@ export default function Hero() {
                   </div>
                   <div className="text-3xl font-bold text-foreground">4.9</div>
                 </div>
-                <div className="text-sm text-muted-foreground font-medium">User Rating</div>
+                <div className="text-sm text-muted-foreground font-medium">
+                  User Rating
+                </div>
               </div>
             </div>
           </div>
@@ -146,8 +170,8 @@ export default function Hero() {
             className="relative lg:block hidden"
             style={{
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateX(0)' : 'translateX(50px)',
-              transition: 'all 1s ease-out 0.4s',
+              transform: isVisible ? "translateX(0)" : "translateX(50px)",
+              transition: "all 1s ease-out 0.4s",
             }}
           >
             <div className="relative">
@@ -157,8 +181,8 @@ export default function Hero() {
                   key={card.id}
                   className={`absolute z-10 w-22 h-22 rounded-2xl shadow-2xl flex items-center justify-center transform transition-all duration-300 ${
                     index === 0
-                      ? '-top-12 -left-12 bg-card border-2 border-border hover:rotate-6'
-                      : '-bottom-12 -right-12 bg-gradient-to-br from-purple-500 to-pink-600 hover:-rotate-6'
+                      ? "-top-12 -left-12 bg-card border-2 border-border hover:rotate-6"
+                      : "-bottom-12 -right-12 bg-gradient-to-br from-purple-500 to-pink-600 hover:-rotate-6"
                   }`}
                   style={{
                     transform:
@@ -179,7 +203,9 @@ export default function Hero() {
                   ) : (
                     <div className="text-center text-white p-3">
                       <div className="text-2xl font-bold">2.5x</div>
-                      <div className="text-sm font-semibold mt-1 opacity-90">Faster Deals</div>
+                      <div className="text-sm font-semibold mt-1 opacity-90">
+                        Faster Deals
+                      </div>
                     </div>
                   )}
                 </div>
@@ -194,7 +220,7 @@ export default function Hero() {
                 />
 
                 {/* Overlay badge */}
-                <div className="absolute bottom-4 left-4 right-4 bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-border">
+                <div className="absolute bottom-4 left-4 right-4 bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-border dark:border-w">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -211,7 +237,9 @@ export default function Hero() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500" />
-                      <span className="text-xl font-bold text-foreground text-white">+15%</span>
+                      <span className="text-xl font-bold text-foreground text-white">
+                        +15%
+                      </span>
                     </div>
                   </div>
                 </div>

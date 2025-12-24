@@ -13,8 +13,19 @@ import { useCheckUniqueFieldQuery } from "@/hooks/checkUniqueFiledQuery";
 import OrderSummary from "./components/OrderSummary";
 import SelectedPlanCard from "./components/selectedPlanCard";
 
-import { CheckoutFormData, FormErrors, BillingCycle, Plan } from "@/types/checkout";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  CheckoutFormData,
+  FormErrors,
+  BillingCycle,
+  Plan,
+} from "@/types/checkout";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -61,17 +72,20 @@ export default function CheckoutPage() {
     try {
       const parsed = JSON.parse(stored);
       const plan = parsed.selectedPlan;
-      
+
       if (!plan || !plan.id) {
         router.replace("/plans");
         return;
       }
-      
+
       // Ensure the plan has all required properties
       const planWithPrice = {
         ...plan,
         key: plan.key || plan.id, // Use key if available, otherwise use id
-        price: parsed.billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly,
+        price:
+          parsed.billingCycle === "yearly"
+            ? plan.priceYearly
+            : plan.priceMonthly,
         currency: plan.currency || "INR",
         maxUsers: plan.maxUsers || plan.maxBuyers || 50,
         maxProducts: plan.maxProducts || 50,
@@ -116,9 +130,20 @@ export default function CheckoutPage() {
 
     // Type-safe field validation
     const validFieldNames: (keyof CheckoutFormData)[] = [
-      'first_name', 'last_name', 'email', 'password', 'phoneNumber',
-      'businessName', 'registrationNumber', 'country', 'state', 'city',
-      'address', 'postalCode', 'taxId', 'website'
+      "first_name",
+      "last_name",
+      "email",
+      "password",
+      "phoneNumber",
+      "businessName",
+      "registrationNumber",
+      "country",
+      "state",
+      "city",
+      "address",
+      "postalCode",
+      "taxId",
+      "website",
     ];
 
     if (validFieldNames.includes(name as keyof CheckoutFormData)) {
@@ -141,7 +166,7 @@ export default function CheckoutPage() {
 
     // Validate form data
     const validationErrors = validateCheckoutForm(formData);
-    
+
     // Check for unique field errors
     const combinedErrors = {
       ...validationErrors,
@@ -151,22 +176,26 @@ export default function CheckoutPage() {
     setErrors(combinedErrors);
 
     // Check if there are any validation errors
-    const hasErrors = Object.values(combinedErrors).some(error => error && error.trim() !== "");
-    
+    const hasErrors = Object.values(combinedErrors).some(
+      (error) => error && error.trim() !== ""
+    );
+
     if (hasErrors) {
       const errorFields = Object.entries(combinedErrors)
         .filter(([_, error]) => error && error.trim() !== "")
-        .map(([field, _]) => field.replace('_', ' '))
+        .map(([field, _]) => field.replace("_", " "))
         .join(", ");
-      
+
       toast.error(`Please fix the errors in: ${errorFields}`);
-      
+
       // Scroll to the first error field
-      const firstErrorField = Object.keys(combinedErrors).find(key => combinedErrors[key]);
+      const firstErrorField = Object.keys(combinedErrors).find(
+        (key) => combinedErrors[key]
+      );
       if (firstErrorField) {
         const element = document.getElementById(firstErrorField);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
           element.focus();
         }
       }
@@ -174,12 +203,11 @@ export default function CheckoutPage() {
     }
 
     // Store form data for the OrderSummary component to access
-    sessionStorage.setItem(
-      "checkoutFormData",
-      JSON.stringify(formData)
-    );
+    sessionStorage.setItem("checkoutFormData", JSON.stringify(formData));
 
-    toast.success("Form validated successfully! Click 'Complete Purchase' to proceed.");
+    toast.success(
+      "Form validated successfully! Click 'Complete Purchase' to proceed."
+    );
   };
 
   if (!selectedPlan) {
@@ -188,7 +216,9 @@ export default function CheckoutPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading checkout...</p>
-          <p className="text-sm text-gray-500 mt-2">If this takes too long, please select a plan first.</p>
+          <p className="text-sm text-gray-500 mt-2">
+            If this takes too long, please select a plan first.
+          </p>
         </div>
       </div>
     );
@@ -220,15 +250,21 @@ export default function CheckoutPage() {
                       <User className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Personal Information</CardTitle>
-                      <CardDescription>Enter your personal details</CardDescription>
+                      <CardTitle className="text-lg">
+                        Personal Information
+                      </CardTitle>
+                      <CardDescription>
+                        Enter your personal details
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="first_name">First Name *</Label>
+                      <Label className="m-1" htmlFor="first_name">
+                        First Name *
+                      </Label>
                       <Input
                         id="first_name"
                         name="first_name"
@@ -238,11 +274,15 @@ export default function CheckoutPage() {
                         className={errors.first_name ? "border-red-500" : ""}
                       />
                       {errors.first_name && (
-                        <p className="text-xs text-red-500">{errors.first_name}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.first_name}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <Label className="m-1" htmlFor="last_name">Last Name *</Label>
+                      <Label className="m-1" htmlFor="last_name">
+                        Last Name *
+                      </Label>
                       <Input
                         id="last_name"
                         name="last_name"
@@ -252,13 +292,17 @@ export default function CheckoutPage() {
                         className={errors.last_name ? "border-red-500" : ""}
                       />
                       {errors.last_name && (
-                        <p className="text-xs text-red-500">{errors.last_name}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.last_name}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="email">Email *</Label>
+                      <Label className="m-1" htmlFor="email">
+                        Email *
+                      </Label>
                       <Input
                         id="email"
                         name="email"
@@ -266,14 +310,22 @@ export default function CheckoutPage() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="your@email.com"
-                        className={errors.email || uniqueErrors.email ? "border-red-500" : ""}
+                        className={
+                          errors.email || uniqueErrors.email
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
                       {(errors.email || uniqueErrors.email) && (
-                        <p className="text-xs text-red-500">{errors.email || uniqueErrors.email}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.email || uniqueErrors.email}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <Label className="m-1" htmlFor="phoneNumber">Phone Number *</Label>
+                      <Label className="m-1" htmlFor="phoneNumber">
+                        Phone Number *
+                      </Label>
                       <Input
                         id="phoneNumber"
                         name="phoneNumber"
@@ -284,12 +336,16 @@ export default function CheckoutPage() {
                         className={errors.phoneNumber ? "border-red-500" : ""}
                       />
                       {errors.phoneNumber && (
-                        <p className="text-xs text-red-500">{errors.phoneNumber}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.phoneNumber}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div>
-                    <Label className="m-1" htmlFor="password">Password *</Label>
+                    <Label className="m-1" htmlFor="password">
+                      Password *
+                    </Label>
                     <Input
                       id="password"
                       name="password"
@@ -314,45 +370,70 @@ export default function CheckoutPage() {
                       <Building2 className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Business Information</CardTitle>
-                      <CardDescription>Provide your business details</CardDescription>
+                      <CardTitle className="text-lg">
+                        Business Information
+                      </CardTitle>
+                      <CardDescription>
+                        Provide your business details
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="businessName">Business Name *</Label>
+                      <Label className="m-1" htmlFor="businessName">
+                        Business Name *
+                      </Label>
                       <Input
                         id="businessName"
                         name="businessName"
                         value={formData.businessName}
                         onChange={handleChange}
                         placeholder="Your Business Name"
-                        className={errors.businessName || uniqueErrors.businessName ? "border-red-500" : ""}
+                        className={
+                          errors.businessName || uniqueErrors.businessName
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
                       {(errors.businessName || uniqueErrors.businessName) && (
-                        <p className="text-xs text-red-500">{errors.businessName || uniqueErrors.businessName}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.businessName || uniqueErrors.businessName}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="registrationNumber" className="m-1">Registration Number *</Label>
+                      <Label htmlFor="registrationNumber" className="m-1">
+                        Registration Number *
+                      </Label>
                       <Input
                         id="registrationNumber"
                         name="registrationNumber"
                         value={formData.registrationNumber}
                         onChange={handleChange}
                         placeholder="REG12345"
-                        className={errors.registrationNumber || uniqueErrors.registrationNumber ? "border-red-500" : ""}
+                        className={
+                          errors.registrationNumber ||
+                          uniqueErrors.registrationNumber
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
-                      {(errors.registrationNumber || uniqueErrors.registrationNumber) && (
-                        <p className="text-xs text-red-500">{errors.registrationNumber || uniqueErrors.registrationNumber}</p>
+                      {(errors.registrationNumber ||
+                        uniqueErrors.registrationNumber) && (
+                        <p className="text-xs text-red-500">
+                          {errors.registrationNumber ||
+                            uniqueErrors.registrationNumber}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="taxId">Tax ID</Label>
+                      <Label className="m-1" htmlFor="taxId">
+                        Tax ID
+                      </Label>
                       <Input
                         id="taxId"
                         name="taxId"
@@ -362,7 +443,9 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <Label className="m-1" htmlFor="website">Website</Label>
+                      <Label className="m-1" htmlFor="website">
+                        Website
+                      </Label>
                       <Input
                         id="website"
                         name="website"
@@ -388,13 +471,17 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">Billing Address</CardTitle>
-                      <CardDescription>Provide your billing details</CardDescription>
+                      <CardDescription>
+                        Provide your billing details
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="address" className="m-1">Address *</Label>
+                    <Label htmlFor="address" className="m-1">
+                      Address *
+                    </Label>
                     <Input
                       id="address"
                       name="address"
@@ -409,7 +496,9 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="city">City *</Label>
+                      <Label className="m-1" htmlFor="city">
+                        City *
+                      </Label>
                       <Input
                         id="city"
                         name="city"
@@ -423,7 +512,9 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1" htmlFor="state">State *</Label>
+                      <Label className="m-1" htmlFor="state">
+                        State *
+                      </Label>
                       <Input
                         id="state"
                         name="state"
@@ -439,7 +530,9 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1" htmlFor="country">Country *</Label>
+                      <Label className="m-1" htmlFor="country">
+                        Country *
+                      </Label>
                       <Input
                         id="country"
                         name="country"
@@ -453,7 +546,9 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1" htmlFor="postalCode">Postal Code *</Label>
+                      <Label className="m-1" htmlFor="postalCode">
+                        Postal Code *
+                      </Label>
                       <Input
                         id="postalCode"
                         name="postalCode"
@@ -463,7 +558,9 @@ export default function CheckoutPage() {
                         className={errors.postalCode ? "border-red-500" : ""}
                       />
                       {errors.postalCode && (
-                        <p className="text-xs text-red-500">{errors.postalCode}</p>
+                        <p className="text-xs text-red-500">
+                          {errors.postalCode}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -481,7 +578,8 @@ export default function CheckoutPage() {
                       Validate Information
                     </Button>
                     <p className="text-xs text-slate-500 mt-2">
-                      Validate your information, then click "Complete Purchase" to proceed to payment
+                      Validate your information, then click "Complete Purchase"
+                      to proceed to payment
                     </p>
                   </div>
                 </CardContent>
