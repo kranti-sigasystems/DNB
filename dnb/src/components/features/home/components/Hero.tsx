@@ -62,24 +62,30 @@ export default function Hero() {
 
             {/* Main Headline */}
             <div
-              className="space-y-5"
+              className="space-y-6"
               style={{
                 opacity: isVisible ? 1 : 0,
                 transform: isVisible ? "translateY(0)" : "translateY(-20px)",
                 transition: "all 0.8s ease-out 0.2s",
               }}
             >
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-none">
-                <span className="block text-foreground mb-2">Digital</span>
-                <span className="block bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent pb-3">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
+                <span className="relative inline-block">
+                  <span className="absolute -inset-1 -skew-y-3 bg-blue-300" />
+                  <span className="relative text-black dark:text-black">
+                    Digital
+                  </span>
+                </span>
+                <span className="block bg-gradient-to-br from-primary via-primary/60 to-primary/30 bg-clip-text text-transparent dark:text-white pb-3">
                   Negotiation Book
                 </span>
               </h1>
 
-              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl font-normal">
-                Transform your fish-selling business with intelligent
-                negotiation tools. Streamline deals, optimize pricing, and close
-                sales faster with real-time collaboration.
+              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl">
+                Modernize your fish-selling operations with a smart negotiation
+                system. Automate pricing discussions, reduce manual effort, and
+                close profitable deals faster through real-time collaboration
+                and data-driven insights.
               </p>
             </div>
 
@@ -193,10 +199,10 @@ export default function Hero() {
                 >
                   {index === 0 ? (
                     <div className="text-center p-3">
-                      <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent">
+                      <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent ">
                         98%
                       </div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-1">
+                      <div className="text-sm font-semibold text-muted-foreground mt-1 dark:text-white">
                         Success Rate
                       </div>
                     </div>
@@ -212,7 +218,7 @@ export default function Hero() {
               ))}
 
               {/* Main image container */}
-              <div className="relative bg-card rounded-3xl shadow-2xl overflow-hidden border-2 border-border transform hover:scale-105 transition-transform duration-500">
+              <div className="relative bg-card rounded-3xl shadow-2xl overflow-hidden border-2 border-border transform hover:scale-105 transition-transform duration-500 ">
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/5/52/Liav%C3%A5g_plant.jpg"
                   alt="Digital Negotiation Platform Dashboard"
@@ -220,7 +226,7 @@ export default function Hero() {
                 />
 
                 {/* Overlay badge */}
-                <div className="absolute bottom-4 left-4 right-4 bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-border dark:border-w">
+                <div className="absolute bottom-4 left-4 right-4 bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-border ">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">

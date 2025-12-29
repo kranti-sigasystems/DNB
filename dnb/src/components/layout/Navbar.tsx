@@ -16,17 +16,21 @@ interface NavbarProps {
   isNoSidebarRoute?: boolean;
 }
 
-export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSidebarRoute = false }: NavbarProps) {
+export default function Navbar({
+  onMenuClick,
+  showSidebarButton = true,
+  isNoSidebarRoute = false,
+}: NavbarProps) {
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  
+
   const userRole = user?.userRole || "guest";
   const isBuyer = userRole === "buyer";
-  
+
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const userNameRef = useRef<HTMLButtonElement>(null);
   const [dropdownWidth, setDropdownWidth] = useState<number | null>(null);
@@ -61,7 +65,10 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(e.target as Node)
+      ) {
         setUserDropdownOpen(false);
       }
     }
@@ -90,10 +97,12 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
           "w-full h-16 bg-background border-b border-border sticky top-0 z-50 transition-colors duration-300"
         )}
       >
-        <div className={cn(
-          "h-full flex items-center justify-between",
-          isNoSidebarRoute ? "app-container" : "px-4 sm:px-6 lg:px-8"
-        )}>
+        <div
+          className={cn(
+            "h-full flex items-center justify-between",
+            isNoSidebarRoute ? "app-container" : "px-4 sm:px-6 lg:px-8"
+          )}
+        >
           {/* LEFT: Logo and menu button */}
           <div className="flex items-center">
             {showSidebarButton && (
@@ -141,17 +150,21 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
               className="text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150 ease-out"
             >
               <div className="relative w-5 h-5">
-                <Moon 
+                <Moon
                   className={cn(
                     "w-5 h-5 absolute inset-0 transition-all duration-150 ease-out",
-                    theme === 'light' ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'
-                  )} 
+                    theme === "light"
+                      ? "opacity-100 rotate-0"
+                      : "opacity-0 rotate-90"
+                  )}
                 />
-                <Sun 
+                <Sun
                   className={cn(
                     "w-5 h-5 absolute inset-0 transition-all duration-150 ease-out",
-                    theme === 'dark' ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-90'
-                  )} 
+                    theme === "dark"
+                      ? "opacity-100 rotate-0"
+                      : "opacity-0 -rotate-90"
+                  )}
                 />
               </div>
             </Button>
@@ -173,7 +186,9 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                     className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg hover:bg-accent transition cursor-pointer"
                   >
                     <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{userName}</span>
+                    <span className="font-medium text-foreground">
+                      {userName}
+                    </span>
                     <ChevronDown
                       className={`w-4 h-4 text-muted-foreground transition ${
                         userDropdownOpen ? "rotate-180" : ""
@@ -261,21 +276,25 @@ export default function Navbar({ onMenuClick, showSidebarButton = true, isNoSide
                 className="w-full flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-150 ease-out"
               >
                 <div className="relative w-4 h-4">
-                  <Moon 
+                  <Moon
                     className={cn(
                       "w-4 h-4 absolute inset-0 transition-all duration-150 ease-out",
-                      theme === 'light' ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'
-                    )} 
+                      theme === "light"
+                        ? "opacity-100 rotate-0"
+                        : "opacity-0 rotate-90"
+                    )}
                   />
-                  <Sun 
+                  <Sun
                     className={cn(
                       "w-4 h-4 absolute inset-0 transition-all duration-150 ease-out",
-                      theme === 'dark' ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-90'
-                    )} 
+                      theme === "dark"
+                        ? "opacity-100 rotate-0"
+                        : "opacity-0 -rotate-90"
+                    )}
                   />
                 </div>
                 <span className="transition-all duration-150 ease-out">
-                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
                 </span>
               </Button>
             </div>

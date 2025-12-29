@@ -24,14 +24,13 @@ import {
 } from "lucide-react";
 
 import { getPaymentStatus } from "@/actions/payment";
-import { sendPaymentConfirmationEmail } from "@/actions/send-payment-email";
 import {
   formatDate,
   formatTime,
 } from "@/app/(checkout)/utils/formatDateandTime";
 import { OrderData, BillingCycle } from "@/types/payment";
-import Link from "next/link";
 import { openAndPrintReceipt } from "@/components/payment/openReceipt";
+import Link from "next/link";
 
 const CURRENCY_SYMBOL: Record<string, string> = {
   INR: "₹",
@@ -121,31 +120,11 @@ export default function PaymentSuccessPage() {
 
         setOrderData(formatted);
 
-        // Send confirmation email
-        try {
-          const emailResult = await sendPaymentConfirmationEmail(
-            user.email || "",
-            `${user.first_name || "User"} ${user.last_name || ""}`.trim(),
-            plan.name || "",
-            Number(payment.amount) || 0,
-            CURRENCY_SYMBOL[plan.currency as keyof typeof CURRENCY_SYMBOL] ??
-              plan.currency,
-            payment.billingCycle || "yearly",
-            payment.stripePaymentId || payment.id || "",
-            formatDate(now),
-            formatDate(endDate)
-          );
-
-          if (emailResult.success) {
-            toast.success("Payment verified and confirmation email sent!");
-          } else {
-            toast.success("Payment verified successfully");
-            console.warn("Email sending failed but payment was successful");
-          }
-        } catch (emailError) {
-          console.error("Error sending email:", emailError);
-          toast.success("Payment verified successfully");
-        }
+        clearInterval(stepInterval);
+        setLoading(false);
+        toast.success(
+          "Payment verified successfully! Check your email for confirmation."
+        );
       } catch (err: any) {
         console.error(err);
         setError(err.message || "Something went wrong");
@@ -420,256 +399,266 @@ export default function PaymentSuccessPage() {
 
   // Success State
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Payment Successful!
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Your subscription has been activated. You now have full access to
-              all premium features.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Payment & Subscription Cards */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-8">
-          {/* Payment Details Card */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Payment Details
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Plan Name</span>
-                <span className="font-bold text-gray-900">
-                  {orderData.planName}
-                </span>
+    <div className=" bg-blue-50  ">
+      <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white border ">
+        {/* Header Section */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Amount Paid</span>
-                <span className="text-2xl font-bold text-green-600">
-                  {orderData.currencySymbol}
-                  {orderData.planPrice?.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Billing Cycle</span>
-                <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold capitalize">
-                  {orderData.billingCycle}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Payment Date</span>
-                <span className="font-semibold text-gray-900">
-                  {orderData.date}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">Payment Time</span>
-                <span className="font-semibold text-gray-900">
-                  {orderData.time}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Subscription Details Card */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Subscription Details
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Start Date</span>
-                <span className="font-semibold text-gray-900">
-                  {orderData.planStartDate}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Renewal Date</span>
-                <span className="font-semibold text-gray-900">
-                  {orderData.planEndDate}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Status</span>
-                <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  Active
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">Currency</span>
-                <span className="font-semibold text-gray-900">
-                  {orderData.currencyCode}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">
-                  Transaction ID
-                </span>
-                <span className="font-mono text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                  {orderData.transactionId?.substring(0, 12)}...
-                </span>
-              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                Payment Successful!
+              </h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Your subscription has been activated. You now have full access
+                to all premium features.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Account Information Card */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Account Information
-            </h2>
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Payment & Subscription Cards */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+            {/* Payment Details Card */}
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Payment Details
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Plan Name</span>
+                  <span className="font-bold text-gray-900">
+                    {orderData.planName}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Amount Paid</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {orderData.currencySymbol}
+                    {orderData.planPrice?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">
+                    Billing Cycle
+                  </span>
+                  <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold capitalize">
+                    {orderData.billingCycle}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">
+                    Payment Date
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {orderData.date}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">
+                    Payment Time
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {orderData.time}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Subscription Details Card */}
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Subscription Details
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Start Date</span>
+                  <span className="font-semibold text-gray-900">
+                    {orderData.planStartDate}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">
+                    Renewal Date
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {orderData.planEndDate}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Status</span>
+                  <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    Active
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Currency</span>
+                  <span className="font-semibold text-gray-900">
+                    {orderData.currencyCode}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">
+                    Transaction ID
+                  </span>
+                  <span className="font-mono text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                    {orderData.transactionId?.substring(0, 12)}...
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="p-6">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">
-                  First Name
-                </p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {orderData.first_name}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">
-                  Last Name
-                </p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {orderData.last_name || "N/A"}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm text-gray-600 font-medium mb-1">
-                  Email Address
-                </p>
-                <p className="text-lg font-semibold text-gray-900 break-all">
-                  {orderData.email}
-                </p>
-              </div>
-              {orderData.businessName && (
-                <div className="sm:col-span-2">
+
+          {/* Account Information Card */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Account Information
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
                   <p className="text-sm text-gray-600 font-medium mb-1">
-                    Business Name
+                    First Name
                   </p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {orderData.businessName}
+                    {orderData.first_name}
                   </p>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Next Steps Section */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              What's Next?
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="grid sm:grid-cols-2 gap-4">
-              {[
-                {
-                  icon: Mail,
-                  title: "Check Your Email",
-                  desc: "Confirmation and login details sent",
-                },
-                {
-                  icon: User,
-                  title: "Complete Profile",
-                  desc: "Add your business information",
-                },
-                {
-                  icon: Building,
-                  title: "Setup Products",
-                  desc: "Add your products and services",
-                },
-                {
-                  icon: Users,
-                  title: "Invite Team",
-                  desc: "Add team members to collaborate",
-                },
-              ].map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
-                  >
-                    <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-bold text-gray-900 text-sm">
-                        {item.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 mt-1">{item.desc}</p>
-                    </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    Last Name
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {orderData.last_name || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    Email Address
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 break-all">
+                    {orderData.email}
+                  </p>
+                </div>
+                <div>
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-gray-600 font-medium mb-1">
+                      Business Name
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {orderData.businessName}
+                    </p>
                   </div>
-                );
-              })}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="flex-1 bg-indigo-600 text-white py-4 px-6 rounded-lg font-bold text-base hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-          >
-            <Home className="w-5 h-5" />
-            Go to Dashboard
-            <ArrowRight className="w-5 h-5" />
-          </button>
-         <button
-  onClick={() => openAndPrintReceipt(orderData)}
-  className="flex-1 bg-white text-gray-800 py-4 px-6 rounded-lg font-bold
-             border-2 border-gray-300 hover:bg-gray-50 transition
-             flex items-center justify-center gap-2 shadow-md"
->
-  <Download className="w-5 h-5" />
-  Download Receipt
-</button>
-        </div>
+          {/* Next Steps Section */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
+            <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                What's Next?
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    icon: Mail,
+                    title: "Check Your Email",
+                    desc: "Confirmation and login details sent",
+                  },
+                  {
+                    icon: User,
+                    title: "Complete Profile",
+                    desc: "Add your business information",
+                  },
+                  {
+                    icon: Building,
+                    title: "Setup Products",
+                    desc: "Add your products and services",
+                  },
+                  {
+                    icon: Users,
+                    title: "Invite Team",
+                    desc: "Add team members to collaborate",
+                  },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                    >
+                      <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-gray-900 text-sm">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-        {/* Support Section */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Need Help?</h3>
-          <p className="text-gray-600 mb-6">
-            If you have any questions about your subscription or need
-            assistance, our support team is here to help.
-          </p>
-          <a
-            href="mailto:support@dnb.com"
-            className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
-          >
-            <Link href={"/"}>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="flex-1 bg-indigo-600 text-white py-4 px-6 rounded-lg font-bold text-base hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+            >
+              <Home className="w-5 h-5" />
+              Go to Dashboard
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => openAndPrintReceipt(orderData)}
+              className="flex-1 bg-white text-gray-800 py-4 px-6 rounded-lg font-bold
+              border-2 border-gray-300 hover:bg-gray-50 transition
+              flex items-center justify-center gap-2 shadow-md"
+            >
+              <Download className="w-5 h-5" />
+              Download Receipt
+            </button>
+          </div>
+
+          {/* Support Section */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Need Help?</h3>
+            <p className="text-gray-600 mb-6">
+              If you have any questions about your subscription or need
+              assistance, our support team is here to help.
+            </p>
+            <a
+              href="mailto:support@dnb.com"
+              className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
+            >
               <Mail className="w-5 h-5" />
               support@dnb.com
-            </Link>
-          </a>
+            </a>
+          </div>
         </div>
       </div>
     </div>

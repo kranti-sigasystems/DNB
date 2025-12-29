@@ -24,33 +24,21 @@ export interface PaymentSuccessEmailData {
 function createEmailTransporter() {
   
   // Validate environment variables
-  const requiredVars = {
-    SMTP_HOST: process.env.SMTP_HOST,
-    EMAIL_USER: process.env.EMAIL_USER,
-    EMAIL_PASS: process.env.EMAIL_PASS,
-  };
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
 
-  const missingVars = Object.entries(requiredVars)
-    .filter(([key, value]) => !value)
-    .map(([key]) => key);
-
-  if (missingVars.length > 0) {
-    console.error('❌ Missing email environment variables:', missingVars);
-    throw new Error(`Email configuration is missing: ${missingVars.join(', ')}`);
+  if (!emailUser || !emailPass) {
+    console.error('❌ Missing email environment variables: EMAIL_USER or EMAIL_PASS');
+    throw new Error('Email configuration is missing: EMAIL_USER or EMAIL_PASS');
   }
-
 
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // Use Gmail service
+      service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: emailUser,
+        pass: emailPass,
       },
-      // Additional options for better reliability
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
     });
 
     return transporter;
@@ -271,7 +259,7 @@ function generatePaymentSuccessEmail(data: PaymentSuccessEmailData): string {
             <div class="greeting">Hello ${data.customerName}! 👋</div>
             
             <div class="message">
-                Congratulations! Your payment has been processed successfully and your <strong>${data.planName}</strong> subscription is now active. You're all set to start your journey with us!
+                Congratulations! Your paymevnt has been processed successfully and your <strong>${data.planName}</strong> subscription is now active. You're all set to start your journey with us!
             </div>
             
             <div class="details-card">
@@ -359,6 +347,273 @@ export async function sendPaymentSuccessEmail(
     return result;
   } catch (error) {
     console.error('❌ Payment success email error:', error);
+    return false;
+  }
+}
+
+
+// ----------------------
+// Generate Expiry Reminder Email HTML
+// ----------------------
+interface ExpiryEmailData {
+  to: string;
+  subject: string;
+  userName?: string;
+  planName: string;
+  expiryDate: string;
+}
+
+function generateExpiryReminderEmail(data: ExpiryEmailData): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Expiry Reminder - Digital Negotiation Book</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .warning-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .message {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .alert-card {
+            background: #fff3e0;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 5px solid #FF9800;
+        }
+        .alert-title {
+            font-size: 18px;
+            color: #E65100;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .alert-content {
+            color: #BF360C;
+            line-height: 1.6;
+        }
+        .details-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 500;
+            color: #555;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white !important;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        .benefits {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .benefits h3 {
+            color: #1b5e20;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .benefits ul {
+            list-style: none;
+            padding: 0;
+        }
+        .benefits li {
+            color: #2e7d32;
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .benefits li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f8f9fa;
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        @media (max-width: 600px) {
+            .email-container { margin: 10px; }
+            .content { padding: 20px; }
+            .header { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="warning-icon">⏰</div>
+            <h1>Plan Expiry Reminder</h1>
+            <p>Your subscription is about to expire</p>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello ${data.userName || 'User'}! 👋</div>
+            
+            <div class="alert-card">
+                <div class="alert-title">⚠️ Important Notice</div>
+                <div class="alert-content">
+                    Your <strong>${data.planName}</strong> subscription will expire on <strong>${data.expiryDate}</strong>. 
+                    To avoid any interruption to your service, please renew your subscription before the expiry date.
+                </div>
+            </div>
+            
+            <div class="details-card">
+                <div class="detail-item">
+                    <span class="detail-label">Current Plan</span>
+                    <span class="detail-value">${data.planName}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Expiry Date</span>
+                    <span class="detail-value">${data.expiryDate}</span>
+                </div>
+            </div>
+            
+            <div class="cta-section">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans" class="cta-button">
+                    🔄 Renew Your Plan Now
+                </a>
+            </div>
+            
+            <div class="benefits">
+                <h3>✨ Continue Enjoying Benefits</h3>
+                <ul>
+                    <li>Uninterrupted access to all features</li>
+                    <li>Continued support from our team</li>
+                    <li>No data loss or service disruption</li>
+                    <li>Maintain your business operations</li>
+                </ul>
+            </div>
+            
+            <div class="message">
+                If you have any questions about renewing your subscription or need assistance, please don't hesitate to contact our support team. We're here to help!
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Digital Negotiation Book</strong></p>
+            <p>This is a reminder email about your upcoming subscription expiry.</p>
+            <p>&copy; ${new Date().getFullYear()} Digital Negotiation Book. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+// ----------------------
+// Send Expiry Reminder Email
+// ----------------------
+export async function sendExpiryMail(data: ExpiryEmailData): Promise<boolean> {
+  try {
+    const html = generateExpiryReminderEmail(data);
+    const text = `Your ${data.planName} subscription will expire on ${data.expiryDate}. Please renew soon to avoid any interruption.`;
+
+    const result = await sendEmail({
+      to: data.to,
+      subject: data.subject,
+      html,
+      text,
+    });
+
+    if (result) {
+      console.log(`✅ Expiry reminder email sent to ${data.to}`);
+    } else {
+      console.error(`❌ Expiry reminder email failed for ${data.to}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('❌ Expiry reminder email error:', error);
     return false;
   }
 }

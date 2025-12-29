@@ -48,7 +48,8 @@ export default function Sidebar({
     setCollapsed(!collapsed);
   };
 
-  const userRole = user?.userRole || "guest";
+  const userRole = user?.role || "guest";
+  console.log("User role is.....", userRole);
 
   if (userRole === "buyer") {
     return null;
@@ -98,24 +99,28 @@ export default function Sidebar({
       <TooltipProvider>
         <aside
           className={cn(
-            'fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col z-50',
-            'transition-all duration-150 ease-out',
-            collapsed ? 'w-16' : 'w-64'
+            "fixed top-0 left-0 h-screen bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col z-50",
+            "transition-all duration-150 ease-out",
+            collapsed ? "w-16" : "w-64"
           )}
         >
           {/* Header */}
           <div className="h-16 border-b border-sidebar-border flex items-center justify-between px-4">
             {!collapsed && (
               <div className="flex flex-col max-w-[180px] truncate">
-                <h2 className="text-2xl font-extrabold text-sidebar-primary truncate">DNB</h2>
-                {businessName && typeof businessName === 'string' && businessName.length > 0 && (
-                  <span className="text-sm font-medium text-sidebar-foreground/70 truncate">
-                    {businessName}
-                  </span>
-                )}
+                <h2 className="text-2xl font-extrabold text-sidebar-primary truncate">
+                  DNB
+                </h2>
+                {businessName &&
+                  typeof businessName === "string" &&
+                  businessName.length > 0 && (
+                    <span className="text-sm font-medium text-sidebar-foreground/70 truncate">
+                      {businessName}
+                    </span>
+                  )}
               </div>
             )}
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -124,9 +129,15 @@ export default function Sidebar({
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               type="button"
             >
-              <ChevronRight className={cn("w-4 h-4 transition-transform", collapsed ? "" : "rotate-180")} strokeWidth={2.5} />
+              <ChevronRight
+                className={cn(
+                  "w-4 h-4 transition-transform",
+                  collapsed ? "" : "rotate-180"
+                )}
+                strokeWidth={2.5}
+              />
             </Button>
-            
+
             {onClose && (
               <Button
                 variant="ghost"
@@ -196,7 +207,9 @@ export default function Sidebar({
                       }}
                     >
                       <Icon className="w-5 h-5 shrink-0 mr-3" strokeWidth={2} />
-                      <span className="truncate font-medium flex-1">{name}</span>
+                      <span className="truncate font-medium flex-1">
+                        {name}
+                      </span>
                       {isActive && (
                         <div className="w-2 h-2 bg-sidebar-primary-foreground/70 rounded-full ml-2"></div>
                       )}

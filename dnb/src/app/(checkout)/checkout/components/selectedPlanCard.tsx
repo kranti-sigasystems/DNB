@@ -45,7 +45,7 @@ const SelectedPlanCard: React.FC<SelectedPlanCardProps> = ({
 }) => {
   if (!selectedPlan) {
     return (
-      <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center text-slate-500">
+      <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-6 text-center text-slate-500 dark:text-slate-400">
         No plan selected yet.
       </div>
     );
@@ -64,32 +64,32 @@ const SelectedPlanCard: React.FC<SelectedPlanCardProps> = ({
   const price = billingCycle === "yearly" ? priceYearly : priceMonthly;
 
   return (
-    <Card className="shadow-md border-slate-200">
+    <Card className="shadow-md border-slate-200 dark:border-slate-700 dark:bg-slate-900">
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 mb-2"
+              className="flex items-center gap-2 mb-2 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
               onClick={() => window.history.back()}
             >
               <MoveLeft className="w-4 h-4" />
               Back
             </Button>
 
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="text-xl font-semibold dark:text-white">
               {name}
             </CardTitle>
 
             {description && (
-              <CardDescription className="text-sm text-slate-600 mt-2">
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 {description}
               </CardDescription>
             )}
           </div>
 
-          <Badge variant="outline" className="capitalize whitespace-nowrap">
+          <Badge variant="outline" className="capitalize whitespace-nowrap dark:border-slate-600 dark:text-slate-300">
             {billingCycle} Billing
           </Badge>
         </div>
@@ -97,14 +97,14 @@ const SelectedPlanCard: React.FC<SelectedPlanCardProps> = ({
 
       <CardContent className="space-y-5">
         {/* Price Section */}
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg p-4">
+        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <CreditCard className="w-5 h-5 text-indigo-600" />
+            <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <div>
-              <p className="text-sm font-medium text-slate-700">Price</p>
-              <p className="text-lg font-semibold text-slate-900">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Price</p>
+              <p className="text-lg font-semibold text-slate-900 dark:text-white">
                 {currency} {price}
-                <span className="text-sm text-slate-500 ml-1">
+                <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
                   / {billingCycle === "yearly" ? "year" : "month"}
                 </span>
               </p>
@@ -119,11 +119,11 @@ const SelectedPlanCard: React.FC<SelectedPlanCardProps> = ({
           )} */}
         </div>
 
-        <Separator />
+        <Separator className="dark:bg-slate-700" />
 
         {/* Features Section */}
         <div>
-          <p className="text-sm font-medium text-slate-700 mb-2">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Plan Includes:
           </p>
 
@@ -132,14 +132,14 @@ const SelectedPlanCard: React.FC<SelectedPlanCardProps> = ({
               features.map((feature, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-sm dark:text-slate-300"
                 >
                   <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-slate-700">{feature}</span>
+                  <span>{feature}</span>
                 </div>
               ))
             ) : (
-              <p className="text-slate-500 italic text-sm">
+              <p className="text-slate-500 dark:text-slate-400 italic text-sm">
                 No features listed.
               </p>
             )}

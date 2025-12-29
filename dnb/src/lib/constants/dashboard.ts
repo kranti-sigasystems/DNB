@@ -16,30 +16,31 @@ export const DASHBOARD_CONFIG = {
   },
   TABLE: {
     COLUMNS_COUNT: 6,
-    MOBILE_BREAKPOINT: 'lg',
+    MOBILE_BREAKPOINT: "lg",
   },
 } as const;
 
 export const USER_ROLES = {
-  SUPER_ADMIN: 'super_admin',
-  BUSINESS_OWNER: 'business_owner',
-  BUYER: 'buyer',
-  GUEST: 'guest',
+  SUPER_ADMIN: "super_admin",
+  business_owner: "business_owner",
+  BUYER: "buyer",
+  GUEST: "guest",
 } as const;
 
 export const USER_STATUS = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  PENDING: 'pending',
-  DELETED: 'deleted',
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  PENDING: "pending",
+  DELETED: "deleted",
 } as const;
 
 export const SORT_DIRECTIONS = {
-  ASC: 'asc',
-  DESC: 'desc',
+  ASC: "asc",
+  DESC: "desc",
   NONE: null,
 } as const;
 
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
-export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
-export type SortDirection = typeof SORT_DIRECTIONS[keyof typeof SORT_DIRECTIONS];
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
+export type SortDirection =
+  (typeof SORT_DIRECTIONS)[keyof typeof SORT_DIRECTIONS];

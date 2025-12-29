@@ -1,6 +1,6 @@
 'use server';
 
-import prisma from '@/lib/prisma-client';
+import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import type { 
   UsersResponse, 
@@ -9,9 +9,6 @@ import type {
   Buyer 
 } from '@/types/users';
 
-/**
- * Get users data based on user role using Prisma
- */
 export async function getUsersData(
   userRole: 'super_admin' | 'business_owner',
   params: SearchParams,
@@ -100,7 +97,7 @@ export async function getUsersData(
       });
 
       // Process status counts
-      statusCounts.forEach(({ status, _count }) => {
+      statusCounts.forEach(({ status : any, _count }) => {
         if (status === 'active') totalActive = _count.status;
         if (status === 'inactive') totalInactive = _count.status;
       });
@@ -304,9 +301,6 @@ export async function getUsersData(
   }
 }
 
-/**
- * Get user by ID using Prisma
- */
 export async function getUserById(
   userRole: 'super_admin' | 'business_owner',
   userId: string,
@@ -381,9 +375,6 @@ export async function getUserById(
   }
 }
 
-/**
- * Create new user using Prisma
- */
 export async function createUser(
   userRole: 'super_admin' | 'business_owner',
   userData: Partial<BusinessOwner | Buyer>,
@@ -489,9 +480,6 @@ export async function createUser(
   }
 }
 
-/**
- * Update user using Prisma
- */
 export async function updateUser(
   userRole: 'super_admin' | 'business_owner',
   userId: string,
@@ -595,9 +583,6 @@ export async function updateUser(
   }
 }
 
-/**
- * Activate user using Prisma
- */
 export async function activateUser(
   userRole: 'super_admin' | 'business_owner',
   userId: string,
@@ -626,9 +611,6 @@ export async function activateUser(
   }
 }
 
-/**
- * Deactivate user using Prisma
- */
 export async function deactivateUser(
   userRole: 'super_admin' | 'business_owner',
   userId: string,
@@ -657,9 +639,6 @@ export async function deactivateUser(
   }
 }
 
-/**
- * Delete user (soft delete) using Prisma
- */
 export async function deleteUser(
   userRole: 'super_admin' | 'business_owner',
   userId: string,
@@ -687,13 +666,6 @@ export async function deleteUser(
   }
 }
 
-/**
- * Additional server actions based on the routes you provided
- */
-
-/**
- * Check if registration number is unique
- */
 export async function checkRegistrationNumber(
   registrationNumber: string
 ): Promise<{ isUnique: boolean }> {
@@ -710,9 +682,7 @@ export async function checkRegistrationNumber(
   }
 }
 
-/**
- * Check if business owner data is unique
- */
+
 export async function checkBusinessOwnerUnique(
   email?: string,
   businessName?: string
@@ -742,11 +712,7 @@ export async function checkBusinessOwnerUnique(
   }
 }
 
-/**
- * Get business owners list (simplified)
- */
 export async function getBusinessOwnersList(): Promise<Array<{ id: string; businessName: string; email: string }>> {
-
   try {
     const businessOwners = await prisma.businessOwner.findMany({
       where: { is_deleted: false },
