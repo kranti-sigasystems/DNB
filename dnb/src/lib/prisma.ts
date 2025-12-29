@@ -5,9 +5,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Use DIRECT_URL if available, otherwise fall back to DATABASE_URL
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
 // Create PostgreSQL adapter
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
+  connectionString: connectionString!,
 });
 
 export const prisma =

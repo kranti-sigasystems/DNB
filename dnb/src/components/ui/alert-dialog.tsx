@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export type AlertAction = 'add' | 'activate' | 'deactivate' | 'delete' | 'update' | 'custom';
+export type AlertAction = 'add' | 'create' | 'activate' | 'deactivate' | 'delete' | 'update' | 'custom';
 
 interface AlertDialogProps {
   open: boolean;
@@ -30,6 +30,7 @@ interface AlertDialogProps {
 
 const actionConfig = {
   add: { icon: Plus, confirmText: 'Add', variant: 'default' as const },
+  create: { icon: Plus, confirmText: 'Create', variant: 'default' as const },
   activate: { icon: UserCheck, confirmText: 'Activate', variant: 'default' as const },
   deactivate: { icon: UserX, confirmText: 'Deactivate', variant: 'default' as const },
   delete: { icon: Trash2, confirmText: 'Delete', variant: 'destructive' as const },
@@ -50,7 +51,7 @@ export function AlertDialog({
   cancelText = 'Cancel',
   isLoading = false,
 }: AlertDialogProps) {
-  const config = actionConfig[action];
+  const config = actionConfig[action] || actionConfig.custom; // Fallback to custom if action not found
   const Icon = config.icon;
   const finalConfirmText = confirmText || config.confirmText;
 

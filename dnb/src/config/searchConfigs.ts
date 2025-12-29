@@ -149,7 +149,7 @@ export const BUSINESS_OWNER_SEARCH_CONFIG: SearchConfig = {
 
 export const LOCATION_SEARCH_CONFIG: SearchConfig = {
   title: 'Search Locations',
-  quickSearchPlaceholder: 'Search locations by name, code, or address...',
+  quickSearchPlaceholder: 'Search locations by name, code, city, state, or country...',
   quickSearchField: 'query',
   showQuickSearch: true,
   showAdvancedToggle: true,
