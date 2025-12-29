@@ -45,8 +45,7 @@ import {
 import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { TableRefreshIndicator } from '@/components/ui/table-refresh-indicator';
-import { UserSearch } from './UserSearch';
-import type { BusinessOwner, Buyer, SearchFilters, SearchField } from '@/types/users';
+import type { BusinessOwner, Buyer } from '@/types/users';
 
 type SortDirection = 'asc' | 'desc' | null;
 type SortField = 'name' | 'email' | 'status' | 'businessName' | 'phone' | 'registration' | 'product' | 'location' | 'contactPhone' | 'createdAt';
@@ -70,11 +69,6 @@ interface UsersTableProps {
   onDeactivate: (userId: string) => void;
   onDelete: (userId: string) => void;
   onRefresh: () => void;
-  // Search props
-  searchFields?: SearchField[];
-  onSearch?: (filters: SearchFilters) => void;
-  onClearSearch?: () => void;
-  searchLoading?: boolean;
   // Action loading states
   isRefreshing?: boolean;
 }
@@ -542,11 +536,6 @@ export function UsersTable({
   onDeactivate,
   onDelete,
   onRefresh,
-  // Search props
-  searchFields = [],
-  onSearch,
-  onClearSearch,
-  searchLoading = false,
   // Action loading
   isRefreshing = false,
 }: UsersTableProps) {
@@ -733,22 +722,10 @@ export function UsersTable({
           <CardTitle className="text-lg font-semibold">{userLabel}</CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-0">
-          {/* Integrated Search */}
-          {searchFields.length > 0 && onSearch && onClearSearch && (
-            <div className="mb-6">
-              <UserSearch
-                searchFields={searchFields}
-                onSearch={onSearch}
-                onClear={onClearSearch}
-                loading={searchLoading}
-              />
-            </div>
-          )}
-
           {/* Table Refresh Indicator */}
           <div className="mb-4">
             <TableRefreshIndicator 
-              isRefreshing={isRefreshing || (isLoading && !searchLoading)} 
+              isRefreshing={isRefreshing || isLoading} 
               message={isRefreshing ? "Updating data..." : "Loading data..."}
             />
           </div>

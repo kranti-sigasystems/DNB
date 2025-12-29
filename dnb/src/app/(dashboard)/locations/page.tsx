@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, MapPin, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -146,7 +146,7 @@ export default function LocationsPage() {
       key: 'city',
       label: 'City',
       sortable: true,
-      render: (value: string, item: Location) => (
+      render: (value: string, _item: Location) => (
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{value}</span>
@@ -248,8 +248,8 @@ export default function LocationsPage() {
       {/* Main Content */}
       <main className="py-6">
         {/* Search Section */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
+        <Card>
+          <CardContent className="p-3">
             <LocationSearch
               onSearch={handleSearch}
               onClear={handleClearSearch}

@@ -1,28 +1,39 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ProductSearch } from '@/components/products/ProductSearch';
 import { ProductTable } from '@/components/products/ProductTable';
 import { useProducts } from '@/hooks/use-products';
+import { useSearch } from '@/hooks/use-search';
 import type { ProductSearchParams } from '@/types/product';
 
 export default function ProductsPage() {
   const router = useRouter();
-  const [searchFilters, setSearchFilters] = useState<ProductSearchParams>({});
   
   const {
     data,
     loading,
-    searchLoading,
     paginationLoading,
     actionLoading,
     fetchProducts,
     handleDeleteProduct,
   } = useProducts();
+
+  // Use centralized search hook
+  const { searchFilters, isSearching, handleSearch, handleClearSearch } = useSearch<ProductSearchParams>({
+    onFetch: (filters, isSearch) => {
+      fetchProducts({
+        ...filters,
+        pageIndex: 0,
+        pageSize: data?.pageSize || 10,
+      }, isSearch);
+    },
+    initialFilters: {},
+  });
 
   // Initial data fetch
   useEffect(() => {
@@ -48,23 +59,6 @@ export default function ProductsPage() {
     }, false, true);
   }, [fetchProducts, searchFilters]);
 
-  const handleSearch = useCallback((filters: ProductSearchParams) => {
-    setSearchFilters(filters);
-    fetchProducts({
-      ...filters,
-      pageIndex: 0,
-      pageSize: data?.pageSize || 10,
-    }, true);
-  }, [fetchProducts, data?.pageSize]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchFilters({});
-    fetchProducts({
-      pageIndex: 0,
-      pageSize: data?.pageSize || 10,
-    });
-  }, [fetchProducts, data?.pageSize]);
-
   const handleView = useCallback((productId: string) => {
     router.push(`/products/${productId}`);
   }, [router]);
@@ -73,11 +67,15 @@ export default function ProductsPage() {
     router.push(`/products/${productId}/edit`);
   }, [router]);
 
+  const handleAddProduct = useCallback(() => {
+    router.push('/products/new');
+  }, [router]);
+
   const handleDelete = useCallback(async (productId: string) => {
     await handleDeleteProduct(productId);
   }, [handleDeleteProduct]);
 
-  if (loading && !searchLoading) {
+  if (loading && !isSearching) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -101,17 +99,22 @@ export default function ProductsPage() {
           Add Product
         </Button>
       </div>
-      {/* Search */}
-      <ProductSearch
-        onSearch={handleSearch}
-        onClear={handleClearSearch}
-        loading={searchLoading}
-      />
+
+      {/* Search Section - Same structure as location page */}
+      <Card>
+        <CardContent className="p-3">
+          <ProductSearch
+            onSearch={handleSearch}
+            onClear={handleClearSearch}
+            loading={isSearching}
+          />
+        </CardContent>
+      </Card>
 
       {/* Products Table */}
       <ProductTable
         data={data?.data || []}
-        isLoading={loading || searchLoading || paginationLoading}
+        isLoading={loading || isSearching || paginationLoading}
         totalItems={data?.totalItems || 0}
         totalPages={data?.totalPages || 0}
         pageIndex={data?.pageIndex || 0}
@@ -121,6 +124,7 @@ export default function ProductsPage() {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onAddProduct={handleAddProduct}
         isRefreshing={actionLoading}
       />
     </div>
