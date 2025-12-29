@@ -181,17 +181,16 @@ export function UniversalSearch({
                         {loading ? 'Searching...' : 'Search'}
                       </Button>
                       
-                      {hasActiveFilters && (
                         <Button 
                           variant="outline" 
                           onClick={handleClear}
                           className="flex items-center gap-2"
                           type="button"
+                          disabled={loading}
                         >
                           <X className="w-4 h-4" />
                           Clear All
                         </Button>
-                      )}
                     </div>
                     
                     {hasActiveFilters && (

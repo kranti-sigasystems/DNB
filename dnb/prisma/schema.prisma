@@ -187,13 +187,13 @@ model Product {
 // ========== Location.prisma ==========
 model Location {
   id           String   @id @default(uuid())
-  locationName String
-  code         String
+  locationName String?
   city         String
-  state        String
+  state        String   // Added required state field
+  code         String
   country      String
-  address      String
-  postalCode   String
+  address      String?
+  postalCode   String?
   ownerId      String
   createdAt    DateTime @default(now()) @map("createdAt")
   updatedAt    DateTime @updatedAt @map("updatedAt")

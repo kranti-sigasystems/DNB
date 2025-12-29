@@ -74,7 +74,7 @@ export default function Sidebar({
           { name: "Products", icon: Fish, path: "/products" },
           { name: "Offer Drafts", icon: ClipboardList, path: "/offer-draft" },
           { name: "Offers", icon: Tag, path: "/offers" },
-          { name: "Locations", icon: Globe, path: "/location" },
+          { name: "Locations", icon: Globe, path: "/locations" },
           { name: "Profile", icon: User, path: "/profile" },
         ]
       : []),
