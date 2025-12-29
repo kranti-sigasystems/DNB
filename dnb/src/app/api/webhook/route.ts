@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       // Create or update subscription with correct schema
       const subscriptionData = await prisma.subscription.upsert({
         where: {
-          id: subscription.id, // Use the subscription ID directly
+          stripeSubscriptionId: subscription.id,
         },
         update: {
           status:
@@ -86,19 +86,22 @@ export async function POST(req: NextRequest) {
           endDate: new Date(subscription.current_period_end * 1000),
         },
         create: {
-          id: subscription.id,
           userId,
-          planId: planKey, // Assuming planKey maps to planId
+          subscriptionId: subscription.id,
+          planName: plan.name,
           status:
             subscription.status === "active"
               ? "active"
               : subscription.status === "canceled"
                 ? "cancelled"
                 : "inactive",
-          billingCycle: billingCycle as "monthly" | "yearly",
+          paymentStatus: "paid",
           startDate: new Date(subscription.current_period_start * 1000),
           endDate: new Date(subscription.current_period_end * 1000),
-          autoRenew: true,
+          stripeSubscriptionId: subscription.id,
+          stripeCustomerId: subscription.customer as string,
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
         },
       });
 

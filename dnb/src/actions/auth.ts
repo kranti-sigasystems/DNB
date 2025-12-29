@@ -35,23 +35,34 @@ interface AuthResponse {
   message?: string;
 }
 
-export async function registerAndLoginUser(userData: RegisterUserData): Promise<AuthResponse> {
-  try {;
-
+export async function registerAndLoginUser(
+  userData: RegisterUserData
+): Promise<AuthResponse> {
+  try {
     // Validate required fields
     const requiredFields = [
-      'email', 'password', 'businessName', 'registrationNumber',
-      'first_name', 'last_name', 'phoneNumber', 'country',
-      'state', 'city', 'address', 'postalCode'
+      "email",
+      "password",
+      "businessName",
+      "registrationNumber",
+      "first_name",
+      "last_name",
+      "phoneNumber",
+      "country",
+      "state",
+      "city",
+      "address",
+      "postalCode",
     ];
 
-    const missingFields = requiredFields.filter(field => !userData[field as keyof RegisterUserData]);
-    
+    const missingFields = requiredFields.filter(
+      (field) => !userData[field as keyof RegisterUserData]
+    );
     if (missingFields.length > 0) {
       return {
         success: false,
         statusCode: 400,
-        message: `Missing required fields: ${missingFields.join(', ')}`
+        message: `Missing required fields: ${missingFields.join(", ")}`,
       };
     }
 
@@ -61,7 +72,7 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
       return {
         success: false,
         statusCode: 400,
-        message: "Invalid email format"
+        message: "Invalid email format",
       };
     }
 
@@ -70,44 +81,44 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
       return {
         success: false,
         statusCode: 400,
-        message: "Password must be at least 8 characters long"
+        message: "Password must be at least 8 characters long",
       };
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email: userData.email }
+      where: { email: userData.email },
     });
     if (existingUser) {
       return {
         success: false,
         statusCode: 409, // Conflict
-        message: "User with this email already exists"
+        message: "User with this email already exists",
       };
     }
 
     // Check if business name is unique
     const existingBusiness = await prisma.businessOwner.findFirst({
-      where: { businessName: userData.businessName }
+      where: { businessName: userData.businessName },
     });
 
     if (existingBusiness) {
       return {
         success: false,
         statusCode: 409,
-        message: "Business name already exists"
+        message: "Business name already exists",
       };
     }
 
     // Check if registration number is unique
     const existingRegistration = await prisma.businessOwner.findFirst({
-      where: { registrationNumber: userData.registrationNumber }
+      where: { registrationNumber: userData.registrationNumber },
     });
 
     if (existingRegistration) {
       return {
         success: false,
         statusCode: 409,
-        message: "Registration number already exists"
+        message: "Registration number already exists",
       };
     }
 
@@ -125,7 +136,7 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
           last_name: userData.last_name,
           roleId: 2, // Business Owner role ID
           businessName: userData.businessName,
-        }
+        },
       });
 
       // Create business owner
@@ -144,7 +155,7 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
           address: userData.address,
           postalCode: userData.postalCode,
           status: "active",
-        }
+        },
       });
 
       return { user, businessOwner };
@@ -156,15 +167,13 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
       email: result.user.email,
       firstName: result.user.first_name,
       lastName: result.user.last_name,
-      role: "BUSINESS_OWNER",
+      role: "business_owner",
       businessOwnerId: result.businessOwner.id,
     };
 
-    const accessToken = jwt.sign(
-      tokenPayload,
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+    const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!, {
+      expiresIn: "1h",
+    });
 
     const refreshToken = jwt.sign(
       { userId: result.user.id },
@@ -197,54 +206,48 @@ export async function registerAndLoginUser(userData: RegisterUserData): Promise<
         accessToken,
         refreshToken,
         tokenPayload,
-        message: "Account created successfully"
-      }
+        message: "Account created successfully",
+      },
     };
-
   } catch (error: any) {
     console.error("❌ Registration error details:", {
       name: error.name,
       code: error.code,
       message: error.message,
-      meta: error.meta
+      meta: error.meta,
     });
-    
     // Handle specific Prisma errors
-    if (error.code === 'P2022') {
+    if (error.code === "P2022") {
       console.error("Database schema mismatch. Please check:");
       console.error("1. If all tables exist in database");
       console.error("2. If column names match between schema and database");
       console.error("3. Run `npx prisma db push` or `npx prisma migrate dev`");
-      
       return {
         success: false,
         statusCode: 500,
-        message: "Database configuration error. Please contact support."
+        message: "Database configuration error. Please contact support.",
       };
     }
-    
-    if (error.code === 'P2002') {
+    if (error.code === "P2002") {
       const target = error.meta?.target || [];
-      const field = target[0] || 'field';
+      const field = target[0] || "field";
       return {
         success: false,
         statusCode: 409,
-        message: `${field} already exists`
+        message: `${field} already exists`,
       };
     }
-    
-    if (error.code === 'P2003') {
+    if (error.code === "P2003") {
       return {
         success: false,
         statusCode: 400,
-        message: "Foreign key constraint failed"
+        message: "Foreign key constraint failed",
       };
     }
-    
     return {
       success: false,
       statusCode: 500,
-      message: `Registration failed: ${error.message || "Internal server error"}`
+      message: `Registration failed: ${error.message || "Internal server error"}`,
     };
   }
 }

@@ -1,14 +1,14 @@
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
 /* ----------------------------- Constants ----------------------------- */
 
-const AUTH_EVENT_KEY = 'dnb:auth:change';
-const AUTH_STORAGE_KEY = 'dnb_auth_session';
-const ACCESS_TOKEN_KEY = 'authToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
+const AUTH_EVENT_KEY = "dnb:auth:change";
+const AUTH_STORAGE_KEY = "dnb_auth_session";
+const ACCESS_TOKEN_KEY = "authToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_KEY = "user";
 
-const isBrowser: boolean = typeof window !== 'undefined';
+const isBrowser: boolean = typeof window !== "undefined";
 
 /* ------------------------------- Types ------------------------------- */
 
@@ -32,24 +32,33 @@ type SessionUpdater = User | ((prevUser: User) => User);
 
 /* ----------------------------- Helpers ------------------------------ */
 
-const parseJSON = <T>(value: string | null, fallback: T | null = null): T | null => {
+const parseJSON = <T>(
+  value: string | null,
+  fallback: T | null = null
+): T | null => {
   if (!value) return fallback;
   try {
     return JSON.parse(value) as T;
   } catch (error) {
-    
     return fallback;
   }
 };
 
 const normaliseSession = (
-  session: Partial<AuthSession & { token?: string; tokenPayload?: any; data?: any }> | null = {}
+  session: Partial<
+    AuthSession & { token?: string; tokenPayload?: any; data?: any }
+  > | null = {}
 ): AuthSession | null => {
   if (!session) {
     return null;
   }
 
-  const { accessToken = null, refreshToken = null, user = null, remember } = session;
+  const {
+    accessToken = null,
+    refreshToken = null,
+    user = null,
+    remember,
+  } = session;
   if (!accessToken || !user) {
     return null;
   }
@@ -64,7 +73,10 @@ const normaliseSession = (
   return normalized;
 };
 
-const syncStorage = (storage: Storage | null, session: AuthSession | null): void => {
+const syncStorage = (
+  storage: Storage | null,
+  session: AuthSession | null
+): void => {
   if (!storage) return;
 
   if (!session) {
@@ -89,9 +101,7 @@ const syncStorage = (storage: Storage | null, session: AuthSession | null): void
     session.user
       ? storage.setItem(USER_KEY, JSON.stringify(session.user))
       : storage.removeItem(USER_KEY);
-  } catch (error) {
-    
-  }
+  } catch (error) {}
 };
 
 const emitSessionChange = (session: AuthSession | null): void => {
@@ -107,8 +117,8 @@ const emitSessionChange = (session: AuthSession | null): void => {
 /* ------------------------------ API -------------------------------- */
 
 export const getUserFromCookie = (): User | null => {
-  const userCookie = Cookies.get('user');
-  
+  const userCookie = Cookies.get("user");
+
   if (!userCookie) {
     return null;
   }
@@ -117,7 +127,6 @@ export const getUserFromCookie = (): User | null => {
     const parsed = JSON.parse(userCookie) as User;
     return parsed;
   } catch (err) {
-    
     return null;
   }
 };
@@ -126,23 +135,28 @@ export const getStoredSession = (): AuthSession | null => {
   if (!isBrowser) return null;
 
   // First check session/local storage for complete session
-  const sessionValue = sessionStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem(AUTH_STORAGE_KEY);
-
+  const sessionValue =
+    sessionStorage.getItem(AUTH_STORAGE_KEY) ||
+    localStorage.getItem(AUTH_STORAGE_KEY);
   if (sessionValue) {
     const parsed = parseJSON<AuthSession>(sessionValue);
-    
+
     // If session exists but accessToken is null, try to get it from individual storage
     if (parsed && parsed.user && !parsed.accessToken) {
-      const authTokenFromStorage = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
-      const refreshTokenFromStorage = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
-      
+      const authTokenFromStorage =
+        sessionStorage.getItem("authToken") ||
+        localStorage.getItem("authToken");
+      const refreshTokenFromStorage =
+        sessionStorage.getItem("refreshToken") ||
+        localStorage.getItem("refreshToken");
+
       if (authTokenFromStorage) {
         // Update the parsed session with the token from storage
         parsed.accessToken = authTokenFromStorage;
-        parsed.refreshToken = refreshTokenFromStorage || parsed.refreshToken
+        parsed.refreshToken = refreshTokenFromStorage || parsed.refreshToken;
       }
     }
-    
+
     const normalised = normaliseSession(parsed);
 
     if (normalised && !sessionStorage.getItem(AUTH_STORAGE_KEY)) {
@@ -152,9 +166,13 @@ export const getStoredSession = (): AuthSession | null => {
   }
 
   // If no complete session, check individual storage items
-  const authTokenFromStorage = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
-  const refreshTokenFromStorage = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
-  const userFromStorage = sessionStorage.getItem('user') || localStorage.getItem('user');
+  const authTokenFromStorage =
+    sessionStorage.getItem("authToken") || localStorage.getItem("authToken");
+  const refreshTokenFromStorage =
+    sessionStorage.getItem("refreshToken") ||
+    localStorage.getItem("refreshToken");
+  const userFromStorage =
+    sessionStorage.getItem("user") || localStorage.getItem("user");
 
   if (authTokenFromStorage && userFromStorage) {
     try {
@@ -167,16 +185,14 @@ export const getStoredSession = (): AuthSession | null => {
         updatedAt: Date.now(),
       };
       syncStorage(sessionStorage, storageSession);
-      
+
       return storageSession;
-    } catch (err) {
-      
-    }
+    } catch (err) {}
   }
 
   // If no session storage, check cookies
-  const authTokenCookie = Cookies.get('accessToken');
-  const refreshTokenCookie = Cookies.get('refreshToken');
+  const authTokenCookie = Cookies.get("accessToken");
+  const refreshTokenCookie = Cookies.get("refreshToken");
   const userCookie = getUserFromCookie();
 
   if (userCookie && authTokenCookie) {
@@ -190,7 +206,7 @@ export const getStoredSession = (): AuthSession | null => {
     };
     // Store in session storage for future use
     syncStorage(sessionStorage, cookieSession);
-    
+
     return cookieSession;
   }
   return null;
@@ -216,7 +232,10 @@ export const getRefreshToken = (): string | null => {
   return session?.refreshToken ?? null;
 };
 
-export const persistSession = (session: any, options: PersistOptions = {}): AuthSession | null => {
+export const persistSession = (
+  session: any,
+  options: PersistOptions = {}
+): AuthSession | null => {
   if (!isBrowser) return null;
 
   if (!session) {
@@ -225,16 +244,26 @@ export const persistSession = (session: any, options: PersistOptions = {}): Auth
   }
 
   const normalised = normaliseSession({
-    accessToken: session.accessToken ?? session.token ?? session.tokenPayload?.accessToken ?? null,
+    accessToken:
+      session.accessToken ??
+      session.token ??
+      session.tokenPayload?.accessToken ??
+      null,
 
     refreshToken: session.refreshToken ?? session?.data?.refreshToken ?? null,
 
-    user: session.user ?? session.tokenPayload ?? session.data?.tokenPayload ?? null,
+    user:
+      session.user ??
+      session.tokenPayload ??
+      session.data?.tokenPayload ??
+      null,
 
     remember:
       options.remember ??
       session.remember ??
-      (session?.data?.remember !== undefined ? session.data.remember : undefined),
+      (session?.data?.remember !== undefined
+        ? session.data.remember
+        : undefined),
   });
 
   if (!normalised) {
@@ -259,19 +288,19 @@ export const clearSession = (): void => {
 
   syncStorage(sessionStorage, null);
   syncStorage(localStorage, null);
-  
+
   // Also clear cookies
-  Cookies.remove('accessToken');
-  Cookies.remove('refreshToken');
-  Cookies.remove('user');
-  
+  Cookies.remove("accessToken");
+  Cookies.remove("refreshToken");
+  Cookies.remove("user");
+
   emitSessionChange(null);
 };
 
 export const subscribeToSessionChanges = (
   callback: (session: AuthSession | null) => void
 ): (() => void) => {
-  if (!isBrowser || typeof callback !== 'function') return () => {};
+  if (!isBrowser || typeof callback !== "function") return () => {};
 
   const handleCustomEvent = (event: Event) => {
     const customEvent = event as CustomEvent<AuthSession | null>;
@@ -280,18 +309,23 @@ export const subscribeToSessionChanges = (
 
   const handleStorageEvent = (event: StorageEvent) => {
     if (
-      [AUTH_STORAGE_KEY, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY].includes(event.key ?? '')
+      [
+        AUTH_STORAGE_KEY,
+        ACCESS_TOKEN_KEY,
+        REFRESH_TOKEN_KEY,
+        USER_KEY,
+      ].includes(event.key ?? "")
     ) {
       callback(getStoredSession());
     }
   };
 
   window.addEventListener(AUTH_EVENT_KEY, handleCustomEvent);
-  window.addEventListener('storage', handleStorageEvent);
+  window.addEventListener("storage", handleStorageEvent);
 
   return () => {
     window.removeEventListener(AUTH_EVENT_KEY, handleCustomEvent);
-    window.removeEventListener('storage', handleStorageEvent);
+    window.removeEventListener("storage", handleStorageEvent);
   };
 };
 
@@ -301,7 +335,8 @@ export const updateStoredUser = (updater: SessionUpdater): User | null => {
   const current = getStoredSession();
   if (!current || !current.user) return null;
 
-  const nextUser = typeof updater === 'function' ? updater(current.user) : updater;
+  const nextUser =
+    typeof updater === "function" ? updater(current.user) : updater;
 
   const nextSession: AuthSession = {
     ...current,

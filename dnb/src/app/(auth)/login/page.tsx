@@ -13,11 +13,12 @@ import { InputField } from "@/components/common/InputField";
 import { PasswordField } from "@/components/common/PasswordField";
 import useAuth from "@/hooks/use-auth";
 import { LoginFormData } from "@/types/auth";
+import { MoveLeftIcon, RefreshCcw } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
-  const { } = useAuth();
-  
+  const {} = useAuth();
+
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       const result = await loginFormAction(prevState, formData);
@@ -25,13 +26,12 @@ export default function Login() {
       // Handle successful login
       if (result?.success && result?.data) {
         const { authToken, refreshToken, tokenPayload } = result.data;
-        
+
         // Store in sessionStorage exactly as shown in the image
-        sessionStorage.setItem('authToken', authToken);
-        sessionStorage.setItem('refreshToken', refreshToken);
-        sessionStorage.setItem('user', JSON.stringify(tokenPayload));
+        sessionStorage.setItem("authToken", authToken);
+        sessionStorage.setItem("refreshToken", refreshToken);
+        sessionStorage.setItem("user", JSON.stringify(tokenPayload));
         toast.success("Login successful!");
-        
         // Redirect to dashboard or specified route
         if (result.redirectTo) {
           router.push(result.redirectTo);
@@ -134,19 +134,15 @@ export default function Login() {
           </Form>
 
           <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-3 sm:gap-4 mt-6 sm:mt-8 text-xs sm:text-sm">
-            <Link
-              href="/forgot-password"
-              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
-            >
-              Forgot password?
-            </Link>
+            <Button variant="link" className="decoration-none">
+              <RefreshCcw />
+              <Link href={"/forgot-password"}>Forgot password</Link>
+            </Button>
 
-            <Link
-              href="/"
-              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
-            >
-              Back to home
-            </Link>
+            <Button variant="link" className="decoration-none">
+              <MoveLeftIcon />
+              <Link href={"/"}>Back to home</Link>
+            </Button>
           </div>
         </div>
       </div>

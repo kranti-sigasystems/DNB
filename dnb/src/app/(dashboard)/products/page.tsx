@@ -2,11 +2,12 @@
 
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, MapPin, Users, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductSearch } from '@/components/products/ProductSearch';
 import { ProductTable } from '@/components/products/ProductTable';
+import { ResourceUsageCard } from '@/components/dashboard/resource-usage-card';
 import { useProducts } from '@/hooks/use-products';
 import { useSearch } from '@/hooks/use-search';
 import type { ProductSearchParams } from '@/types/product';

@@ -299,7 +299,7 @@ export async function getLocationStats(authToken?: string) {
       data: {
         totalLocations: totalCount,
         countriesCount: countryCount.length,
-        countryBreakdown: countryCount.map(item => ({
+        countryBreakdown: countryCount.map((item: any) => ({
           country: item.country,
           count: item._count.country
         }))

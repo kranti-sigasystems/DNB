@@ -80,7 +80,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   if (!selectedPlan) {
     return (
-      <div className="text-center text-slate-500 p-6 border border-dashed rounded-lg">
+      <div className="text-center text-slate-500 dark:text-slate-400 p-6 border border-dashed dark:border-slate-700 rounded-lg">
         No plan selected.
       </div>
     );
@@ -246,59 +246,59 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   return (
     <div className="lg:col-span-1">
       <div className="sticky top-24 space-y-6">
-        <Card className="shadow-lg border-slate-200">
+        <Card className="shadow-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900">
           <CardHeader>
-            <CardTitle className="text-lg">Order Summary</CardTitle>
+            <CardTitle className="text-lg dark:text-white">Order Summary</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <div className="flex justify-between">
               <div>
-                <h3 className="font-semibold text-slate-900">{selectedPlan.name}</h3>
-                <p className="text-slate-600">{selectedPlan.description}</p>
+                <h3 className="font-semibold text-slate-900 dark:text-white">{selectedPlan.name}</h3>
+                <p className="text-slate-600 dark:text-slate-400">{selectedPlan.description}</p>
               </div>
-              <Badge variant="outline" className="capitalize bg-amber-300">
+              <Badge variant="outline" className="capitalize bg-amber-300 dark:text-black ">
                 {billingCycle} Billing
               </Badge>
             </div>
 
-            <Separator />
+            <Separator className="dark:bg-slate-700" />
 
             <div className="grid grid-cols-2 gap-2">
               {planFeatures.map((f, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
+                <div key={i} className="flex items-center gap-2 text-sm dark:text-slate-300">
                   <Check className="w-4 h-4 text-green-600" />
                   {f.value} {f.label}
                 </div>
               ))}
             </div>
 
-            <Separator />
+            <Separator className="dark:bg-slate-700" />
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm dark:text-slate-300">
                 <span>Subtotal</span>
                 <span>
                   {calculateTotal()} {selectedPlan.currency}
                 </span>
               </div>
 
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm dark:text-slate-300">
                 <span>Tax</span>
                 <span>Calculated at checkout</span>
               </div>
 
-              <Separator />
+              <Separator className="dark:bg-slate-700" />
 
               <div className="flex justify-between items-baseline">
-                <span className="font-semibold text-slate-900">Total</span>
+                <span className="font-semibold text-slate-900 dark:text-white">Total</span>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-slate-900">
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
                     {calculateTotal() === 0
                       ? 'You\'re starting your trial plan'
                       : `${calculateTotal()} ${selectedPlan.currency}`}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     per {billingCycle === 'monthly' ? 'month' : 'year'}
                   </p>
                 </div>
@@ -314,19 +314,19 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </Button>
 
             {/* Flow explanation */}
-            <div className="text-xs text-gray-500 text-center mt-2">
+            <div className="text-xs text-gray-500 dark:text-slate-400 text-center mt-2">
               <p>✅ Auto-create account → ✅ Secure payment → ✅ Activate subscription</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-slate-200 bg-slate-50">
+        <Card className="shadow-md border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
-                <h4 className="text-sm font-semibold text-slate-900 mb-1">Secure Payment</h4>
-                <p className="text-xs text-slate-600">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Secure Payment</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   Your payment information is encrypted and never stored.
                 </p>
               </div>
