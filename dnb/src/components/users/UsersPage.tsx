@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Users as UsersIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSearch } from './UserSearch';
 import { UsersTable } from './UsersTable';
 import { useUsers } from '@/hooks/use-users';
+import { useSearch } from '@/hooks/use-search';
 import type { 
-  BusinessOwner, 
-  Buyer, 
   SearchFilters,
   SearchField
 } from '@/types/users';
@@ -21,14 +20,11 @@ interface UsersPageProps {
 }
 
 export function UsersPage({ userRole, authToken }: UsersPageProps) {
-
   const router = useRouter();
-  const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
   
   const {
     data,
     loading,
-    searchLoading,
     paginationLoading,
     actionLoading,
     fetchUsers,
@@ -37,26 +33,20 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
     handleDelete,
   } = useUsers({ userRole, authToken });
 
-  // Log data whenever it changes
-  useEffect(() => {
-    if (data) {
-
-      // Log each user individually for detailed inspection
-      if (Array.isArray(data.data)) {
-        data.data.forEach((user, index) => {
-          
-        });
-      } else {
-        
-      }
-    } else {
-      
-    }
-  }, [data, userRole]);
+  // Use centralized search hook
+  const { searchFilters, isSearching, handleSearch, handleClearSearch } = useSearch<SearchFilters>({
+    onFetch: (filters, isSearch) => {
+      fetchUsers({
+        ...filters,
+        pageIndex: 0,
+        pageSize: data?.pageSize || 10,
+      }, isSearch);
+    },
+    initialFilters: {},
+  });
 
   // Initial data fetch
   useEffect(() => {
-    
     fetchUsers({
       pageIndex: 0,
       pageSize: 10,
@@ -64,7 +54,6 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
   }, []);
 
   const handlePageChange = useCallback((page: number) => {
-    
     fetchUsers({
       ...searchFilters,
       pageIndex: page,
@@ -73,7 +62,6 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
   }, [fetchUsers, searchFilters, data?.pageSize]);
 
   const handlePageSizeChange = useCallback((pageSize: number) => {
-    
     fetchUsers({
       ...searchFilters,
       pageIndex: 0,
@@ -81,27 +69,7 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
     }, false, true);
   }, [fetchUsers, searchFilters]);
 
-  const handleSearch = useCallback((filters: SearchFilters) => {
-    
-    setSearchFilters(filters);
-    fetchUsers({
-      ...filters,
-      pageIndex: 0,
-      pageSize: data?.pageSize || 10,
-    }, true);
-  }, [fetchUsers, data?.pageSize]);
-
-  const handleClearSearch = useCallback(() => {
-    
-    setSearchFilters({});
-    fetchUsers({
-      pageIndex: 0,
-      pageSize: data?.pageSize || 10,
-    });
-  }, [fetchUsers, data?.pageSize]);
-
   const handleRefresh = useCallback(() => {
-    
     fetchUsers({
       ...searchFilters,
       pageIndex: data?.pageIndex || 0,
@@ -146,9 +114,8 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
 
   const pageTitle = userRole === 'super_admin' ? 'Business Owners' : 'Buyers';
   const addButtonText = userRole === 'super_admin' ? 'Add Business Owner' : 'Add Buyer';
-  const addRoute = '/users/new';
 
-  if (loading && !searchLoading) {
+  if (loading && !isSearching) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -214,11 +181,24 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
         </div>
       )}
 
-      {/* Users Table with integrated search */}
+      {/* Search Section - Same structure as location page */}
+      <Card>
+        <CardContent className="p-3">
+          <UserSearch
+            searchFields={searchFields}
+            onSearch={handleSearch}
+            onClear={handleClearSearch}
+            loading={isSearching}
+            userType={userRole === 'super_admin' ? 'business_owners' : 'buyers'}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Users Table - Simplified without integrated search */}
       <UsersTable
         data={data?.data || []}
         userRole={userRole}
-        isLoading={loading || searchLoading || paginationLoading}
+        isLoading={loading || isSearching || paginationLoading}
         totalItems={data?.totalItems || 0}
         totalPages={data?.totalPages || 0}
         pageIndex={data?.pageIndex || 0}
@@ -229,12 +209,6 @@ export function UsersPage({ userRole, authToken }: UsersPageProps) {
         onDeactivate={handleDeactivate}
         onDelete={handleDelete}
         onRefresh={handleRefresh}
-        // Pass search props
-        searchFields={searchFields}
-        onSearch={handleSearch}
-        onClearSearch={handleClearSearch}
-        searchLoading={searchLoading}
-        // Pass action loading state
         isRefreshing={actionLoading}
       />
     </div>

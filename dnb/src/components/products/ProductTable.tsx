@@ -65,6 +65,7 @@ interface ProductTableProps {
   onView: (productId: string) => void;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
+  onAddProduct?: () => void;
   isRefreshing?: boolean;
 }
 
@@ -406,6 +407,7 @@ export function ProductTable({
   onView,
   onEdit,
   onDelete,
+  onAddProduct,
   isRefreshing = false,
 }: ProductTableProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -532,9 +534,15 @@ export function ProductTable({
             <p className="text-muted-foreground font-medium text-sm sm:text-base">
               No products found
             </p>
-            <p className="text-muted-foreground/70 text-xs sm:text-sm mt-1">
-              Try adjusting your search criteria
+            <p className="text-muted-foreground/70 text-xs sm:text-sm mt-1 mb-4">
+              Try adjusting your search criteria or add your first product
             </p>
+            {onAddProduct && (
+              <Button onClick={onAddProduct} size="sm" className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Add Product
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -626,7 +634,13 @@ export function ProductTable({
                           <div className="flex flex-col items-center gap-2">
                             <Package className="w-8 h-8 text-muted-foreground/50" />
                             <p className="text-muted-foreground">No products found</p>
-                            <p className="text-muted-foreground/70 text-sm">Try adjusting your search criteria</p>
+                            <p className="text-muted-foreground/70 text-sm mb-3">Try adjusting your search criteria or add your first product</p>
+                            {onAddProduct && (
+                              <Button onClick={onAddProduct} size="sm" className="flex items-center gap-2">
+                                <Package className="w-4 h-4" />
+                                Add Product
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -653,6 +667,12 @@ export function ProductTable({
               <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Products Found</h3>
               <p className="text-muted-foreground mb-4">Get started by creating your first product.</p>
+              {onAddProduct && (
+                <Button onClick={onAddProduct} className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Add Product
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
