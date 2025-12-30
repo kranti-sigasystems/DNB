@@ -1,45 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { 
+  withErrorHandler, 
+  withRateLimit, 
+  withValidation, 
+  rateLimitConfigs,
+  commonSchemas 
+} from '@/core/middleware';
+import { successResponse, errorResponse } from '@/core/handlers';
 import { loginFormAction } from '@/actions/auth.actions';
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { email, password, businessName } = body;
+// Login validation schema
+const loginSchema = {
+  body: z.object({
+    email: commonSchemas.email,
+    password: z.string().min(1, 'Password is required'),
+    businessName: z.string().optional(),
+  }),
+};
 
-    // Create FormData for the server action
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
-    if (businessName) {
-      formData.append('businessName', businessName);
-    }
+// POST /api/auth/login - User login with rate limiting and validation
+export const POST = withErrorHandler(
+  withRateLimit(rateLimitConfigs.auth)(
+    withValidation(loginSchema)(async (request: NextRequest) => {
+      const { email, password, businessName } = (request as any).validatedBody;
 
-    // Use the server action for login
-    const result = await loginFormAction(null, formData);
+      // Create FormData for the server action
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('password', password);
+      if (businessName) {
+        formData.append('businessName', businessName);
+      }
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        data: result.data,
-        message: 'Login successful'
-      });
-    } else {
-      return NextResponse.json({
-        success: false,
-        error: result.error || 'Login failed'
-      }, { status: 401 });
-    }
-  } catch (error: any) {
-    console.error('Login API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
-  }
-}
+      // Use the server action for login
+      const result = await loginFormAction(null, formData);
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'Login endpoint - use POST method'
-  }, { status: 405 });
-}
+      if (result.success) {
+        return successResponse(200, 'Login successful', result.data);
+      } else {
+        return errorResponse(401, result.error || 'Login failed');
+      }
+    })
+  )
+);
+
+// GET /api/auth/login - Method not allowed
+export const GET = withErrorHandler(async () => {
+  return errorResponse(405, 'Method not allowed - use POST');
+});
