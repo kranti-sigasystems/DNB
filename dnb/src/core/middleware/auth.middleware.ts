@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { errorResponse } from '../handlers/responseHandler';
+import { errorResponse, legacyErrorResponse } from '../handlers/responseHandler';
 
 interface DecodedToken {
   id: string;
@@ -13,6 +13,19 @@ interface DecodedToken {
 interface AuthenticatedRequest extends NextRequest {
   user?: DecodedToken;
 }
+
+// Express-style interfaces for compatibility
+interface ExpressRequest {
+  headers: { [key: string]: string | undefined };
+  user?: DecodedToken;
+}
+
+interface ExpressResponse {
+  status: (code: number) => ExpressResponse;
+  json: (data: any) => ExpressResponse;
+}
+
+type ExpressNext = () => void;
 
 /**
  * Authenticate JWT token for Next.js API routes
@@ -52,6 +65,49 @@ export const authenticateJWT = async (
     return errorResponse(500, 'Internal Server Error during authentication');
   }
 };
+
+/**
+ * Express-style JWT authentication middleware
+ */
+export const expressAuthenticateJWT = (
+  req: ExpressRequest,
+  res: ExpressResponse,
+  next: ExpressNext
+): void => {
+  try {
+    const authHeader = req.headers["authorization"];
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      legacyErrorResponse(res, 401, "Unauthorized: No access token provided");
+      return;
+    }
+
+    const token = authHeader.split(" ")[1];
+    
+    if (!process.env.ACCESS_TOKEN_SECRET) {
+      console.error('ACCESS_TOKEN_SECRET is not defined');
+      legacyErrorResponse(res, 500, "Server configuration error");
+      return;
+    }
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err: any, decoded: any) => {
+      if (err) {
+        legacyErrorResponse(res, 403, "Invalid or expired access token", err.message);
+        return;
+      }
+      
+      req.user = decoded as DecodedToken;
+      next();
+    });
+  } catch (err: any) {
+    legacyErrorResponse(res, 500, "Internal Server Error", err.message);
+  }
+};
+
+/**
+ * Express-style access token authentication (alias)
+ */
+export const expressAuthenticateAccessToken = expressAuthenticateJWT;
 
 /**
  * Authenticate access token (alias for authenticateJWT)

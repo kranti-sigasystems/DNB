@@ -1,10 +1,83 @@
-# Robust Middleware Implementation
+# Comprehensive Middleware System
 
-This document outlines the comprehensive middleware system implemented across the application for enhanced security, validation, error handling, and performance.
+This document outlines the robust middleware system implemented across the application for enhanced security, validation, error handling, and performance.
 
 ## 🚀 Implementation Summary
 
-### **API Routes Enhanced**
+### **Middleware Architecture**
+
+The middleware system supports both **Next.js App Router** patterns and **Express.js compatibility** for legacy code integration.
+
+#### **Next.js Style Middleware**
+- Modern async/await patterns
+- NextRequest/NextResponse integration
+- Composable middleware chains
+- TypeScript-first design
+
+#### **Express Style Middleware**
+- Legacy Express.js compatibility
+- (req, res, next) pattern support
+- Backward compatibility for existing code
+- Easy migration path
+
+### **Core Middleware Components**
+
+#### 1. **Authentication & Authorization**
+```typescript
+// Next.js style
+withAuth(handler)
+withRole(['business_owner', 'super_admin'])(handler)
+
+// Express style
+expressAuthenticateJWT(req, res, next)
+requireRole(['business_owner'])(req, res, next)
+```
+
+#### 2. **Rate Limiting**
+```typescript
+// Next.js style
+withRateLimit(rateLimitConfigs.auth)(handler)
+
+// Express style
+rateLimiter(req, res, next)
+expressRateLimit({ windowMs: 15 * 60 * 1000, max: 5 })
+```
+
+#### 3. **Input Validation**
+```typescript
+// Next.js style with Zod
+withValidation({
+  body: z.object({
+    email: commonSchemas.email,
+    password: commonSchemas.password,
+  })
+})(handler)
+
+// Express style
+validateRequest(schema)(req, res, next)
+```
+
+#### 4. **Error Handling**
+```typescript
+// Next.js style
+withErrorHandler(handler)
+
+// Express style
+asyncHandler(async (req, res, next) => {
+  // Your logic here
+})
+```
+
+#### 5. **Plan & Subscription Management**
+```typescript
+// Check plan validity
+withPlanValidity(handler)
+
+// Check plan limits
+withPlanLimit({ feature: 'exports', limit: 100 })(handler)
+```
+
+### **Enhanced API Routes**
 
 #### 1. **Authentication API** (`/api/auth/login`)
 - ✅ **Rate Limiting**: 5 attempts per 15 minutes
@@ -12,234 +85,357 @@ This document outlines the comprehensive middleware system implemented across th
 - ✅ **Error Handling**: Standardized error responses
 - ✅ **Security**: Prevents brute force attacks
 
-#### 2. **Checkout API** (`/api/checkout`)
-- ✅ **Authentication**: JWT token validation
-- ✅ **Authorization**: User can only create checkout for themselves
-- ✅ **Rate Limiting**: 100 requests per 15 minutes
-- ✅ **Input Validation**: Comprehensive business data validation
-- ✅ **Error Handling**: Prisma error handling, Stripe error handling
-
-#### 3. **Webhook API** (`/api/webhook`)
-- ✅ **Rate Limiting**: 1000 requests per 5 minutes (high for webhooks)
-- ✅ **Error Handling**: Structured webhook event handling
-- ✅ **Security**: Stripe signature verification
-- ✅ **Reliability**: Separated event handlers for maintainability
-
-#### 4. **Products API** (`/api/products`)
+#### 2. **Products API** (`/api/products`)
 - ✅ **Authentication**: JWT token validation
 - ✅ **Authorization**: Role-based access (business_owner, super_admin)
 - ✅ **Rate Limiting**: API rate limits
 - ✅ **Input Validation**: Product creation and search validation
 - ✅ **Pagination**: Built-in pagination support
 
-#### 5. **Users API** (`/api/users`)
+#### 3. **Users API** (`/api/users`)
 - ✅ **Authentication**: JWT token validation
 - ✅ **Authorization**: Role-based access with granular permissions
 - ✅ **Rate Limiting**: API rate limits
 - ✅ **Input Validation**: User creation and search validation
 - ✅ **Data Filtering**: Users only see data they're authorized to see
 
-### **Middleware Components**
-
-#### **Authentication & Authorization**
-```typescript
-// JWT Authentication
-withAuth(handler)
-
-// Role-based Authorization
-withRole(['business_owner', 'super_admin'])(handler)
-
-// Combined
-withAuth(withRole(['business_owner'])(handler))
-```
-
-#### **Rate Limiting**
-```typescript
-// Predefined configurations
-withRateLimit(rateLimitConfigs.auth)    // 5 req/15min
-withRateLimit(rateLimitConfigs.api)     // 100 req/15min
-withRateLimit(rateLimitConfigs.general) // 1000 req/15min
-
-// Custom configuration
-withRateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: 'Custom rate limit message'
-})(handler)
-```
-
-#### **Input Validation**
-```typescript
-// Schema validation
-const schema = {
-  body: z.object({
-    email: commonSchemas.email,
-    password: commonSchemas.password,
-  }),
-  query: z.object({
-    page: z.number().min(1).default(1),
-  })
-};
-
-withValidation(schema)(handler)
-```
-
-#### **Error Handling**
-```typescript
-// Global error wrapper
-withErrorHandler(handler)
-
-// Custom error types
-throw new ValidationError('Invalid input');
-throw new UnauthorizedError('Access denied');
-throw new NotFoundError('Resource not found');
-```
-
-### **Response Helpers**
-```typescript
-// Success responses
-return successResponse(200, 'Success message', data);
-
-// Error responses
-return errorResponse(400, 'Error message');
-```
+#### 4. **Webhook API** (`/api/webhook`)
+- ✅ **Rate Limiting**: 1000 requests per 5 minutes (high for webhooks)
+- ✅ **Error Handling**: Structured webhook event handling
+- ✅ **Security**: Stripe signature verification
+- ✅ **Reliability**: Separated event handlers for maintainability
 
 ## 🔒 Security Features
 
-### **Rate Limiting**
-- **Authentication endpoints**: 5 attempts per 15 minutes
-- **API endpoints**: 100 requests per 15 minutes
-- **General endpoints**: 1000 requests per 15 minutes
-- **Webhooks**: 1000 requests per 5 minutes
-- **IP-based tracking** with user ID fallback
+### **Multi-Layer Rate Limiting**
+```typescript
+export const rateLimitConfigs = {
+  // Strict for authentication
+  auth: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per 15 minutes
+    message: 'Too many authentication attempts, please try again after 15 minutes.',
+  },
+  
+  // Moderate for API endpoints
+  api: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 minutes
+    message: 'Too many API requests, please try again later.',
+  },
+  
+  // Lenient for general endpoints
+  general: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // 1000 requests per 15 minutes
+    message: 'Rate limit exceeded, please try again later.',
+  },
+};
+```
 
-### **Authentication**
-- **JWT token validation** on protected routes
-- **Token expiration handling**
-- **Signature verification**
-- **User context injection**
+### **JWT Authentication**
+- **Token validation** with configurable secrets
+- **Expiration handling** with refresh token support
+- **Role-based authorization** with granular permissions
+- **User context injection** for downstream handlers
 
-### **Authorization**
-- **Role-based access control**
-- **Resource-level permissions**
-- **User ownership validation**
-- **Granular permission checks**
-
-### **Input Validation**
+### **Input Validation & Sanitization**
 - **Schema-based validation** using Zod
 - **Type safety** with TypeScript
 - **Sanitization** of user inputs
-- **Detailed error messages**
+- **Detailed validation error messages**
 
-## 🛡️ Error Handling
+## 🛡️ Advanced Error Handling
 
 ### **Custom Error Classes**
-- `ValidationError` - Input validation failures
-- `UnauthorizedError` - Authentication failures
-- `ForbiddenError` - Authorization failures
-- `NotFoundError` - Resource not found
-- `ConflictError` - Data conflicts
-- `TooManyRequestsError` - Rate limit exceeded
+```typescript
+// Validation errors
+throw new ValidationError('Invalid input data');
 
-### **Database Error Handling**
-- **Prisma error mapping** to user-friendly messages
-- **Constraint violation handling**
-- **Connection error recovery**
-- **Transaction rollback support**
+// Authentication errors
+throw new UnauthorizedError('Access token required');
 
-### **Logging & Monitoring**
-- **Structured error logging**
-- **Request/response logging**
-- **Performance monitoring**
-- **Audit trail support**
+// Authorization errors
+throw new ForbiddenError('Insufficient permissions');
 
-## 📊 Performance Features
+// Resource errors
+throw new NotFoundError('Resource not found');
 
-### **Caching**
-- **In-memory rate limit storage**
-- **Token validation caching**
-- **Response caching headers**
+// Conflict errors
+throw new ConflictError('Resource already exists');
 
-### **Optimization**
-- **Lazy loading** of middleware
-- **Efficient database queries**
-- **Minimal payload responses**
-- **Compression support**
+// Rate limiting errors
+throw new TooManyRequestsError('Rate limit exceeded');
+```
+
+### **Error Response Standardization**
+```typescript
+// Success responses
+return successResponse(200, 'Operation successful', data);
+
+// Error responses
+return errorResponse(400, 'Validation failed', validationErrors);
+
+// Legacy Express responses
+legacySuccessResponse(res, 200, 'Success', data);
+legacyErrorResponse(res, 400, 'Error', error);
+```
+
+## 📊 Performance & Monitoring
+
+### **Request/Response Logging**
+```typescript
+// Automatic request logging
+requestLogger(req, res, next);
+
+// Performance monitoring
+const startTime = Date.now();
+// ... operation ...
+console.log(`Operation took ${Date.now() - startTime}ms`);
+```
+
+### **Caching Strategy**
+- **In-memory rate limit storage** with automatic cleanup
+- **Token validation caching** for performance
+- **Response headers** for client-side caching
 
 ## 🔧 Usage Examples
 
-### **Complete API Route**
+### **Complete Next.js API Route**
 ```typescript
+import {
+  withErrorHandler,
+  withAuth,
+  withRole,
+  withRateLimit,
+  withValidation,
+  rateLimitConfigs,
+  successResponse,
+} from '@/core/middleware';
+
+const createProductSchema = {
+  body: z.object({
+    productName: z.string().min(1),
+    species: z.string().min(1),
+    price: z.number().positive(),
+  }),
+};
+
 export const POST = withErrorHandler(
-  withRole(['business_owner'])(
+  withRateLimit(rateLimitConfigs.api)(
     withValidation(createProductSchema)(
-      withRateLimit(rateLimitConfigs.api)(async (req: NextRequest) => {
-        const user = (req as any).user;
-        const data = (req as any).validatedBody;
-        
-        // Your business logic here
-        const result = await createProduct(data, user.id);
-        
-        return successResponse(201, 'Product created', result);
+      withAuth(
+        withRole(['business_owner'])(async (req: NextRequest) => {
+          const user = (req as any).user;
+          const { validatedBody } = req as any;
+          
+          // Create product with validated data
+          const product = await prisma.product.create({
+            data: {
+              ...validatedBody,
+              businessOwnerId: user.businessOwnerId,
+            },
+          });
+          
+          return successResponse(201, 'Product created successfully', product);
+        })
+      )
+    )
+  )
+);
+```
+
+### **Express-Style Route (Legacy Compatibility)**
+```typescript
+import {
+  legacyAsyncHandler,
+  legacyAuthenticateJWT,
+  requireRole,
+  legacyRateLimiter,
+} from '@/core/middleware';
+
+// Express middleware chain
+export const expressRoute = [
+  legacyRateLimiter,
+  legacyAuthenticateJWT,
+  requireRole(['business_owner']),
+  legacyAsyncHandler(async (req, res) => {
+    // Your Express-style logic here
+    const products = await getProducts(req.user.businessOwnerId);
+    
+    res.status(200).json({
+      success: true,
+      data: products,
+    });
+  }),
+];
+```
+
+### **Plan & Subscription Middleware**
+```typescript
+export const POST_PremiumFeature = withErrorHandler(
+  withAuth(
+    withPlanValidity(
+      withPlanLimit({ feature: 'premium_exports', limit: 100 })(
+        async (req: NextRequest) => {
+          // Premium feature logic
+          return successResponse(200, 'Premium feature executed');
+        }
+      )
+    )
+  )
+);
+```
+
+### **Custom Rate Limiting**
+```typescript
+// Custom rate limit for file uploads
+const fileUploadRateLimit = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 uploads per 15 minutes
+  message: 'Upload limit exceeded. Please try again later.',
+};
+
+export const POST_FileUpload = withErrorHandler(
+  withRateLimit(fileUploadRateLimit)(
+    withAuth(async (req: NextRequest) => {
+      // File upload logic
+      return successResponse(200, 'File uploaded successfully');
+    })
+  )
+);
+```
+
+## 🚀 Helper Utilities
+
+### **CRUD Route Generator**
+```typescript
+import { createProtectedCRUDRoute } from '@/core/examples/middleware-usage-examples';
+
+export const POST_CreateProduct = createProtectedCRUDRoute(
+  async (req: NextRequest) => {
+    const body = await req.json();
+    // Create product logic
+    return successResponse(201, 'Product created', body);
+  },
+  {
+    roles: ['business_owner'],
+    rateLimit: rateLimitConfigs.api,
+    validation: {
+      body: commonSchemas.createProduct,
+    },
+    requirePlan: true,
+  }
+);
+```
+
+### **Testing Helpers**
+```typescript
+import { createMockRequest, createAuthenticatedRequest } from '@/core/examples/middleware-usage-examples';
+
+// Create test request
+const mockReq = createMockRequest({
+  method: 'POST',
+  body: { productName: 'Test Product' },
+});
+
+// Create authenticated test request
+const authReq = createAuthenticatedRequest('jwt-token', {
+  method: 'POST',
+  body: { productName: 'Test Product' },
+});
+```
+
+## 📝 Configuration
+
+### **Environment Variables**
+```env
+# JWT Configuration
+ACCESS_TOKEN_SECRET=your-jwt-secret
+REFRESH_TOKEN_SECRET=your-refresh-secret
+ACCESS_TOKEN_EXPIRY=15m
+REFRESH_TOKEN_EXPIRY=7d
+
+# Database
+DATABASE_URL=your-database-url
+
+# External Services
+STRIPE_SECRET_KEY=your-stripe-secret
+STRIPE_WEBHOOK_SECRET=your-webhook-secret
+```
+
+### **Middleware Configuration**
+```typescript
+// Rate limit customization
+export const customRateLimits = {
+  passwordReset: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 attempts per hour
+  },
+  fileUpload: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 uploads per 15 minutes
+  },
+};
+
+// Validation schemas
+export const customSchemas = {
+  createProduct: z.object({
+    productName: z.string().min(1).max(100),
+    species: z.string().min(1),
+    price: z.number().positive(),
+  }),
+};
+```
+
+## 🔄 Migration Guide
+
+### **From Express to Next.js**
+```typescript
+// Old Express route
+app.post('/api/products', 
+  rateLimiter,
+  authenticateJWT,
+  requireRole(['business_owner']),
+  asyncHandler(async (req, res) => {
+    // Logic here
+  })
+);
+
+// New Next.js route
+export const POST = withErrorHandler(
+  withRateLimit(rateLimitConfigs.api)(
+    withAuth(
+      withRole(['business_owner'])(async (req: NextRequest) => {
+        // Same logic here
       })
     )
   )
 );
 ```
 
-### **Server Action Enhancement**
-```typescript
-import { withActionErrorHandler, validateFormData } from '@/core/utils/action-helpers';
+## 🚀 Future Enhancements
 
-export const createProductAction = withActionErrorHandler(async (formData: FormData) => {
-  validateFormData(formData, ['productName', 'species']);
-  
-  const productName = formData.get('productName') as string;
-  const species = formData.get('species') as string;
-  
-  // Your logic here
-  const product = await prisma.product.create({
-    data: { productName, species }
-  });
-  
-  return createSuccessResponse(product, 'Product created successfully');
-});
-```
-
-## 🚀 Next Steps
-
-### **Immediate Benefits**
-- ✅ **Enhanced Security** - Rate limiting, authentication, authorization
-- ✅ **Better UX** - Consistent error messages, proper validation
-- ✅ **Maintainability** - Centralized error handling, reusable middleware
-- ✅ **Monitoring** - Structured logging, error tracking
-- ✅ **Performance** - Optimized request handling, caching
-
-### **Future Enhancements**
-- [ ] **Redis Integration** - For distributed rate limiting
-- [ ] **Metrics Collection** - Performance and usage analytics
-- [ ] **Advanced Caching** - Response caching, CDN integration
+### **Planned Features**
+- [ ] **Redis Integration** - Distributed rate limiting
+- [ ] **Metrics Collection** - Performance analytics
+- [ ] **Advanced Caching** - Response caching with TTL
 - [ ] **Audit Logging** - Complete audit trail system
 - [ ] **Health Checks** - API health monitoring endpoints
+- [ ] **Circuit Breaker** - Fault tolerance patterns
+- [ ] **Request Tracing** - Distributed tracing support
 
-## 📝 Configuration
-
-### **Environment Variables Required**
-```env
-ACCESS_TOKEN_SECRET=your-jwt-secret
-STRIPE_SECRET_KEY=your-stripe-secret
-STRIPE_WEBHOOK_SECRET=your-webhook-secret
-DATABASE_URL=your-database-url
-```
-
-### **Rate Limit Configuration**
-Adjust rate limits in `src/core/middleware/rate-limit.middleware.ts`:
-```typescript
-export const rateLimitConfigs = {
-  auth: { windowMs: 15 * 60 * 1000, max: 5 },
-  api: { windowMs: 15 * 60 * 1000, max: 100 },
-  general: { windowMs: 15 * 60 * 1000, max: 1000 },
-};
-```
+### **Performance Optimizations**
+- [ ] **Connection Pooling** - Database connection optimization
+- [ ] **Response Compression** - Automatic response compression
+- [ ] **CDN Integration** - Static asset optimization
+- [ ] **Load Balancing** - Multi-instance support
 
 The middleware system is now production-ready and provides comprehensive protection, validation, and error handling across your entire application! 🎉
+
+## 📚 Additional Resources
+
+- **Examples**: See `src/core/examples/middleware-usage-examples.ts` for comprehensive usage examples
+- **Express Compatibility**: Use `src/core/middleware/express-style.middleware.ts` for legacy Express code
+- **Response Helpers**: Import from `src/core/handlers/responseHandler.ts` for consistent responses
+- **Error Classes**: Import custom error types from `src/core/middleware/error.middleware.ts`

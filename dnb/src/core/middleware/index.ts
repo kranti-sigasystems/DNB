@@ -8,7 +8,9 @@ export {
   authenticateAccessToken, 
   withAuth, 
   withRole, 
-  getAuthenticatedUser 
+  getAuthenticatedUser,
+  expressAuthenticateJWT,
+  expressAuthenticateAccessToken
 } from './auth.middleware';
 
 // Rate limiting middleware
@@ -16,7 +18,9 @@ export {
   rateLimit, 
   withRateLimit, 
   rateLimiters,
-  rateLimitConfigs 
+  rateLimitConfigs,
+  expressRateLimit,
+  rateLimiter
 } from './rate-limit.middleware';
 
 // Validation middleware
@@ -42,3 +46,20 @@ export {
   ConflictError,
   TooManyRequestsError
 } from './error.middleware';
+
+// Express-style middleware for compatibility (with different names to avoid conflicts)
+export {
+  asyncHandler as legacyAsyncHandler,
+  errorHandler as legacyErrorHandler,
+  notFoundHandler as legacyNotFoundHandler,
+  successResponse as legacySuccessResponse,
+  errorResponse as legacyErrorResponse,
+  authenticateAccessToken as legacyAuthenticateAccessToken,
+  authenticateJWT as legacyAuthenticateJWT,
+  rateLimiter as legacyRateLimiter,
+  validateRequest,
+  requireRole,
+  corsMiddleware,
+  requestLogger,
+  securityHeaders,
+} from './express-style.middleware';

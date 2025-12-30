@@ -112,3 +112,80 @@ export const handleApiError = (error: unknown): NextResponse => {
   
   return errorResponse(500, 'Unknown error occurred');
 };
+
+/**
+ * Legacy Express-style response helpers for compatibility
+ * These are used by middleware that was originally designed for Express
+ */
+export const legacySuccessResponse = (
+  res: any, 
+  status: number = 200, 
+  message: string = "Success", 
+  data?: any
+) => {
+  if (!res || typeof res.status !== 'function') {
+    console.error("Invalid response object in legacySuccessResponse");
+    return;
+  }
+  
+  return res.status(status).json({
+    statusCode: status,
+    success: true,
+    message,
+    data,
+  });
+};
+
+/**
+ * Legacy Express-style error response for compatibility
+ */
+export const legacyErrorResponse = (
+  res: any, 
+  status: number = 500, 
+  message: string = "Internal Server Error", 
+  error?: any
+) => {
+  if (!res || typeof res.status !== 'function') {
+    console.error("Invalid response object in legacyErrorResponse:", message, error);
+    return;
+  }
+  
+  return res.status(status).json({
+    statusCode: status,
+    success: false,
+    message,
+    error,
+  });
+};
+
+/**
+ * Express-style async handler wrapper
+ */
+export const expressAsyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+/**
+ * Express-style global error handler middleware
+ */
+export const expressErrorHandler = (err: any, req: any, res: any, next: any) => {
+  console.error("Express Error Handler:", err);
+  
+  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+  });
+};
+
+/**
+ * Express-style 404 handler
+ */
+export const expressNotFoundHandler = (req: any, res: any, next: any) => {
+  return res.status(404).json({
+    success: false,
+    message: `Not Found - ${req.originalUrl}`,
+  });
+};

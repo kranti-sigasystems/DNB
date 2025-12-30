@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { errorResponse } from '../handlers/responseHandler';
+import { errorResponse, legacyErrorResponse } from '../handlers/responseHandler';
 
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -15,6 +15,21 @@ interface RateLimitStore {
     resetTime: number;
   };
 }
+
+// Express-style interfaces for compatibility
+interface ExpressRequest {
+  ip?: string;
+  headers: { [key: string]: string | undefined };
+  user?: { id?: string };
+}
+
+interface ExpressResponse {
+  status: (code: number) => ExpressResponse;
+  json: (data: any) => ExpressResponse;
+  set: (header: string, value: string) => void;
+}
+
+type ExpressNext = () => void;
 
 // In-memory store for rate limiting (use Redis in production)
 const store: RateLimitStore = {};
@@ -42,6 +57,20 @@ const getClientId = (req: NextRequest): string => {
   
   // You can also include user ID if authenticated
   const userId = req.headers.get('x-user-id');
+  
+  return userId ? `user:${userId}` : `ip:${clientIp}`;
+};
+
+/**
+ * Get client identifier from Express request
+ */
+const getExpressClientId = (req: ExpressRequest): string => {
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.headers['x-real-ip'] || 
+                   req.ip || 
+                   'unknown';
+  
+  const userId = req.user?.id;
   
   return userId ? `user:${userId}` : `ip:${clientIp}`;
 };
@@ -111,6 +140,74 @@ export const rateLimit = (config: RateLimitConfig) => {
       console.error('Rate limiting error:', error);
       // Don't block requests if rate limiting fails
       return null;
+    }
+  };
+};
+
+/**
+ * Express-style rate limiting middleware
+ */
+export const expressRateLimit = (config: RateLimitConfig) => {
+  const {
+    windowMs = 15 * 60 * 1000, // 15 minutes
+    max = 5, // 5 requests per window
+    message = 'Too many attempts, please try again after 15 minutes.',
+  } = config;
+
+  return (req: ExpressRequest, res: ExpressResponse, next: ExpressNext): void => {
+    try {
+      // Clean up expired entries periodically
+      if (Math.random() < 0.01) { // 1% chance to cleanup
+        cleanupStore();
+      }
+
+      const clientId = getExpressClientId(req);
+      const now = Date.now();
+      const resetTime = now + windowMs;
+
+      // Get or create client record
+      if (!store[clientId] || store[clientId].resetTime <= now) {
+        store[clientId] = {
+          count: 1,
+          resetTime,
+        };
+        
+        // Add rate limit headers
+        res.set('X-RateLimit-Limit', max.toString());
+        res.set('X-RateLimit-Remaining', (max - 1).toString());
+        res.set('X-RateLimit-Reset', resetTime.toString());
+        
+        next();
+        return;
+      }
+
+      // Increment count
+      store[clientId].count++;
+
+      // Check if limit exceeded
+      if (store[clientId].count > max) {
+        const retryAfter = Math.ceil((store[clientId].resetTime - now) / 1000);
+        
+        res.set('Retry-After', retryAfter.toString());
+        res.set('X-RateLimit-Limit', max.toString());
+        res.set('X-RateLimit-Remaining', '0');
+        res.set('X-RateLimit-Reset', store[clientId].resetTime.toString());
+        
+        legacyErrorResponse(res, 429, message);
+        return;
+      }
+
+      // Add rate limit headers to successful requests
+      const remaining = Math.max(0, max - store[clientId].count);
+      res.set('X-RateLimit-Limit', max.toString());
+      res.set('X-RateLimit-Remaining', remaining.toString());
+      res.set('X-RateLimit-Reset', store[clientId].resetTime.toString());
+      
+      next();
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+      // Don't block requests if rate limiting fails
+      next();
     }
   };
 };
@@ -186,3 +283,12 @@ export const rateLimiters = {
   // Lenient rate limiting for general endpoints
   general: rateLimit(rateLimitConfigs.general),
 };
+
+/**
+ * Express-style rate limiter (matches the user's example)
+ */
+export const rateLimiter = expressRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Too many attempts, please try again after 15 minutes.",
+});

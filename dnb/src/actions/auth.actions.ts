@@ -3,8 +3,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { handleError } from '@/core/handlers/responseHandler';
-import { ValidationError, UnauthorizedError, NotFoundError } from '@/core/middleware';
+import { ValidationError } from '@/core/middleware';
 
 interface TokenPayload {
   id: string;
@@ -317,7 +316,7 @@ export async function getTokenExpiryTime(token: string): Promise<number | null> 
  * @returns Login response with tokens or error
  */
 export async function loginFormAction(
-  prevState: any,
+  _prevState: any,
   formData: FormData
 ): Promise<LoginFormResponse> {
   try {
