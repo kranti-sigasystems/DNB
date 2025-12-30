@@ -48,8 +48,7 @@ export default function Sidebar({
     setCollapsed(!collapsed);
   };
 
-  const userRole = user?.role || "guest";
-  console.log("User role is.....", userRole);
+  const userRole = user?.userRole || user?.role || "guest";
 
   if (userRole === "buyer") {
     return null;
