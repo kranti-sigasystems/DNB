@@ -194,6 +194,53 @@ export const LOCATION_SEARCH_CONFIG: SearchConfig = {
   ],
 };
 
+export const OFFER_DRAFT_SEARCH_CONFIG: SearchConfig = {
+  title: 'Search Offer Drafts',
+  quickSearchPlaceholder: 'Search offer drafts by draft name, draft number, or product...',
+  quickSearchField: 'query',
+  showQuickSearch: true,
+  showAdvancedToggle: true,
+  defaultExpanded: false,
+  fields: [
+    {
+      name: 'draftName',
+      label: 'Draft Name',
+      type: 'text',
+      placeholder: 'Enter draft name',
+    },
+    {
+      name: 'draftNo',
+      label: 'Draft Number',
+      type: 'text',
+      placeholder: 'Enter draft number',
+    },
+    {
+      name: 'productName',
+      label: 'Product Name',
+      type: 'text',
+      placeholder: 'Enter product name',
+    },
+    {
+      name: 'fromParty',
+      label: 'From Party',
+      type: 'text',
+      placeholder: 'Enter from party name',
+    },
+    {
+      name: 'origin',
+      label: 'Origin',
+      type: 'text',
+      placeholder: 'Enter origin',
+    },
+    {
+      name: 'brand',
+      label: 'Brand',
+      type: 'text',
+      placeholder: 'Enter brand name',
+    },
+  ],
+};
+
 export const DASHBOARD_SEARCH_CONFIG: SearchConfig = {
   title: 'Search Dashboard Data',
   quickSearchPlaceholder: 'Search across all data...',

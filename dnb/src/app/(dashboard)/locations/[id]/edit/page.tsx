@@ -86,7 +86,15 @@ export default function EditLocationPage({ params }: EditLocationPageProps) {
 
         if (locationResult.success && locationResult.data) {
           const locationData = locationResult.data.location;
-          setLocation(locationData);
+          
+          const normalizedLocationData: Location = {
+            ...locationData,
+            locationName: locationData.locationName ?? undefined,
+            address: locationData.address ?? undefined,
+            postalCode: locationData.postalCode ?? undefined,
+          };
+          
+          setLocation(normalizedLocationData);
           
           const locationFormData: UpdateLocationData = {
             locationName: locationData.locationName || '',

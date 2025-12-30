@@ -3,6 +3,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { ValidationError } from '@/core/middleware';
 
 interface TokenPayload {
   id: string;
@@ -40,13 +41,13 @@ interface LoginFormResponse {
 }
 
 /**
- * Generate a new access token
+ * Generate a new access token with error handling
  */
 function generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
   const secret = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
   
   if (!secret) {
-    throw new Error('ACCESS_TOKEN_SECRET is not configured');
+    throw new ValidationError('ACCESS_TOKEN_SECRET is not configured');
   }
 
   const expiresIn = process.env.ACCESS_TOKEN_EXPIRY || '15m';
@@ -315,7 +316,7 @@ export async function getTokenExpiryTime(token: string): Promise<number | null> 
  * @returns Login response with tokens or error
  */
 export async function loginFormAction(
-  prevState: any,
+  _prevState: any,
   formData: FormData
 ): Promise<LoginFormResponse> {
   try {

@@ -85,7 +85,10 @@ const ActionMenu = ({
   const [isLoading, setIsLoading] = useState(false);
   const { showAlert, AlertDialog } = useAlertDialog();
 
-  const handleDelete = () => {
+  const handleDelete = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     showAlert({
       title: 'Delete Offer Draft',
       description: 'Are you sure you want to delete this offer draft? This action cannot be undone.',

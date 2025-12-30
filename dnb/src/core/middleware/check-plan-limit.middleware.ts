@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-interface AuthenticatedRequest extends Request {
+interface AuthenticatedRequest extends NextRequest {
   user?: {
     id?: string;
   };
@@ -12,18 +12,19 @@ type UsageType = 'product' | 'offer' | 'buyer' | 'location';
 export const checkPlanLimit = (type: UsageType) => {
   return async (
     req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+    context?: any
+  ): Promise<NextResponse | void> => {
     try {
-      const userId = req.user?.id || (req.body?.userId as string | undefined);
+      const userId = req.user?.id || context?.params?.userId;
 
       if (!userId) {
-        res.status(400).json({
-          success: false,
-          message: 'User ID is required',
-        });
-        return;
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'User ID is required',
+          },
+          { status: 400 }
+        );
       }
 
       const subscription = await prisma.subscription.findFirst({
@@ -37,11 +38,13 @@ export const checkPlanLimit = (type: UsageType) => {
       });
 
       if (!subscription) {
-        res.status(404).json({
-          success: false,
-          message: 'No active subscription found for user',
-        });
-        return;
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'No active subscription found for user',
+          },
+          { status: 404 }
+        );
       }
 
       const plan = await prisma.plan.findUnique({
@@ -51,11 +54,13 @@ export const checkPlanLimit = (type: UsageType) => {
       });
 
       if (!plan) {
-        res.status(404).json({
-          success: false,
-          message: 'Plan not found for user',
-        });
-        return;
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Plan not found for user',
+          },
+          { status: 404 }
+        );
       }
 
       const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
@@ -63,20 +68,40 @@ export const checkPlanLimit = (type: UsageType) => {
       const maxAllowed = plan[maxColumn] as number;
 
       if (maxAllowed === 0 || maxAllowed === null) {
-        res.status(403).json({
-          success: false,
-          message: `Limit reached for ${type}`,
-        });
-        return;
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Limit reached for ${type}`,
+          },
+          { status: 403 }
+        );
       }
 
-      next();
+      // If we reach here, the limit check passed
+      return;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(500).json({
-        success: false,
-        message,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+        },
+        { status: 500 }
+      );
     }
+  };
+};
+
+// Helper function for API routes
+export const withPlanLimit = (type: UsageType, handler: Function) => {
+  return async (req: NextRequest, context?: any) => {
+    const limitCheck = checkPlanLimit(type);
+    const limitResult = await limitCheck(req, context);
+    
+    if (limitResult) {
+      return limitResult; // Return error response if limit exceeded
+    }
+    
+    return handler(req, context);
   };
 };

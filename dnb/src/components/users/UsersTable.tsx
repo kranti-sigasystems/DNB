@@ -117,7 +117,10 @@ const ActionMenu = ({
     return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
   };
 
-  const handleAction = (action: 'activate' | 'deactivate' | 'delete') => {
+  const handleAction = (action: 'activate' | 'deactivate' | 'delete') => (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     const actionMessages = {
       activate: {
         title: 'Activate User',
@@ -193,7 +196,7 @@ const ActionMenu = ({
           
           {user.status !== 'active' && (
             <DropdownMenuItem 
-              onClick={() => handleAction('activate')}
+              onClick={handleAction('activate')}
               className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-green-50 focus:bg-green-50 dark:hover:bg-green-900/20 dark:focus:bg-green-900/20 rounded-sm transition-colors text-green-700 dark:text-green-400"
             >
               <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -205,7 +208,7 @@ const ActionMenu = ({
           
           {user.status === 'active' && (
             <DropdownMenuItem 
-              onClick={() => handleAction('deactivate')}
+              onClick={handleAction('deactivate')}
               className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 focus:bg-orange-50 dark:hover:bg-orange-900/20 dark:focus:bg-orange-900/20 rounded-sm transition-colors text-orange-700 dark:text-orange-400"
             >
               <div className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
@@ -218,7 +221,7 @@ const ActionMenu = ({
           <div className="h-px bg-border/50 my-1" />
           
           <DropdownMenuItem 
-            onClick={() => handleAction('delete')}
+            onClick={handleAction('delete')}
             className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 dark:hover:bg-red-900/20 dark:focus:bg-red-900/20 rounded-sm transition-colors text-red-600 dark:text-red-400"
           >
             <Trash2 className="w-4 h-4" />

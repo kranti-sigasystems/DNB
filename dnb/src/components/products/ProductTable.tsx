@@ -83,7 +83,10 @@ const ActionMenu = ({
   const [isLoading, setIsLoading] = useState(false);
   const { showAlert, AlertDialog } = useAlertDialog();
 
-  const handleDelete = () => {
+  const handleDelete = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     showAlert({
       title: 'Delete Product',
       description: 'Are you sure you want to delete this product? This action cannot be undone.',
