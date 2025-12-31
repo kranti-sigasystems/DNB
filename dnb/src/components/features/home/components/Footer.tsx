@@ -1,19 +1,23 @@
-import { Button } from '@/components/ui/button';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 export default function Footer() {
-  const currentYear: number = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 p-5 text-gray-400">
-      <div className="mx-auto max-w-7xl py-16">
-        {/* Top grid */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="bg-gray-900 text-gray-400">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14">
+        {/* Top Section */}
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Company */}
-          <div>
-            <h3 className="mb-4 text-lg font-bold text-white">Digital Negotiation Book</h3>
-            <p className="text-sm text-gray-400">
-              Building modern web solutions that scale. Your trusted tech partner.
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white">
+              Digital Negotiation Book
+            </h3>
+            <p className="text-sm leading-relaxed">
+              Building modern web solutions that scale. Your trusted tech
+              partner.
             </p>
           </div>
 
@@ -22,24 +26,27 @@ export default function Footer() {
             <h3 className="mb-4 font-semibold text-white">Product</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/features" className="hover:text-white transition">
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/pricing" className="hover:text-white transition">
                   Pricing
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link
+                  href="/integrations"
+                  className="hover:text-white transition"
+                >
                   Integrations
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/api" className="hover:text-white transition">
                   API
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -49,50 +56,50 @@ export default function Footer() {
             <h3 className="mb-4 font-semibold text-white">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/help" className="hover:text-white transition">
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/blog" className="hover:text-white transition">
                   Blog
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/guides" className="hover:text-white transition">
                   Guides
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link
+                  href="/privacy-policy"
+                  className="hover:text-white transition"
+                >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link href="/terms" className="hover:text-white transition">
                   Terms of Service
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Newsletter */}
-          <div>
-            <h3 className="mb-4 font-semibold text-white">Stay Updated</h3>
-            <p className="mb-4 text-sm text-gray-400">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-white">Stay Updated</h3>
+            <p className="text-sm">
               Subscribe to our newsletter to get the latest updates and offers.
             </p>
 
-            <form className="flex flex-col gap-2 sm:flex-row">
+            <form className="flex flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 placeholder="Your email"
-                className="w-full cursor-pointer rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:outline-none focus:ring-2"
+                className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <Button
-                type="submit"
-                className="h-10 w-full cursor-pointer bg-[#16a34a] px-4 py-4 hover:bg-green-600 sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg transition-all duration-200 hover:shadow-md"
-              >
+              <Button type="submit" className="h-10 w-full sm:w-auto px-6">
                 Subscribe
               </Button>
             </form>
@@ -100,34 +107,47 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="mt-12 flex flex-col items-center justify-between border-t border-gray-700 pt-6 sm:flex-row">
-          <p className="mb-4 text-sm text-gray-500 sm:mb-0">
+        <div className="mt-12 flex flex-col gap-6 border-t border-gray-700 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-500 text-center sm:text-left">
             © {currentYear} Digital Negotiation Book. All rights reserved.
           </p>
 
-          <div className="flex space-x-4">
-            <Button variant="ghost" size="icon" asChild className="cursor-pointer">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-                <Github className="h-5 w-5 text-blue-400 hover:bg-indigo-600" />
-              </a>
+          {/* Social Links */}
+          <div className="flex justify-center sm:justify-end gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="h-5 w-5" />
+              </Link>
             </Button>
 
-            <Button variant="ghost" size="icon" asChild className="cursor-pointer">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-                <Twitter className="h-5 w-5 text-blue-400 hover:bg-indigo-600" />
-              </a>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Twitter className="h-5 w-5" />
+              </Link>
             </Button>
 
-            <Button variant="ghost" size="icon" asChild className="cursor-pointer">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-                <Linkedin className="h-5 w-5 text-blue-400 hover:bg-indigo-600" />
-              </a>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Linkedin className="h-5 w-5" />
+              </Link>
             </Button>
 
-            <Button variant="ghost" size="icon" asChild className="cursor-pointer">
-              <a href="mailto:contact@yourcompany.com">
-                <Mail className="h-5 w-5 text-blue-400 hover:bg-indigo-600" />
-              </a>
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="mailto:contact@yourcompany.com">
+                <Mail className="h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </div>

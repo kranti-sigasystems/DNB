@@ -12,7 +12,6 @@ import {
 import { useCheckUniqueFieldQuery } from "@/hooks/checkUniqueFiledQuery";
 import OrderSummary from "./components/OrderSummary";
 import SelectedPlanCard from "./components/selectedPlanCard";
-import CheckoutNavbar from "@/components/features/home/components/CheckoutNavbar";
 
 import {
   CheckoutFormData,
@@ -31,6 +30,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Building2, MapPin, User } from "lucide-react";
+import Footer from "@/components/features/home/components/Footer";
+import Link from "next/link";
 
 /* -------------------- Component -------------------- */
 
@@ -216,7 +217,9 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading checkout...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading checkout...
+          </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             If this takes too long, please select a plan first.
           </p>
@@ -234,7 +237,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-      <CheckoutNavbar />
       <main className="max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -264,7 +266,10 @@ export default function CheckoutPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="first_name">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="first_name"
+                      >
                         First Name *
                       </Label>
                       <Input
@@ -282,7 +287,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="last_name">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="last_name"
+                      >
                         Last Name *
                       </Label>
                       <Input
@@ -302,7 +310,10 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="email">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="email"
+                      >
                         Email *
                       </Label>
                       <Input
@@ -325,7 +336,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="phoneNumber">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="phoneNumber"
+                      >
                         Phone Number *
                       </Label>
                       <Input
@@ -345,7 +359,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div>
-                    <Label className="m-1 dark:text-slate-200" htmlFor="password">
+                    <Label
+                      className="m-1 dark:text-slate-200"
+                      htmlFor="password"
+                    >
                       Password *
                     </Label>
                     <Input
@@ -384,7 +401,10 @@ export default function CheckoutPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="businessName">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="businessName"
+                      >
                         Business Name *
                       </Label>
                       <Input
@@ -406,7 +426,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="registrationNumber" className="m-1 dark:text-slate-200">
+                      <Label
+                        htmlFor="registrationNumber"
+                        className="m-1 dark:text-slate-200"
+                      >
                         Registration Number *
                       </Label>
                       <Input
@@ -433,7 +456,10 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="taxId">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="taxId"
+                      >
                         Tax ID
                       </Label>
                       <Input
@@ -446,7 +472,10 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="website">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="website"
+                      >
                         Website
                       </Label>
                       <Input
@@ -473,7 +502,9 @@ export default function CheckoutPage() {
                       <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg dark:text-white">Billing Address</CardTitle>
+                      <CardTitle className="text-lg dark:text-white">
+                        Billing Address
+                      </CardTitle>
                       <CardDescription className="dark:text-slate-400">
                         Provide your billing details
                       </CardDescription>
@@ -482,7 +513,10 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="address" className="m-1 dark:text-slate-200">
+                    <Label
+                      htmlFor="address"
+                      className="m-1 dark:text-slate-200"
+                    >
                       Address *
                     </Label>
                     <Input
@@ -515,7 +549,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="state">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="state"
+                      >
                         State *
                       </Label>
                       <Input
@@ -533,7 +570,10 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="country">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="country"
+                      >
                         Country *
                       </Label>
                       <Input
@@ -549,7 +589,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label className="m-1 dark:text-slate-200" htmlFor="postalCode">
+                      <Label
+                        className="m-1 dark:text-slate-200"
+                        htmlFor="postalCode"
+                      >
                         Postal Code *
                       </Label>
                       <Input
@@ -569,24 +612,6 @@ export default function CheckoutPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Form Submit Button */}
-              <Card className="shadow-md border-slate-200 dark:border-slate-700 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 dark:bg-slate-900">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <Button
-                      type="submit"
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white py-3 text-base font-semibold"
-                    >
-                      Validate Information
-                    </Button>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      Validate your information, then click "Complete Purchase"
-                      to proceed to payment
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             </form>
           </div>
 
@@ -598,6 +623,83 @@ export default function CheckoutPage() {
           />
         </div>
       </main>
+      {/* ---------------------------------------------
+   Checkout Assurance & Information
+---------------------------------------------- */}
+      <section className="mt-5 mb-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
+            {/* Header */}
+            <div className="px-6 py-8 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                What happens after checkout?
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
+                A quick overview of how your subscription is activated, how
+                billing works, and how we keep your data secure.
+              </p>
+            </div>
+
+            {/* Steps */}
+            <div className="px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  step: "01",
+                  title: "Instant Account Setup",
+                  description:
+                    "Your account is created automatically using the details you provided. No manual setup required.",
+                },
+                {
+                  step: "02",
+                  title: "Plan Activated Immediately",
+                  description:
+                    "Your selected plan becomes active right away with full access to features and limits.",
+                },
+                {
+                  step: "03",
+                  title: "Confirmation & Invoice",
+                  description:
+                    "You’ll receive a confirmation email with login credentials and a downloadable invoice.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.step}
+                  className="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-6"
+                >
+                  <span className="absolute -top-3 left-6 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
+                    {item.step}
+                  </span>
+                  <h3 className="mt-4 font-semibold text-slate-900 dark:text-white">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Support CTA */}
+            <div className="px-6 py-6 bg-slate-50 dark:bg-slate-800 rounded-b-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  Need help before completing payment?
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Our support team is available during business hours.
+                  Enterprise customers receive priority assistance.
+                </p>
+              </div>
+
+              <Link href="/contact" className="inline-block">
+                <Button variant="outline" className="w-full md:w-auto">
+                  Contact Support
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

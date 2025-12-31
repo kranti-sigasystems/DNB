@@ -1,19 +1,19 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { stripe } from '@/lib/stripe';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { prisma } from "@/lib/prisma";
+import { stripe } from "@/lib/stripe";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
 interface PaymentPayload {
   userId?: string; // optional since we decode from cookie
   planId: string;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: "monthly" | "yearly";
 }
 
 interface BusinessOwnerPayload {
   planId: string;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: "monthly" | "yearly";
   userId: string;
   businessName: string;
   registrationNumber: string;
@@ -33,10 +33,10 @@ export async function createCheckoutSession(
   try {
     /* ---------------- AUTH ---------------- */
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
+    const accessToken = cookieStore.get("accessToken")?.value;
 
     if (!accessToken) {
-      return { success: false, message: 'Authentication required' };
+      return { success: false, message: "Authentication required" };
     }
 
     let userId: string;
@@ -50,7 +50,7 @@ export async function createCheckoutSession(
       userId = decoded.id;
       userEmail = decoded.email;
     } catch {
-      return { success: false, message: 'Invalid authentication token' };
+      return { success: false, message: "Invalid authentication token" };
     }
 
     /* ---------------- PLAN ---------------- */
@@ -59,32 +59,36 @@ export async function createCheckoutSession(
     });
 
     if (!plan || !plan.isActive) {
-      return { success: false, message: 'Plan not found or inactive' };
+      return { success: false, message: "Plan not found or inactive" };
     }
 
     /* ---------------- PRICE ---------------- */
-    const rawAmount = payload.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+    const rawAmount =
+      payload.billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
 
     if (rawAmount <= 0) {
-      return { success: false, message: 'Free plans do not require payment' };
+      return { success: false, message: "Free plans do not require payment" };
     }
 
     const stripeAmount = rawAmount * 100; // Stripe expects smallest currency unit
 
     /* ---------------- STRIPE ---------------- */
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
+      mode: "subscription",
+      payment_method_types: ["card"],
       customer_email: userEmail,
       line_items: [
         {
           price_data: {
             currency: plan.currency.toLowerCase(),
             unit_amount: stripeAmount,
-            recurring: { interval: payload.billingCycle === 'yearly' ? 'year' : 'month' },
+            recurring: {
+              interval: payload.billingCycle === "yearly" ? "year" : "month",
+            },
             product_data: {
               name: plan.name,
-              description: plan.description?.trim() || `Subscription for ${plan.name}`,
+              description:
+                plan.description?.trim() || `Subscription for ${plan.name}`,
             },
           },
           quantity: 1,
@@ -117,16 +121,24 @@ export async function createCheckoutSession(
         userId,
         planId: plan.id,
         amount: rawAmount,
-        currency: 'INR',
-        status: 'pending',
+        currency: "INR",
+        status: "pending",
         transactionId: `temp_${Date.now()}`,
+      },
+    });
+
+    prisma.userPlanUsage.create({
+      data: {
+        userId: userId,
+        planKey: plan.key,
+        billingCycle: payload.billingCycle === "monthly" ? "MONTHLY" : "YEARLY",
       },
     });
 
     return { success: true, checkoutUrl: session.url! };
   } catch (error: any) {
-    console.error('Checkout session creation error:', error);
-    return { success: false, message: 'Failed to create checkout session' };
+    console.error("Checkout session creation error:", error);
+    return { success: false, message: "Failed to create checkout session" };
   }
 }
 
@@ -143,15 +155,14 @@ export async function createBusinessOwnerWithPayment(
 
     return await createCheckoutSession(paymentPayload);
   } catch (error) {
-    console.error('Business owner payment creation error:', error);
-    return { success: false, message: 'Failed to create payment session' };
+    console.error("Business owner payment creation error:", error);
+    return { success: false, message: "Failed to create payment session" };
   }
 }
 
 /* ---------------------- Payment Status ---------------------- */
 export async function getPaymentStatus(sessionId: string) {
   try {
-    
     // Find payment by Stripe session ID
     const payment = await prisma.payment.findFirst({
       where: {
@@ -164,7 +175,7 @@ export async function getPaymentStatus(sessionId: string) {
             email: true,
             first_name: true,
             last_name: true,
-          }
+          },
         },
         plan: {
           select: {
@@ -172,13 +183,13 @@ export async function getPaymentStatus(sessionId: string) {
             name: true,
             description: true,
             currency: true,
-          }
+          },
         },
       },
     });
 
     if (!payment) {
-      return { success: false, message: 'Payment not found' };
+      return { success: false, message: "Payment not found" };
     }
 
     // Get business owner if exists
@@ -199,23 +210,24 @@ export async function getPaymentStatus(sessionId: string) {
       });
     }
 
-
     // Get Stripe session details
     let session;
     try {
       session = await stripe.checkout.sessions.retrieve(sessionId);
     } catch (stripeError) {
-      return { success: false, message: 'Failed to verify payment with Stripe' };
+      return {
+        success: false,
+        message: "Failed to verify payment with Stripe",
+      };
     }
 
     // If Stripe shows payment as paid but our database shows pending, update it
-    if (session.payment_status === 'paid' && payment.status === 'pending') {
-      
+    if (session.payment_status === "paid" && payment.status === "pending") {
       try {
         const updatedPayment = await prisma.payment.update({
           where: { id: payment.id },
-          data: { 
-            status: 'success',
+          data: {
+            status: "success",
             stripePaymentId: session.payment_intent as string,
             stripeCustomerId: session.customer as string,
           },
@@ -226,7 +238,7 @@ export async function getPaymentStatus(sessionId: string) {
                 email: true,
                 first_name: true,
                 last_name: true,
-              }
+              },
             },
             plan: {
               select: {
@@ -234,7 +246,7 @@ export async function getPaymentStatus(sessionId: string) {
                 name: true,
                 description: true,
                 currency: true,
-              }
+              },
             },
           },
         });
@@ -242,73 +254,88 @@ export async function getPaymentStatus(sessionId: string) {
         // Also create/update subscription if it doesn't exist
         if (session.subscription) {
           try {
-            const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription as string);
-            
+            const stripeSubscription = await stripe.subscriptions.retrieve(
+              session.subscription as string
+            );
+
             await prisma.subscription.upsert({
               where: {
                 stripeSubscriptionId: stripeSubscription.id,
               },
               update: {
                 status: stripeSubscription.status,
-                currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-                currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+                currentPeriodStart: new Date(
+                  stripeSubscription.current_period_start * 1000
+                ),
+                currentPeriodEnd: new Date(
+                  stripeSubscription.current_period_end * 1000
+                ),
               },
               create: {
                 userId: payment.userId!,
                 subscriptionId: stripeSubscription.id,
                 planName: payment.plan.name,
                 status: stripeSubscription.status,
-                paymentStatus: 'paid',
-                startDate: new Date(stripeSubscription.current_period_start * 1000),
+                paymentStatus: "paid",
+                startDate: new Date(
+                  stripeSubscription.current_period_start * 1000
+                ),
                 endDate: new Date(stripeSubscription.current_period_end * 1000),
                 stripeSubscriptionId: stripeSubscription.id,
                 stripeCustomerId: stripeSubscription.customer as string,
-                currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-                currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+                currentPeriodStart: new Date(
+                  stripeSubscription.current_period_start * 1000
+                ),
+                currentPeriodEnd: new Date(
+                  stripeSubscription.current_period_end * 1000
+                ),
               },
             });
-            
           } catch (subError) {
-            console.error('Failed to create/update subscription:', subError);
+            console.error("Failed to create/update subscription:", subError);
             // Don't fail the payment verification for subscription errors
           }
         }
 
-        return { 
-          success: true, 
+        return {
+          success: true,
           payment: {
             ...updatedPayment,
             amount: Number(updatedPayment.amount), // Convert Decimal to number
-            billingCycle: 'yearly',
+            billingCycle: "yearly",
             businessOwner,
-          }
+          },
           // Remove session object to avoid serialization issues
         };
       } catch (updateError) {
-        console.error('Failed to update payment status:', updateError);
+        console.error("Failed to update payment status:", updateError);
         // Return the original payment data even if update fails
       }
     }
 
     // Check if payment is completed
-    if (payment.status === 'success' || payment.status === 'succeeded' || session.payment_status === 'paid') {
-      return { 
-        success: true, 
+    if (
+      payment.status === "success" ||
+      payment.status === "succeeded" ||
+      session.payment_status === "paid"
+    ) {
+      return {
+        success: true,
         payment: {
           ...payment,
           amount: Number(payment.amount), // Convert Decimal to number for display
-          billingCycle: 'yearly', // Default for now, you can store this in payment metadata
+          billingCycle: "yearly", // Default for now, you can store this in payment metadata
           businessOwner,
-        }        
+        },
       };
     }
 
-    return { 
-      success: false, 
-      message: `Payment is ${payment.status}. Please wait for confirmation or try again.` 
+    return {
+      success: false,
+      message: `Payment is ${payment.status}. Please wait for confirmation or try again.`,
     };
   } catch (error) {
-    console.error('Payment status error:', error);
-    return { success: false, message: 'Failed to get payment status' };
+    console.error("Payment status error:", error);
+    return { success: false, message: "Failed to get payment status" };
   }
 }
