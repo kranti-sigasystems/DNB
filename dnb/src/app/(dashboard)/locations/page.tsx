@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastContainer } from '@/components/ui/toast';
 import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/ui/data-table/data-table';
+import type { DataTableColumn } from '@/components/ui/data-table/types';
 import { LocationSearch } from '@/components/locations/LocationSearch';
 import { getAllLocations, searchLocations, deleteLocation } from '@/actions/location.actions';
 import { getStoredSession } from '@/utils/auth';
@@ -141,7 +142,7 @@ export default function LocationsPage() {
     fetchLocations(searchFilters);
   }, [pageIndex, pageSize]);
 
-  const columns = [
+  const columns: DataTableColumn<Location>[] = [
     {
       key: 'city',
       label: 'City',

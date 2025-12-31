@@ -9,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url = env("DATABASE_URL") - Configure in PrismaClient instead
 }
 
 // ========== BusinessOwner.prisma ==========
@@ -41,6 +40,8 @@ model BusinessOwner {
   buyers        Buyer[]        // Add buyers relation
   products      Product[]      @relation("BusinessOwnerProducts")
   locations     Location[]     @relation("BusinessOwnerLocations")
+  offers        Offer[]        @relation("BusinessOwnerOffers")
+  offerDrafts   OfferDraft[]   @relation("BusinessOwnerOfferDrafts")
 
   @@map("business_owners")
 }
@@ -54,24 +55,30 @@ model Buyer {
   contactPhone       String?
   phoneNumber        String?
   buyersCompanyName  String?
-  businessName       String?
   productName        String?
   locationName       String?
+  businessOwnerId    String
+  status             String   @default("active")
+  is_deleted         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  businessName       String?
   registrationNumber String?  @unique
+  taxId              String?
+  countryCode        String?
   address            String?
   city               String?
   state              String?
   country            String   @default("India")
   postalCode         String?
-  businessOwnerId    String
-  status             String   @default("active")
-  is_deleted         Boolean  @default(false) @map("is_deleted")
-  createdAt          DateTime @default(now()) @map("createdAt")
-  updatedAt          DateTime @updatedAt @map("updatedAt")
 
   // Relations
   businessOwner BusinessOwner @relation(fields: [businessOwnerId], references: [id], onDelete: Cascade)
+  offers        Offer[]        @relation("BuyerOffers")
 
+  // Unique constraints per business owner
+  @@unique([businessOwnerId, businessName], name: "unique_buyer_business_name_per_owner")
+  @@unique([businessOwnerId, phoneNumber], name: "unique_buyer_phone_per_owner")
   @@map("buyers")
 }
 
@@ -106,18 +113,21 @@ model Payment {
 
 // ========== Subscription.prisma ==========
 model Subscription {
-  id             String @id @default(uuid())
+  id             String    @id @default(uuid())
   userId         String
   subscriptionId String
+  planKey        String? // Added planKey to match your requirement
   planName       String
-  status         String
-  paymentStatus  String
+  status         String // "active", "past_due", "canceled", "trialing", "inactive"
+  paymentStatus  String // "paid", "unpaid", "upgrade", "downgrade"
   startDate      DateTime
   endDate        DateTime?
-  maxLocations   Int?
-  maxProducts    Int?
-  maxOffers      Int?
-  maxBuyers      Int?
+
+  // Feature limits from plan
+  maxProducts  Int?
+  maxOffers    Int?
+  maxBuyers    Int?
+  maxLocations Int @default(25) // Added maxLocations
 
   // Stripe fields
   stripeSubscriptionId String?   @unique
@@ -132,6 +142,25 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+// ========== UserPlanUsage.prisma ==========
+model UserPlanUsage {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  planKey       String?
+  usedLocations Int      @default(0)
+  usedProducts  Int      @default(0)
+  usedOffers    Int      @default(0)
+  usedBuyers    Int      @default(0)
+  lastUpdated   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_plan_usage")
 }
 
 // ========== Plan.prisma ==========
@@ -180,6 +209,8 @@ model Product {
 
   // Relations - using ownerId to match existing table
   businessOwner BusinessOwner @relation("BusinessOwnerProducts", fields: [ownerId], references: [id], onDelete: Cascade)
+  offerProducts OfferProduct[] @relation("ProductOffers")
+  offerDraftProducts OfferDraftProduct[] @relation("ProductOfferDrafts")
 
   @@map("products")
 }
@@ -204,7 +235,167 @@ model Location {
   @@map("locations")
 }
 
+// ========== Offer.prisma ==========
+model OfferDraft {
+  draftNo             Int      @id @default(autoincrement()) @map("draftNo")
+  businessOwnerId     String   @map("businessOwnerId")
+  draftName           String?  @map("draftName")
+  fromParty           String   @map("fromParty")
+  origin              String
+  processor           String?
+  plantApprovalNumber String   @map("plantApprovalNumber")
+  brand               String
+  quantity            String?
+  tolerance           String?
+  offerValidityDate   DateTime? @map("offerValidityDate")
+  shipmentDate        DateTime? @map("shipmentDate")
+  paymentTerms        String?  @map("paymentTerms")
+  remark              String?
+  grandTotal          Decimal? @map("grandTotal")
+  status              String   @default("draft")
+  isDeleted           Boolean  @default(false) @map("isDeleted")
+  deletedAt           DateTime? @map("deletedAt")
+  createdAt           DateTime @default(now()) @map("createdAt")
+  updatedAt           DateTime @updatedAt @map("updatedAt")
+
+  // Relations
+  businessOwner BusinessOwner @relation("BusinessOwnerOfferDrafts", fields: [businessOwnerId], references: [id], onDelete: Cascade)
+  draftProducts OfferDraftProduct[]
+
+  @@map("offers_draft")
+}
+
+model OfferDraftProduct {
+  id               String @id @default(uuid())
+  draftNo          Int    @map("draftNo")  // Existing table uses camelCase
+  productId        String @map("productId") // Existing table uses camelCase
+  productName      String @map("productName") // Existing table uses camelCase
+  species          String
+  packing          String?
+  sizeDetails      String? @map("sizeDetails") // Existing table uses camelCase
+  breakupDetails   String? @map("breakupDetails") // Existing table uses camelCase
+  priceDetails     String? @map("priceDetails") // Existing table uses camelCase
+  conditionDetails String? @map("conditionDetails") // Existing table uses camelCase
+  createdAt        DateTime @default(now()) @map("createdAt") // Existing table uses camelCase
+  updatedAt        DateTime @updatedAt @map("updatedAt") // Existing table uses camelCase
+
+  // Relations
+  offerDraft   OfferDraft @relation(fields: [draftNo], references: [draftNo], onDelete: Cascade)
+  product      Product    @relation("ProductOfferDrafts", fields: [productId], references: [id], onDelete: Cascade)
+  sizeBreakups OfferDraftSizeBreakup[]
+
+  @@map("offer_draft_products")
+}
+
+model OfferDraftSizeBreakup {
+  id                   String @id @default(uuid())
+  offerDraftProductId  String @map("offerDraftProductId")
+  size                 String
+  breakup              Int
+  price                Decimal
+  condition            String?
+  sizeDetails          String? @map("sizeDetails")
+  breakupDetails       String? @map("breakupDetails")
+  priceDetails         String? @map("priceDetails")
+  packing              String?
+  createdAt            DateTime @default(now()) @map("createdAt")
+  updatedAt            DateTime @updatedAt @map("updatedAt")
+
+  // Relations
+  offerDraftProduct OfferDraftProduct @relation(fields: [offerDraftProductId], references: [id], onDelete: Cascade)
+
+  @@map("size_breakups")
+}
+
+model Offer {
+  id                   Int      @id @default(autoincrement())
+  businessOwnerId      String   @map("business_owner_id")
+  offerName            String   @map("offer_name")
+  businessName         String   @map("business_name")
+  fromParty            String   @map("from_party")
+  toParty              String   @map("to_party")
+  buyerId              String?  @map("buyer_id")
+  origin               String
+  processor            String?
+  plantApprovalNumber  String   @map("plant_approval_number")
+  destination          String
+  brand                String
+  draftName            String?  @map("draft_name")
+  offerValidityDate    DateTime @map("offer_validity_date")
+  shipmentDate         DateTime? @map("shipment_date")
+  grandTotal           Float?   @map("grand_total")
+  quantity             String?
+  tolerance            String?
+  paymentTerms         String?  @map("payment_terms")
+  remark               String?
+  status               String   @default("open")
+  packing              String?
+  sizeBreakups         Json     @default("[]") @map("size_breakups")
+  total                Float?
+  isDeleted            Boolean  @default(false) @map("is_deleted")
+  deletedAt            DateTime? @map("deleted_at")
+  createdAt            DateTime? @map("created_at")
+  updatedAt            DateTime? @map("updated_at")
+
+  // Relations
+  businessOwner BusinessOwner @relation("BusinessOwnerOffers", fields: [businessOwnerId], references: [id], onDelete: Cascade)
+  buyer         Buyer?        @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: SetNull)
+  products      OfferProduct[]
+
+  @@map("offers")
+}
+
+model OfferProduct {
+  id               String @id @default(uuid())
+  offerId          Int    @map("offerId")  // Database uses camelCase
+  productId        String @map("productId")  // Database uses camelCase
+  productName      String @map("productName")  // Database uses camelCase
+  species          String
+  packing          String?
+  sizeDetails      String? @map("sizeDetails")  // Database uses camelCase
+  breakupDetails   String? @map("breakupDetails")  // Database uses camelCase
+  priceDetails     String? @map("priceDetails")  // Database uses camelCase
+  conditionDetails String? @map("conditionDetails")  // Database uses camelCase
+  createdAt        DateTime @default(now()) @map("createdAt")  // Database uses camelCase
+  updatedAt        DateTime @updatedAt @map("updatedAt")  // Database uses camelCase
+
+  // Relations
+  offer        Offer               @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product      Product             @relation("ProductOffers", fields: [productId], references: [id], onDelete: Cascade)
+  sizeBreakups OfferSizeBreakup[]
+
+  @@map("offer_products")
+}
+
+model OfferSizeBreakup {
+  id             String @id @default(uuid())
+  offerProductId String @map("offerProductId")  // Database uses camelCase
+  size           String
+  breakup        Float  // Changed from Int to Float to match database (double precision)
+  price          String  // Changed from Decimal to String to match database
+  condition      String?
+  createdAt      DateTime @default(now()) @map("createdAt")  // Database uses camelCase
+  updatedAt      DateTime @updatedAt @map("updatedAt")  // Database uses camelCase
+
+  // Relations
+  offerProduct OfferProduct @relation(fields: [offerProductId], references: [id], onDelete: Cascade)
+
+  @@map("offer_size_breakups")
+}
+
 // ========== User.prisma ==========
+model PasswordResetOtp {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("password_reset_otps")
+}
+
 model User {
   id               String   @id @default(uuid())
   first_name       String?  @map("first_name")
@@ -222,6 +413,7 @@ model User {
   businessOwner BusinessOwner?
   payments      Payment[]
   subscriptions Subscription[]
+  planUsage     UserPlanUsage? // Added relation to UserPlanUsage
 
   @@map("users")
 }

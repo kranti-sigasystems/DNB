@@ -59,9 +59,10 @@ export function FormField({
     required,
     disabled,
     readOnly,
-    className: `${className} ${errorProps.className}`.trim(),
     ...errorProps,
   };
+
+  const combinedClassName = `${className} ${errorProps.className || ''}`.trim();
 
   const renderInput = () => {
     switch (type) {
@@ -69,6 +70,7 @@ export function FormField({
         return (
           <Textarea
             {...baseInputProps}
+            className={combinedClassName}
             rows={rows}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -82,7 +84,7 @@ export function FormField({
             disabled={disabled}
           >
             <SelectTrigger
-              className={`${className} ${errorProps.className}`.trim()}
+              className={combinedClassName}
               data-error={errorProps['data-error']}
               data-error-field={errorProps['data-error-field']}
             >
@@ -102,6 +104,7 @@ export function FormField({
         return (
           <Input
             {...baseInputProps}
+            className={combinedClassName}
             type="number"
             min={min}
             max={max}
@@ -114,6 +117,7 @@ export function FormField({
         return (
           <Input
             {...baseInputProps}
+            className={combinedClassName}
             type={type}
             onChange={(e) => onChange(e.target.value)}
           />

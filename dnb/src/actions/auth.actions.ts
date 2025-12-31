@@ -3,6 +3,123 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import type { RefreshTokenRequest, RefreshTokenResponse } from '@/types/auth';
+
+export async function refreshToken(data: RefreshTokenRequest): Promise<{ success: boolean; data?: RefreshTokenResponse; error?: string }> {
+  try {
+    const { refreshToken } = data;
+
+    if (!refreshToken) {
+      return { success: false, error: 'Refresh token is required' };
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as any;
+    
+    if (!decoded || !decoded.id) {
+      return { success: false, error: 'Invalid refresh token' };
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        roleId: true,
+        businessName: true,
+      }
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Determine user role based on roleId
+    let userRole = 'guest';
+    if (user.roleId === 1) userRole = 'super_admin';
+    else if (user.roleId === 2) userRole = 'business_owner';
+    else if (user.roleId === 3) userRole = 'buyer';
+    let tokenPayload: any = {
+      id: user.id,
+      email: user.email,
+      userRole,
+      name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+      businessName: user.businessName || '',
+    };
+
+    // Handle business owner specific data
+    if (user.roleId === 2) { // business_owner
+      const businessOwner = await prisma.businessOwner.findUnique({
+        where: { userId: user.id },
+        select: { id: true, businessName: true, paymentId: true }
+      });
+
+      if (businessOwner) {
+        tokenPayload.businessOwnerId = businessOwner.id;
+        tokenPayload.businessName = businessOwner.businessName;
+        tokenPayload.paymentId = businessOwner.paymentId;
+      }
+    }
+
+    // Handle buyer specific data
+    if (user.roleId === 3) { // buyer
+      const buyer = await prisma.buyer.findFirst({
+        where: { email: user.email },
+        select: { 
+          id: true, 
+          contactName: true, 
+          buyersCompanyName: true, 
+          businessOwnerId: true 
+        }
+      });
+
+      if (buyer) {
+        tokenPayload = {
+          id: buyer.id,
+          email: user.email,
+          userRole,
+          name: buyer.contactName,
+          businessName: buyer.buyersCompanyName,
+          ownerId: buyer.businessOwnerId,
+        };
+      }
+    }
+
+    // Generate new tokens
+    const newAccessToken = jwt.sign(
+      tokenPayload,
+      process.env.ACCESS_TOKEN_SECRET!,
+      { expiresIn: '15m' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user.id },
+      process.env.REFRESH_TOKEN_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    return {
+      success: true,
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: tokenPayload.id,
+          email: tokenPayload.email,
+          userRole: tokenPayload.userRole,
+          businessName: tokenPayload.businessName,
+          name: tokenPayload.name,
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return { success: false, error: 'Invalid or expired refresh token' };
+  }
+}
 import { ValidationError } from '@/core/middleware';
 
 interface TokenPayload {
@@ -16,17 +133,6 @@ interface TokenPayload {
   activeNegotiationId?: string | null;
   iat?: number;
   exp?: number;
-}
-
-interface RefreshTokenResponse {
-  success: boolean;
-  data?: {
-    accessToken: string;
-    authToken: string;
-    refreshToken: string;
-    tokenPayload: TokenPayload;
-  };
-  error?: string;
 }
 
 interface LoginFormResponse {
@@ -87,7 +193,11 @@ function verifyToken(token: string, secret: string): TokenPayload | null {
  * Refresh access token using refresh token
  * This server action handles expired access tokens and creates new ones
  */
-export async function refreshAccessToken(refreshToken: string): Promise<RefreshTokenResponse> {
+export async function refreshAccessToken(refreshToken: string): Promise<{
+  success: boolean;
+  data?: RefreshTokenResponse;
+  error?: string;
+}> {
   try {
 
     if (!refreshToken) {
@@ -221,12 +331,13 @@ export async function refreshAccessToken(refreshToken: string): Promise<RefreshT
       success: true,
       data: {
         accessToken: newAccessToken,
-        authToken: newAccessToken, // Alias for compatibility
         refreshToken: newRefreshToken,
-        tokenPayload: {
-          ...tokenPayload,
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes
+        user: {
+          id: tokenPayload.id,
+          email: tokenPayload.email,
+          userRole: tokenPayload.userRole,
+          businessName: tokenPayload.businessName,
+          name: tokenPayload.name,
         },
       },
     };
@@ -377,10 +488,20 @@ export async function loginFormAction(
     let redirectTo = '/dashboard';
 
     if (user.roleId === 1) {
+      // Super admin - no business name required
       userRole = 'super_admin';
       redirectTo = '/dashboard';
     } else if (user.roleId === 2) {
+      // Business owner - business name is required
       userRole = 'business_owner';
+      
+      // Business name is required for business owners
+      if (!businessName || businessName.trim().length === 0) {
+        return {
+          success: false,
+          error: 'Business name is required',
+        };
+      }
       
       // Get business owner details
       const businessOwner = await prisma.businessOwner.findFirst({
@@ -403,22 +524,63 @@ export async function loginFormAction(
           };
         }
         
-        businessOwnerId = businessOwner.id;
-        businessNameFromDB = businessOwner.businessName;
-        
-        // If business name was provided in form, verify it matches
-        if (businessName && businessName !== businessOwner.businessName) {
+        // Verify business name matches
+        if (businessName !== businessOwner.businessName) {
           return {
             success: false,
             error: 'Invalid business name',
           };
         }
         
+        businessOwnerId = businessOwner.id;
+        businessNameFromDB = businessOwner.businessName;
+        
       } else {
         return {
           success: false,
           error: 'Business owner account not found',
         };
+      }
+      
+      redirectTo = '/dashboard';
+    } else if (user.roleId === 3) {
+      // Buyer - business name is required
+      userRole = 'buyer';
+      
+      // Business name is required for buyers
+      if (!businessName || businessName.trim().length === 0) {
+        return {
+          success: false,
+          error: 'Business name is required',
+        };
+      }
+      
+      // Get buyer details and verify business name
+      const buyer = await prisma.buyer.findFirst({
+        where: { 
+          email: email,
+          is_deleted: false,
+        },
+        select: {
+          id: true,
+          contactName: true,
+          buyersCompanyName: true,
+          businessOwnerId: true,
+          businessName: true,
+        },
+      });
+
+      if (buyer) {
+        // Verify business name matches
+        if (businessName !== buyer.businessName && businessName !== buyer.buyersCompanyName) {
+          return {
+            success: false,
+            error: 'Invalid business name',
+          };
+        }
+        
+        businessNameFromDB = buyer.businessName || buyer.buyersCompanyName || undefined;
+        businessOwnerId = buyer.businessOwnerId;
       }
       
       redirectTo = '/dashboard';

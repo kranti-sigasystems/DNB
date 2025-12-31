@@ -1,404 +1,549 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
-import type { 
-  Location, 
-  CreateLocationData, 
-  UpdateLocationData, 
-  LocationSearchFilters,
-  PaginatedLocationResponse 
-} from '@/types/location';
+import { getStoredSession } from '@/utils/auth';
 
-// Helper function to decode JWT and get business owner ID
-async function getBusinessOwnerFromToken(authToken: string) {
-  try {
-    const decoded = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET || 'fallback_secret') as any;
-    
-    if (decoded.businessOwnerId) {
-      // Verify the business owner still exists
-      const businessOwner = await prisma.businessOwner.findUnique({
-        where: { id: decoded.businessOwnerId },
-        select: { id: true }
-      });
-      return businessOwner?.id || null;
-    }
-    
-    if (decoded.id) {
-      const businessOwner = await prisma.businessOwner.findFirst({
-        where: { userId: decoded.id },
-        select: { id: true }
-      });
-      return businessOwner?.id || null;
-    }
-    
-    return null;
-  } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      console.error('JWT token expired');
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      console.error('Invalid JWT token');
-    } else {
-      console.error('Error decoding token:', error);
-    }
-    return null;
-  }
+export interface LocationSearchParams {
+  city?: string;
+  state?: string;
+  country?: string;
+  pageIndex?: number;
+  pageSize?: number;
 }
 
-// Get all locations for business owner
-export async function getAllLocations(authToken?: string, pageIndex = 0, pageSize = 100) {
+/**
+ * Get all locations for the authenticated user
+ */
+export async function getAllLocations(authToken?: string, pageIndex = 0, pageSize = 100): Promise<{
+  success: boolean;
+  data?: {
+    data: any[];
+    totalItems: number;
+    totalPages: number;
+    pageIndex: number;
+    pageSize: number;
+  };
+  error?: string;
+}> {
   try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
+    let businessOwnerId: string;
     
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found. Please log in again.' };
+    if (authToken) {
+      // If auth token is provided, decode it to get business owner ID
+      const jwt = require('jsonwebtoken');
+      try {
+        const decoded = jwt.decode(authToken) as any;
+        businessOwnerId = decoded?.businessOwnerId || decoded?.id;
+        
+        if (!businessOwnerId) {
+          return { success: false, error: 'Business owner ID not found in token' };
+        }
+      } catch (error) {
+        return { success: false, error: 'Invalid authentication token' };
+      }
+    } else {
+      // Fallback to session
+      const session = getStoredSession();
+      if (!session?.user) {
+        return { success: false, error: 'Authentication required' };
+      }
+
+      const user = session.user as any;
+      businessOwnerId = user.businessOwnerId || user.id;
     }
-    
+
     const skip = pageIndex * pageSize;
-    
-    const [locations, totalCount] = await Promise.all([
-      prisma.location.findMany({
-        where: { ownerId: businessOwnerId },
-        skip,
-        take: pageSize,
-        orderBy: { city: 'asc' }
-      }),
-      prisma.location.count({ where: { ownerId: businessOwnerId } })
-    ]);
-    
-    const totalPages = Math.ceil(totalCount / pageSize);
-    
+
+    // Build where clause
+    const where: any = {
+      ownerId: businessOwnerId,
+    };
+
+    // Get total count
+    const totalItems = await prisma.location.count({ where });
+
+    // Get locations
+    const locations = await prisma.location.findMany({
+      where,
+      orderBy: [
+        { country: 'asc' },
+        { state: 'asc' },
+        { city: 'asc' },
+      ],
+      skip,
+      take: pageSize,
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
     return {
       success: true,
       data: {
         data: locations,
-        totalItems: totalCount,
+        totalItems,
         totalPages,
         pageIndex,
-        pageSize
-      }
+        pageSize,
+      },
     };
-  } catch (error) {
-    console.error('Error fetching locations:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch locations' 
+  } catch (error: any) {
+    console.error('Get all locations error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get locations',
     };
   }
 }
 
-// Get location by ID
-export async function getLocationById(locationId: string, authToken?: string) {
+/**
+ * Get location by ID
+ */
+export async function getLocationById(locationId: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
+    const session = getStoredSession();
+    if (!session?.user) {
+      return { success: false, error: 'Authentication required' };
     }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
-    }
-    
+
+    const user = session.user as any;
+    const businessOwnerId = user.businessOwnerId || user.id;
+
     const location = await prisma.location.findFirst({
-      where: { 
+      where: {
         id: locationId,
-        ownerId: businessOwnerId
-      }
+        ownerId: businessOwnerId,
+      },
     });
-    
+
     if (!location) {
-      return { success: false, error: 'Location not found' };
+      return { success: false, error: 'Location not found or access denied' };
     }
-    
+
     return {
       success: true,
-      data: { location }
+      data: location,
     };
-  } catch (error) {
-    console.error('Error getting location:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get location' 
+  } catch (error: any) {
+    console.error('Get location by ID error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get location',
     };
   }
 }
 
-// Create new location
-export async function createLocation(locationData: CreateLocationData, authToken?: string) {
+/**
+ * Search locations
+ */
+export async function searchLocations(searchParams: LocationSearchParams & {
+  page?: number;
+  limit?: number;
+}, authToken?: string): Promise<{
+  success: boolean;
+  data?: {
+    data: any[];
+    totalItems: number;
+    totalPages: number;
+    pageIndex: number;
+    pageSize: number;
+  };
+  error?: string;
+}> {
   try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
+    let businessOwnerId: string;
     
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
+    if (authToken) {
+      // If auth token is provided, decode it to get business owner ID
+      const jwt = require('jsonwebtoken');
+      try {
+        const decoded = jwt.decode(authToken) as any;
+        businessOwnerId = decoded?.businessOwnerId || decoded?.id;
+        
+        if (!businessOwnerId) {
+          return { success: false, error: 'Business owner ID not found in token' };
+        }
+      } catch (error) {
+        return { success: false, error: 'Invalid authentication token' };
+      }
+    } else {
+      // Fallback to session
+      const session = getStoredSession();
+      if (!session?.user) {
+        return { success: false, error: 'Authentication required' };
+      }
+
+      const user = session.user as any;
+      businessOwnerId = user.businessOwnerId || user.id;
     }
-    
-    // Check if location with same code already exists for this business owner
+
+    const {
+      page = 0,
+      limit = 100,
+      city,
+      state,
+      country,
+    } = searchParams;
+
+    const skip = page * limit;
+
+    // Build where clause
+    const where: any = {
+      ownerId: businessOwnerId,
+    };
+
+    if (city) {
+      where.city = {
+        contains: city,
+        mode: 'insensitive',
+      };
+    }
+
+    if (state) {
+      where.state = {
+        contains: state,
+        mode: 'insensitive',
+      };
+    }
+
+    if (country) {
+      where.country = {
+        contains: country,
+        mode: 'insensitive',
+      };
+    }
+
+    // Get total count
+    const totalItems = await prisma.location.count({ where });
+
+    // Get locations
+    const locations = await prisma.location.findMany({
+      where,
+      orderBy: [
+        { country: 'asc' },
+        { state: 'asc' },
+        { city: 'asc' },
+      ],
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      success: true,
+      data: {
+        data: locations,
+        totalItems,
+        totalPages,
+        pageIndex: page,
+        pageSize: limit,
+      },
+    };
+  } catch (error: any) {
+    console.error('Search locations error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to search locations',
+    };
+  }
+}
+
+/**
+ * Create a new location
+ */
+export async function createLocation(locationData: {
+  locationName?: string;
+  city: string;
+  state: string;
+  code: string;
+  country: string;
+  address?: string;
+  postalCode?: string;
+}): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    // Fallback to session
+    const session = getStoredSession();
+    if (!session?.user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    const user = session.user as any;
+    const businessOwnerId = user.businessOwnerId || user.id;
+
+    // Validate required fields
+    if (!locationData.city?.trim()) {
+      return { success: false, error: 'City is required' };
+    }
+
+    if (!locationData.state?.trim()) {
+      return { success: false, error: 'State is required' };
+    }
+
+    if (!locationData.code?.trim()) {
+      return { success: false, error: 'Location code is required' };
+    }
+
+    if (!locationData.country?.trim()) {
+      return { success: false, error: 'Country is required' };
+    }
+
+    // Check if location code already exists for this business owner
     const existingLocation = await prisma.location.findFirst({
       where: {
         code: locationData.code,
-        ownerId: businessOwnerId
-      }
+        ownerId: businessOwnerId,
+      },
     });
-    
+
     if (existingLocation) {
-      return { success: false, error: 'Location with this code already exists' };
+      return { success: false, error: 'Location code already exists' };
     }
-    
-    const location = await prisma.location.create({
+
+    // Create the location
+    const newLocation = await prisma.location.create({
       data: {
-        locationName: locationData.locationName,
+        locationName: locationData.locationName || null,
         city: locationData.city,
         state: locationData.state,
         code: locationData.code,
         country: locationData.country,
-        address: locationData.address,
-        postalCode: locationData.postalCode,
-        ownerId: businessOwnerId
-      }
+        address: locationData.address || null,
+        postalCode: locationData.postalCode || null,
+        ownerId: businessOwnerId,
+      },
     });
-    
+
     return {
       success: true,
-      data: { location }
+      data: newLocation,
     };
-  } catch (error) {
-    console.error('Error creating location:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create location' 
+  } catch (error: any) {
+    console.error('Create location error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to create location',
     };
   }
 }
 
-// Update location
-export async function updateLocation(locationId: string, updateData: UpdateLocationData, authToken?: string) {
+/**
+ * Create a new location (with auth token)
+ */
+export async function createLocationWithToken(locationData: {
+  locationName?: string;
+  city: string;
+  state: string;
+  code: string;
+  country: string;
+  address?: string;
+  postalCode?: string;
+}, authToken: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
+    // If auth token is provided, decode it to get business owner ID
+    const jwt = require('jsonwebtoken');
+    try {
+      const decoded = jwt.decode(authToken) as any;
+      const businessOwnerId = decoded?.businessOwnerId || decoded?.id;
+      
+      if (!businessOwnerId) {
+        return { success: false, error: 'Business owner ID not found in token' };
+      }
+
+      // Validate required fields
+      if (!locationData.city?.trim()) {
+        return { success: false, error: 'City is required' };
+      }
+
+      if (!locationData.state?.trim()) {
+        return { success: false, error: 'State is required' };
+      }
+
+      if (!locationData.code?.trim()) {
+        return { success: false, error: 'Location code is required' };
+      }
+
+      if (!locationData.country?.trim()) {
+        return { success: false, error: 'Country is required' };
+      }
+
+      // Check if location code already exists for this business owner
+      const existingLocation = await prisma.location.findFirst({
+        where: {
+          code: locationData.code,
+          ownerId: businessOwnerId,
+        },
+      });
+
+      if (existingLocation) {
+        return { success: false, error: 'Location code already exists' };
+      }
+
+      // Create the location
+      const newLocation = await prisma.location.create({
+        data: {
+          locationName: locationData.locationName || null,
+          city: locationData.city,
+          state: locationData.state,
+          code: locationData.code,
+          country: locationData.country,
+          address: locationData.address || null,
+          postalCode: locationData.postalCode || null,
+          ownerId: businessOwnerId,
+        },
+      });
+
+      return {
+        success: true,
+        data: newLocation,
+      };
+    } catch (error) {
+      return { success: false, error: 'Invalid authentication token' };
     }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
+  } catch (error: any) {
+    console.error('Create location error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to create location',
+    };
+  }
+}
+
+/**
+ * Update location
+ */
+export async function updateLocation(locationId: string, updateData: {
+  locationName?: string;
+  city?: string;
+  code?: string;
+  country?: string;
+  address?: string;
+  postalCode?: string;
+}): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    const session = getStoredSession();
+    if (!session?.user) {
+      return { success: false, error: 'Authentication required' };
     }
-    
-    // Check if location exists and belongs to business owner
+
+    const user = session.user as any;
+    const businessOwnerId = user.businessOwnerId || user.id;
+
+    // Check if location exists and belongs to user
     const existingLocation = await prisma.location.findFirst({
       where: {
         id: locationId,
-        ownerId: businessOwnerId
-      }
+        ownerId: businessOwnerId,
+      },
     });
-    
+
     if (!existingLocation) {
-      return { success: false, error: 'Location not found' };
+      return { success: false, error: 'Location not found or access denied' };
     }
-    
-    // Check for code conflicts if code is being updated
-    if (updateData.code && updateData.code !== existingLocation.code) {
-      const codeConflict = await prisma.location.findFirst({
-        where: {
-          code: updateData.code,
-          ownerId: businessOwnerId,
-          id: { not: locationId }
-        }
-      });
-      
-      if (codeConflict) {
-        return { success: false, error: 'Location with this code already exists' };
-      }
-    }
-    
-    const location = await prisma.location.update({
+
+    // Update the location
+    const updatedLocation = await prisma.location.update({
       where: { id: locationId },
-      data: updateData
+      data: {
+        ...(updateData.locationName !== undefined && { locationName: updateData.locationName }),
+        ...(updateData.city && { city: updateData.city }),
+        ...(updateData.code && { code: updateData.code }),
+        ...(updateData.country && { country: updateData.country }),
+        ...(updateData.address !== undefined && { address: updateData.address }),
+        ...(updateData.postalCode !== undefined && { postalCode: updateData.postalCode }),
+        updatedAt: new Date(),
+      },
     });
-    
+
     return {
       success: true,
-      data: { location }
+      data: updatedLocation,
     };
-  } catch (error) {
-    console.error('Error updating location:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to update location' 
+  } catch (error: any) {
+    console.error('Update location error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to update location',
     };
   }
 }
 
-// Delete location
-export async function deleteLocation(locationId: string, authToken?: string) {
+/**
+ * Delete location (hard delete)
+ */
+export async function deleteLocation(locationId: string, authToken?: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
+    let businessOwnerId: string;
     
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
+    if (authToken) {
+      // If auth token is provided, decode it to get business owner ID
+      const jwt = require('jsonwebtoken');
+      try {
+        const decoded = jwt.decode(authToken) as any;
+        businessOwnerId = decoded?.businessOwnerId || decoded?.id;
+        
+        if (!businessOwnerId) {
+          return { success: false, error: 'Business owner ID not found in token' };
+        }
+      } catch (error) {
+        return { success: false, error: 'Invalid authentication token' };
+      }
+    } else {
+      // Fallback to session
+      const session = getStoredSession();
+      if (!session?.user) {
+        return { success: false, error: 'Authentication required' };
+      }
+
+      const user = session.user as any;
+      businessOwnerId = user.businessOwnerId || user.id;
     }
-    
-    const location = await prisma.location.findFirst({
+
+    // Check if location exists and belongs to user
+    const existingLocation = await prisma.location.findFirst({
       where: {
         id: locationId,
-        ownerId: businessOwnerId
-      }
+        ownerId: businessOwnerId,
+      },
     });
-    
-    if (!location) {
-      return { success: false, error: 'Location not found' };
+
+    if (!existingLocation) {
+      return { success: false, error: 'Location not found or access denied' };
     }
-    
+
+    // Delete the location
     await prisma.location.delete({
-      where: { id: locationId }
+      where: { id: locationId },
     });
-    
-    return {
-      success: true,
-      data: { location }
-    };
-  } catch (error) {
-    console.error('Error deleting location:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete location' 
-    };
-  }
-}
 
-// Get location statistics
-export async function getLocationStats(authToken?: string) {
-  try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found. Please log in again.' };
-    }
-    
-    const [totalCount, countryCount] = await Promise.all([
-      prisma.location.count({ where: { ownerId: businessOwnerId } }),
-      prisma.location.groupBy({
-        by: ['country'],
-        where: { ownerId: businessOwnerId },
-        _count: { country: true }
-      })
-    ]);
-    
     return {
       success: true,
-      data: {
-        totalLocations: totalCount,
-        countriesCount: countryCount.length,
-        countryBreakdown: countryCount.map((item: any) => ({
-          country: item.country,
-          count: item._count.country
-        }))
-      }
+      data: { message: 'Location deleted successfully' },
     };
-  } catch (error) {
-    console.error('Error fetching location stats:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch location statistics' 
-    };
-  }
-}
-
-// Search locations
-export async function searchLocations(filters: LocationSearchFilters, authToken?: string) {
-  try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found. Please log in again.' };
-    }
-    
-    const pageIndex = filters.page || 0;
-    const pageSize = filters.limit || 50;
-    const skip = pageIndex * pageSize;
-    
-    // Build where clause
-    const where: any = {
-      ownerId: businessOwnerId
-    };
-    
-    // General query search across multiple fields
-    if (filters.query) {
-      where.OR = [
-        { city: { contains: filters.query, mode: 'insensitive' } },
-        { state: { contains: filters.query, mode: 'insensitive' } },
-        { country: { contains: filters.query, mode: 'insensitive' } },
-        { code: { contains: filters.query, mode: 'insensitive' } },
-        { locationName: { contains: filters.query, mode: 'insensitive' } },
-        { address: { contains: filters.query, mode: 'insensitive' } }
-      ];
-    }
-    
-    // Specific field filters
-    if (filters.locationName) {
-      where.locationName = { contains: filters.locationName, mode: 'insensitive' };
-    }
-    
-    if (filters.city) {
-      where.city = { contains: filters.city, mode: 'insensitive' };
-    }
-    
-    if (filters.state) {
-      where.state = { contains: filters.state, mode: 'insensitive' };
-    }
-    
-    if (filters.country) {
-      where.country = { contains: filters.country, mode: 'insensitive' };
-    }
-    
-    if (filters.code) {
-      where.code = { contains: filters.code, mode: 'insensitive' };
-    }
-    
-    if (filters.address) {
-      where.address = { contains: filters.address, mode: 'insensitive' };
-    }
-    
-    const [locations, totalCount] = await Promise.all([
-      prisma.location.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { city: 'asc' }
-      }),
-      prisma.location.count({ where })
-    ]);
-    
-    const totalPages = Math.ceil(totalCount / pageSize);
-    
+  } catch (error: any) {
+    console.error('Delete location error:', error);
     return {
-      success: true,
-      data: {
-        data: locations,
-        totalItems: totalCount,
-        totalPages,
-        pageIndex,
-        pageSize
-      }
-    };
-  } catch (error) {
-    console.error('Error searching locations:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to search locations' 
+      success: false,
+      error: error.message || 'Failed to delete location',
     };
   }
 }

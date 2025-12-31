@@ -50,12 +50,11 @@ export const GET = withErrorHandler(
           sortOrder,
         };
 
-        const result = await getProducts(searchParams, user.accessToken || '');
-
-        if (result.success) {
-          return successResponse(200, 'Products retrieved successfully', result.data);
-        } else {
-          return errorResponse(400, result.error || 'Failed to retrieve products');
+        try {
+          const result = await getProducts(searchParams, user.accessToken || '');
+          return successResponse(200, 'Products retrieved successfully', result);
+        } catch (error: any) {
+          return errorResponse(400, error.message || 'Failed to retrieve products');
         }
       })
     )

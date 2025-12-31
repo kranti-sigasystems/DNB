@@ -150,6 +150,16 @@ export async function getProductById(
 }
 
 /**
+ * Create a single product
+ */
+export async function createProduct(
+  product: ProductFormData,
+  authToken?: string
+): Promise<CreateProductResponse> {
+  return createProducts(product, authToken);
+}
+
+/**
  * Create new product(s)
  */
 export async function createProducts(

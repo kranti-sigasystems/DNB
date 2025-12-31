@@ -6,6 +6,11 @@ export interface User {
   userRole: string;
   businessName?: string;
   businessOwnerId?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  postalCode?: string;
   status: 'active' | 'inactive' | 'pending';
   createdAt: string;
   updatedAt: string;
@@ -14,10 +19,17 @@ export interface User {
 export interface Buyer {
   id: string;
   contactName: string;
-  contactEmail: string;
+  contactEmail: string | null;
   buyersCompanyName: string;
+  registrationNumber?: string;
+  taxId?: string;
+  countryCode?: string;
   status: 'active' | 'inactive' | 'pending';
   country?: string;
+  city?: string;
+  state?: string;
+  address?: string;
+  postalCode?: string;
   isVerified: boolean;
   ownerId: string;
   createdAt: string;

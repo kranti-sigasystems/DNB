@@ -241,6 +241,63 @@ export const OFFER_DRAFT_SEARCH_CONFIG: SearchConfig = {
   ],
 };
 
+export const OFFER_SEARCH_CONFIG: SearchConfig = {
+  title: 'Search Offers',
+  quickSearchPlaceholder: 'Search offers by name, buyer, product, or status...',
+  quickSearchField: 'query',
+  showQuickSearch: true,
+  showAdvancedToggle: true,
+  defaultExpanded: false,
+  fields: [
+    {
+      name: 'offerName',
+      label: 'Offer Name',
+      type: 'text',
+      placeholder: 'Enter offer name',
+    },
+    {
+      name: 'buyerName',
+      label: 'Buyer Name',
+      type: 'text',
+      placeholder: 'Enter buyer company name',
+    },
+    {
+      name: 'toParty',
+      label: 'To Party',
+      type: 'text',
+      placeholder: 'Enter to party name',
+    },
+    {
+      name: 'productName',
+      label: 'Product Name',
+      type: 'text',
+      placeholder: 'Enter product name',
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'open', label: 'Open' },
+        { value: 'closed', label: 'Closed' },
+        { value: 'expired', label: 'Expired' },
+      ],
+    },
+    {
+      name: 'destination',
+      label: 'Destination',
+      type: 'text',
+      placeholder: 'Enter destination',
+    },
+    {
+      name: 'fromParty',
+      label: 'From Party',
+      type: 'text',
+      placeholder: 'Enter from party name',
+    },
+  ],
+};
+
 export const DASHBOARD_SEARCH_CONFIG: SearchConfig = {
   title: 'Search Dashboard Data',
   quickSearchPlaceholder: 'Search across all data...',

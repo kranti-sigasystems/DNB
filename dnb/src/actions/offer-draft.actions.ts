@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { ensureAuthenticated } from '@/utils/tokenManager';
 import { decodeTokenClient } from '@/utils/token-utils';
 import type { 
-  OfferDraft,
   OfferDraftFormData,
   OfferDraftsResponse,
   OfferDraftSearchParams,
@@ -131,49 +130,65 @@ export async function getOfferDrafts(
     }
     
     // Get offer drafts with pagination
-    const [offerDrafts, totalItems] = await Promise.all([
-      prisma.offerDraft.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          draftNo: true,
-          businessOwnerId: true,
-          fromParty: true,
-          origin: true,
-          processor: true,
-          plantApprovalNumber: true,
-          brand: true,
-          draftName: true,
-          offerValidityDate: true,
-          shipmentDate: true,
-          quantity: true,
-          tolerance: true,
-          paymentTerms: true,
-          remark: true,
-          grandTotal: true,
-          isDeleted: true,
-          deletedAt: true,
-          createdAt: true,
-          updatedAt: true,
-          draftProducts: {
-            include: {
-              sizeBreakups: true,
+    let offerDrafts = [];
+    let totalItems = 0;
+    
+    try {
+      const [draftsResult, countResult] = await Promise.all([
+        prisma.offerDraft.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            draftProducts: {
+              include: {
+                sizeBreakups: true,
+              },
             },
           },
-        },
-      }),
-      prisma.offerDraft.count({ where }),
-    ]);
+        }),
+        prisma.offerDraft.count({ where }),
+      ]);
+      
+      offerDrafts = draftsResult;
+      totalItems = countResult;
+    } catch (dbError: any) {
+      console.error('❌ Database query error:', dbError);
+      
+      // Check if it's a table not found error
+      if (dbError.message?.includes('does not exist') || 
+          dbError.message?.includes('Unknown field') ||
+          dbError.message?.includes('deletedAt')) {
+        console.warn('⚠️ OfferDraft tables not found in database. Please run the SQL script or: npx prisma db push');
+        return {
+          data: [],
+          totalItems: 0,
+          totalPages: 0,
+          pageIndex,
+          pageSize,
+        };
+      }
+      
+      throw dbError; // Re-throw if it's a different error
+    }
     
     // Convert Decimal fields to numbers for client serialization
-    const serializedOfferDrafts = offerDrafts.map(draft => ({
+    const serializedOfferDrafts = offerDrafts.map((draft: any) => ({
       ...draft,
       grandTotal: draft.grandTotal ? Number(draft.grandTotal) : null,
-      draftProducts: draft.draftProducts.map(product => ({
+      processor: draft.processor || undefined, // Convert null to undefined
+      draftName: draft.draftName || undefined, // Convert null to undefined
+      quantity: draft.quantity || undefined,
+      tolerance: draft.tolerance || undefined,
+      paymentTerms: draft.paymentTerms || undefined,
+      remark: draft.remark || undefined,
+      offerValidityDate: draft.offerValidityDate || undefined, // Convert null to undefined
+      shipmentDate: draft.shipmentDate || undefined, // Convert null to undefined
+      deletedAt: draft.deletedAt || undefined, // Convert null to undefined
+      draftProducts: draft.draftProducts.map((product: any) => ({
         ...product,
-        sizeBreakups: product.sizeBreakups.map(breakup => ({
+        sizeBreakups: product.sizeBreakups.map((breakup: any) => ({
           ...breakup,
           price: Number(breakup.price),
         })),
@@ -233,26 +248,7 @@ export async function getOfferDraftById(
         businessOwnerId,
         isDeleted: false,
       },
-      select: {
-        draftNo: true,
-        businessOwnerId: true,
-        fromParty: true,
-        origin: true,
-        processor: true,
-        plantApprovalNumber: true,
-        brand: true,
-        draftName: true,
-        offerValidityDate: true,
-        shipmentDate: true,
-        quantity: true,
-        tolerance: true,
-        paymentTerms: true,
-        remark: true,
-        grandTotal: true,
-        isDeleted: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         draftProducts: {
           include: {
             sizeBreakups: true,
@@ -272,9 +268,18 @@ export async function getOfferDraftById(
     const serializedOfferDraft = {
       ...offerDraft,
       grandTotal: offerDraft.grandTotal ? Number(offerDraft.grandTotal) : null,
-      draftProducts: offerDraft.draftProducts.map(product => ({
+      processor: offerDraft.processor || undefined, // Convert null to undefined
+      draftName: offerDraft.draftName || undefined, // Convert null to undefined
+      quantity: offerDraft.quantity || undefined,
+      tolerance: offerDraft.tolerance || undefined,
+      paymentTerms: offerDraft.paymentTerms || undefined,
+      remark: offerDraft.remark || undefined,
+      offerValidityDate: offerDraft.offerValidityDate || undefined, // Convert null to undefined
+      shipmentDate: offerDraft.shipmentDate || undefined, // Convert null to undefined
+      deletedAt: offerDraft.deletedAt || undefined, // Convert null to undefined
+      draftProducts: offerDraft.draftProducts.map((product: any) => ({
         ...product,
-        sizeBreakups: product.sizeBreakups.map(breakup => ({
+        sizeBreakups: product.sizeBreakups.map((breakup: any) => ({
           ...breakup,
           price: Number(breakup.price),
         })),
@@ -404,7 +409,7 @@ export async function createOfferDraft(
         
         // Create size breakups with detail fields
         if (product.sizeBreakups && product.sizeBreakups.length > 0) {
-          await tx.sizeBreakup.createMany({
+          await tx.offerDraftSizeBreakup.createMany({
             data: product.sizeBreakups.map(sb => ({
               offerDraftProductId: draftProduct.id,
               size: sb.size,
@@ -419,26 +424,7 @@ export async function createOfferDraft(
       // Return the complete offer draft with relations
       const result = await tx.offerDraft.findUnique({
         where: { draftNo: offerDraft.draftNo },
-        select: {
-          draftNo: true,
-          businessOwnerId: true,
-          fromParty: true,
-          origin: true,
-          processor: true,
-          plantApprovalNumber: true,
-          brand: true,
-          draftName: true,
-          offerValidityDate: true,
-          shipmentDate: true,
-          quantity: true,
-          tolerance: true,
-          paymentTerms: true,
-          remark: true,
-          grandTotal: true,
-          isDeleted: true,
-          deletedAt: true,
-          createdAt: true,
-          updatedAt: true,
+        include: {
           draftProducts: {
             include: {
               sizeBreakups: true,
@@ -452,9 +438,18 @@ export async function createOfferDraft(
         return {
           ...result,
           grandTotal: result.grandTotal ? Number(result.grandTotal) : null,
-          draftProducts: result.draftProducts.map(product => ({
+          processor: result.processor || undefined, // Convert null to undefined
+          draftName: result.draftName || undefined, // Convert null to undefined
+          quantity: result.quantity || undefined,
+          tolerance: result.tolerance || undefined,
+          paymentTerms: result.paymentTerms || undefined,
+          remark: result.remark || undefined,
+          offerValidityDate: result.offerValidityDate || undefined, // Convert null to undefined
+          shipmentDate: result.shipmentDate || undefined, // Convert null to undefined
+          deletedAt: result.deletedAt || undefined, // Convert null to undefined
+          draftProducts: result.draftProducts.map((product: any) => ({
             ...product,
-            sizeBreakups: product.sizeBreakups.map(breakup => ({
+            sizeBreakups: product.sizeBreakups.map((breakup: any) => ({
               ...breakup,
               price: Number(breakup.price),
             })),
@@ -561,26 +556,7 @@ export async function updateOfferDraft(
     const updatedDraft = await prisma.offerDraft.update({
       where: { draftNo },
       data: updateData,
-      select: {
-        draftNo: true,
-        businessOwnerId: true,
-        fromParty: true,
-        origin: true,
-        processor: true,
-        plantApprovalNumber: true,
-        brand: true,
-        draftName: true,
-        offerValidityDate: true,
-        shipmentDate: true,
-        quantity: true,
-        tolerance: true,
-        paymentTerms: true,
-        remark: true,
-        grandTotal: true,
-        isDeleted: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         draftProducts: {
           include: {
             sizeBreakups: true,
@@ -593,9 +569,18 @@ export async function updateOfferDraft(
     const serializedDraft = {
       ...updatedDraft,
       grandTotal: updatedDraft.grandTotal ? Number(updatedDraft.grandTotal) : null,
-      draftProducts: updatedDraft.draftProducts.map(product => ({
+      processor: updatedDraft.processor || undefined, // Convert null to undefined
+      draftName: updatedDraft.draftName || undefined, // Convert null to undefined
+      quantity: updatedDraft.quantity || undefined,
+      tolerance: updatedDraft.tolerance || undefined,
+      paymentTerms: updatedDraft.paymentTerms || undefined,
+      remark: updatedDraft.remark || undefined,
+      offerValidityDate: updatedDraft.offerValidityDate || undefined, // Convert null to undefined
+      shipmentDate: updatedDraft.shipmentDate || undefined, // Convert null to undefined
+      deletedAt: updatedDraft.deletedAt || undefined, // Convert null to undefined
+      draftProducts: updatedDraft.draftProducts.map((product: any) => ({
         ...product,
-        sizeBreakups: product.sizeBreakups.map(breakup => ({
+        sizeBreakups: product.sizeBreakups.map((breakup: any) => ({
           ...breakup,
           price: Number(breakup.price),
         })),
@@ -667,9 +652,9 @@ export async function deleteOfferDraft(
  * Update offer draft status - TEMPORARILY DISABLED
  */
 export async function updateOfferDraftStatus(
-  draftNo: number,
-  status: 'open' | 'close',
-  authToken?: string
+  _draftNo: number,
+  _status: 'open' | 'close',
+  _authToken?: string
 ): Promise<OfferDraftActionResponse> {
   // Temporarily disabled due to enum issue
   return {

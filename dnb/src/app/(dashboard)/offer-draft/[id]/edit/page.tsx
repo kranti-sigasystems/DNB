@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useOfferDrafts } from '@/hooks/use-offer-drafts';
 import { useFormChanges } from '@/hooks/use-form-changes';
-import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import type { OfferDraft, OfferDraftFormData } from '@/types/offer-draft';
 
 export default function EditOfferDraftPage() {
@@ -26,7 +25,7 @@ export default function EditOfferDraftPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form change tracking - compare current form data with original draft data
-  const originalFormData = originalDraft ? {
+  const originalFormData: Partial<OfferDraftFormData> = originalDraft ? {
     fromParty: originalDraft.fromParty,
     origin: originalDraft.origin,
     processor: originalDraft.processor || '',
@@ -372,8 +371,6 @@ export default function EditOfferDraftPage() {
           </Card>
         </form>
       </div>
-
-      <UnsavedChangesDialog />
     </>
   );
 }

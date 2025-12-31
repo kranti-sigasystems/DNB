@@ -82,10 +82,10 @@ export default function EditLocationPage({ params }: EditLocationPageProps) {
           return;
         }
 
-        const locationResult = await getLocationById(id, session.accessToken);
+        const locationResult = await getLocationById(id);
 
         if (locationResult.success && locationResult.data) {
-          const locationData = locationResult.data.location;
+          const locationData = locationResult.data;
           
           const normalizedLocationData: Location = {
             ...locationData,
@@ -191,7 +191,7 @@ export default function EditLocationPage({ params }: EditLocationPageProps) {
             return;
           }
 
-          const result = await updateLocation(location.id, formData, session.accessToken);
+          const result = await updateLocation(location.id, formData);
           
           if (result.success) {
             showSuccess('Location updated successfully!');

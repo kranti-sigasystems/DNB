@@ -28,7 +28,38 @@ interface UserFormProps {
   mode: 'create' | 'edit';
 }
 
-type FormData = Partial<BusinessOwner | Buyer>;
+type FormData = {
+  // Common fields from User interface
+  id?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phoneNumber?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  status?: 'active' | 'inactive';
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  userRole?: 'super_admin' | 'business_owner' | 'buyer';
+  
+  // BusinessOwner specific fields
+  businessName?: string;
+  registrationNumber?: string;
+  postalCode?: string;
+  userId?: string;
+  
+  // Buyer specific fields
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  buyersCompanyName?: string;
+  productName?: string;
+  locationName?: string;
+  businessOwnerId?: string;
+};
 
 export function UserForm({ userRole, authToken, initialData, mode }: UserFormProps) {
   const router = useRouter();

@@ -2,24 +2,26 @@ export interface Buyer {
   id: string;
   contactName: string;
   email: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  buyersCompanyName?: string;
-  registrationNumber?: string;
-  taxId?: string;
-  productName?: string;
-  locationName?: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  phoneNumber?: string | null;
+  buyersCompanyName?: string | null;
+  businessName?: string | null;
+  registrationNumber?: string | null;
+  taxId?: string | null;
+  countryCode?: string | null;
+  productName?: string | null;
+  locationName?: string | null;
   businessOwnerId: string;
   country: string;
-  state: string;
-  city: string;
-  address: string;
-  postalCode: string;
-  countryCode: string;
-  status: 'active' | 'inactive';
+  state?: string | null;
+  city?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  status: string;
   is_deleted: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface CreateBuyerData {
@@ -27,17 +29,19 @@ export interface CreateBuyerData {
   email: string;
   contactEmail?: string;
   contactPhone?: string;
+  phoneNumber?: string;
   buyersCompanyName?: string;
+  businessName?: string;
   registrationNumber?: string;
   taxId?: string;
+  countryCode?: string;
   productName?: string;
   locationName?: string;
   country: string;
-  state: string;
-  city: string;
-  address: string;
-  postalCode: string;
-  countryCode: string;
+  state?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
 }
 
 export interface Product {
@@ -54,13 +58,13 @@ export interface Product {
 
 export interface Location {
   id: string;
-  locationName: string;
+  locationName: string | null;
   code: string;
   city: string;
   state: string;
   country: string;
-  address: string;
-  postalCode: string;
+  address: string | null;
+  postalCode: string | null;
   ownerId: string;
   createdAt: string | Date;
   updatedAt: string | Date;

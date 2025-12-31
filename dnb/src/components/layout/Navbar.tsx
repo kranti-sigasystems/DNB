@@ -59,9 +59,9 @@ export default function Navbar({
     setMobileMenuOpen(false);
   };
 
-  const userName = user?.first_name
+  const userName: string = user?.first_name
     ? `${user.first_name} ${user.last_name || ""}`.trim()
-    : user?.name || user?.businessName || "";
+    : (user?.name as string) || (user?.businessName as string) || "User";
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

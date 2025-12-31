@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastContainer } from '@/components/ui/toast';
 import { useAlertDialog } from '@/components/ui/alert-dialog';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
-import { createLocation } from '@/actions/location.actions';
+import { createLocationWithToken } from '@/actions/location.actions';
 import { getStoredSession } from '@/utils/auth';
 import type { CreateLocationData } from '@/types/location';
 
@@ -102,7 +102,7 @@ export default function NewLocationPage() {
             return;
           }
 
-          const result = await createLocation(formData, session.accessToken);
+          const result = await createLocationWithToken(formData, session.accessToken);
           
           if (result.success) {
             showSuccess('Location created successfully!');

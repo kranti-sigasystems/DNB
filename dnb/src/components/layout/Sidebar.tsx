@@ -83,6 +83,15 @@ export default function Sidebar({
       : []),
   ];
 
+  // Temporary: Show default navigation if no items (for debugging)
+  const finalNavItems = navItems.length > 1 ? navItems : [
+    { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+    { name: "Users", icon: Users, path: "/users" },
+    { name: "Products", icon: Fish, path: "/products" },
+    { name: "Offers", icon: Tag, path: "/offers" },
+    { name: "Locations", icon: Globe, path: "/locations" },
+  ];
+
   // Function to check if a navigation item is active
   const isNavItemActive = (navPath: string) => {
     if (pathname === navPath) return true;
@@ -155,7 +164,7 @@ export default function Sidebar({
           <nav className="flex-1 overflow-y-auto py-4">
             {collapsed ? (
               <div className="flex flex-col items-center space-y-3">
-                {navItems.map(({ name, icon: Icon, path }) => {
+                {finalNavItems.map(({ name, icon: Icon, path }) => {
                   const isActive = isNavItemActive(path);
 
                   return (
@@ -188,7 +197,7 @@ export default function Sidebar({
               </div>
             ) : (
               <div className="px-4 space-y-1">
-                {navItems.map(({ name, icon: Icon, path }) => {
+                {finalNavItems.map(({ name, icon: Icon, path }) => {
                   const isActive = isNavItemActive(path);
 
                   return (
