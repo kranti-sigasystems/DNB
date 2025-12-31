@@ -1,39 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { refreshAccessToken } from '@/actions/auth.actions';
+import { refreshToken } from '@/actions/auth.actions';
+import { z } from 'zod';
+
+const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { refreshToken } = body;
-
-    if (!refreshToken) {
+    
+    // Validate input
+    const validation = refreshTokenSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Refresh token is required' },
+        { 
+          success: false, 
+          error: 'Invalid refresh token',
+          details: validation.error.issues 
+        },
         { status: 400 }
       );
     }
 
-    // Use the server action to refresh the token
-    const result = await refreshAccessToken(refreshToken);
-
-    if (!result.success) {
-      const statusCode = result.error?.includes('not found') ? 404 :
-                        result.error?.includes('inactive') ? 403 :
-                        result.error?.includes('Invalid') || result.error?.includes('expired') ? 401 : 500;
-
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: statusCode }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: result.data,
+    const result = await refreshToken(validation.data);
+    
+    return NextResponse.json(result, { 
+      status: result.success ? 200 : 401 
     });
-
-  } catch (error: any) {
-    console.error('❌ Refresh token API error:', error);
+  } catch (error) {
+    console.error('Refresh token API error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

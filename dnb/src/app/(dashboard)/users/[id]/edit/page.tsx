@@ -64,17 +64,19 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
     email: '',
     contactEmail: '',
     contactPhone: '',
+    phoneNumber: '',
     buyersCompanyName: '',
+    businessName: '',
     productName: '',
     locationName: '',
     registrationNumber: '',
+    taxId: '',
+    countryCode: '',
     address: '',
     city: '',
     state: '',
     country: 'India',
     postalCode: '',
-    taxId: '',
-    countryCode: '',
   });
   
   const [originalData, setOriginalData] = useState<CreateBuyerData | null>(null);
@@ -126,6 +128,7 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
         if (locationsResponse.success && locationsResponse.data) {
           const locations = locationsResponse.data.data.map(location => ({
             ...location,
+            locationName: location.locationName || `${location.city}, ${location.country}`,
             createdAt: typeof location.createdAt === 'string' ? location.createdAt : location.createdAt.toISOString(),
             updatedAt: typeof location.updatedAt === 'string' ? location.updatedAt : location.updatedAt.toISOString(),
           }));
@@ -157,7 +160,15 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
         const result = await getBuyerById(id, session.accessToken);
         if (result.success && result.data) {
           const buyer = result.data.buyer;
-          setBuyer(buyer);
+          // Cast the buyer data to match our Buyer interface
+          const typedBuyer: Buyer = {
+            ...buyer,
+            status: buyer.status as 'active' | 'inactive',
+            contactEmail: buyer.contactEmail || undefined,
+            createdAt: typeof buyer.createdAt === 'string' ? buyer.createdAt : buyer.createdAt.toISOString(),
+            updatedAt: typeof buyer.updatedAt === 'string' ? buyer.updatedAt : buyer.updatedAt.toISOString(),
+          };
+          setBuyer(typedBuyer);
           
           // Update form data with buyer information
           const buyerFormData: CreateBuyerData = {
@@ -165,17 +176,19 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
             email: buyer.email || '',
             contactEmail: buyer.contactEmail || '',
             contactPhone: buyer.contactPhone || '',
+            phoneNumber: buyer.phoneNumber || '',
             buyersCompanyName: buyer.buyersCompanyName || '',
+            businessName: buyer.businessName || '',
             productName: buyer.productName || '',
             locationName: buyer.locationName || '',
             registrationNumber: buyer.registrationNumber || '',
+            taxId: buyer.taxId || '',
+            countryCode: buyer.countryCode || '',
             address: buyer.address || '',
             city: buyer.city || '',
             state: buyer.state || '',
             country: buyer.country || 'India',
             postalCode: buyer.postalCode || '',
-            taxId: '',
-            countryCode: '',
           };
           
           setFormData(buyerFormData);

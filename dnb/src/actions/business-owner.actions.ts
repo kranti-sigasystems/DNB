@@ -2,6 +2,37 @@
 
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
+import { 
+  generateBuyerWelcomeTemplate, 
+  generateBuyerStatusTemplate,
+  generateOfferNotificationTemplate 
+} from '@/utils/emailTemplate';
+import { sendEmailWithRetry } from '@/services/email.service';
+
+// Helper function to generate a strong password
+// Requirements: at least 8 chars, at least one capital letter, at least one number, only !@#$%& special chars
+function generateStrongPassword(): string {
+  const length = 8;
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const special = "!@#$%&";
+  const charset = uppercase + numbers + special;
+  let password = "";
+  
+  // Ensure at least one uppercase letter
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  
+  // Ensure at least one number
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  
+  // Fill the rest randomly from all allowed characters
+  for (let i = 2; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}
 
 // Helper function to decode JWT and get business owner ID
 async function getBusinessOwnerFromToken(authToken: string) {
@@ -27,6 +58,90 @@ async function getBusinessOwnerFromToken(authToken: string) {
     console.error('Error decoding token:', error);
     return null;
   }
+}
+
+// Get all business owners (for admin/system use)
+export async function getBusinessOwners(params: {
+  pageIndex?: number;
+  pageSize?: number;
+  email?: string;
+  status?: string;
+} = {}, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const pageIndex = params.pageIndex || 0;
+    const pageSize = params.pageSize || 50;
+    const skip = pageIndex * pageSize;
+    
+    // Build where clause for filtering
+    const where: any = {
+      is_deleted: false,
+    };
+    
+    if (params.email) {
+      where.email = {
+        contains: params.email,
+        mode: 'insensitive',
+      };
+    }
+    
+    if (params.status) {
+      where.status = params.status;
+    }
+    
+    const [businessOwners, totalItems] = await Promise.all([
+      prisma.businessOwner.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              email: true,
+              first_name: true,
+              last_name: true,
+            }
+          }
+        }
+      }),
+      prisma.businessOwner.count({ where })
+    ]);
+    
+    const totalPages = Math.ceil(totalItems / pageSize);
+    
+    return {
+      success: true,
+      data: {
+        data: businessOwners,
+        totalItems,
+        totalPages,
+        pageIndex,
+        pageSize,
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error in getBusinessOwners:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch business owners' 
+    };
+  }
+}
+
+// Alias for getAllBuyers to match API route expectations
+export async function getBuyers(params: {
+  pageIndex?: number;
+  pageSize?: number;
+  email?: string;
+  status?: string;
+  country?: string;
+  isVerified?: boolean;
+} = {}, authToken?: string) {
+  return getAllBuyers(params, authToken);
 }
 
 // Debug function to check all buyers in database
@@ -106,14 +221,6 @@ export async function getAllBuyers(params: {
     const allBuyers = await prisma.buyer.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        businessOwner: {
-          select: {
-            businessName: true,
-            email: true
-          }
-        }
-      }
     });
     
     // Apply filters in memory (like the old code)
@@ -205,14 +312,6 @@ export async function searchBuyers(filters: {
         is_deleted: false,
       },
       orderBy: { createdAt: 'desc' },
-      include: {
-        businessOwner: {
-          select: {
-            businessName: true,
-            email: true
-          }
-        }
-      }
     });
     
     // Apply filters in memory (like the old code)
@@ -278,110 +377,6 @@ export async function searchBuyers(filters: {
   }
 }
 
-// Activate buyer - matches your frontend activateBuyer endpoint
-export async function activateBuyer(buyerId: string, authToken?: string) {
-  
-  try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
-    }
-    
-    // Update buyer status
-    const buyer = await prisma.buyer.update({
-      where: { 
-        id: buyerId,
-        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
-      },
-      data: { status: 'active' }
-    });
-    
-    return {
-      success: true,
-      data: { buyer }
-    };
-  } catch (error) {
-    console.error('Error activating buyer:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to activate buyer' 
-    };
-  }
-}
-
-// Deactivate buyer - matches your frontend deactivateBuyer endpoint
-export async function deactivateBuyer(buyerId: string, authToken?: string) {
-  
-  try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
-    }
-    
-    // Update buyer status
-    const buyer = await prisma.buyer.update({
-      where: { 
-        id: buyerId,
-        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
-      },
-      data: { status: 'inactive' }
-    });
-    
-    return {
-      success: true,
-      data: { buyer }
-    };
-  } catch (error) {
-    console.error('Error deactivating buyer:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to deactivate buyer' 
-    };
-  }
-}
-
-// Delete buyer - matches your frontend deleteBuyer endpoint
-export async function deleteBuyer(buyerId: string, authToken?: string) {
-  try {
-    if (!authToken) {
-      return { success: false, error: 'Authentication token required' };
-    }
-    
-    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
-    if (!businessOwnerId) {
-      return { success: false, error: 'Business owner not found' };
-    }
-    
-    // Soft delete buyer
-    const buyer = await prisma.buyer.update({
-      where: { 
-        id: buyerId,
-        businessOwnerId: businessOwnerId // Ensure buyer belongs to this business owner
-      },
-      data: { is_deleted: true }
-    });
-    
-    return {
-      success: true,
-      data: { buyer }
-    };
-  } catch (error) {
-    console.error('Error deleting buyer:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete buyer' 
-    };
-  }
-}
-
 // Get buyer by ID - matches your frontend getBuyerById endpoint
 export async function getBuyerById(buyerId: string, authToken?: string) {
   
@@ -401,14 +396,6 @@ export async function getBuyerById(buyerId: string, authToken?: string) {
         businessOwnerId: businessOwnerId,
         is_deleted: false
       },
-      include: {
-        businessOwner: {
-          select: {
-            businessName: true,
-            email: true
-          }
-        }
-      }
     });
     
     if (!buyer) {
@@ -433,6 +420,9 @@ export async function updateBuyer(buyerId: string, updateData: {
   contactName?: string;
   contactEmail?: string;
   buyersCompanyName?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  countryCode?: string;
   status?: string;
   [key: string]: any;
 }, authToken?: string) {
@@ -478,9 +468,14 @@ export async function updateBuyer(buyerId: string, updateData: {
 // Create new buyer - matches your frontend addBuyer endpoint
 export async function createBuyer(buyerData: {
   contactName: string;
-  contactEmail: string;
+  contactEmail?: string;
   buyersCompanyName: string;
+  registrationNumber?: string;
+  taxId?: string;
+  countryCode?: string;
   country?: string;
+  businessName?: string;
+  phoneNumber?: string;
   [key: string]: any;
 }, authToken?: string) {
   
@@ -494,10 +489,20 @@ export async function createBuyer(buyerData: {
       return { success: false, error: 'Business owner not found' };
     }
     
+    // Validate contact name (allow spaces)
+    if (!buyerData.contactName || buyerData.contactName.trim().length === 0) {
+      return { success: false, error: 'Contact name is required' };
+    }
+    
     // Check if buyer with same email already exists for this business owner
+    const email = buyerData.contactEmail || buyerData.email || '';
+    if (!email) {
+      return { success: false, error: 'Email is required' };
+    }
+    
     const existingBuyer = await prisma.buyer.findFirst({
       where: {
-        email: buyerData.contactEmail,
+        email: email,
         businessOwnerId: businessOwnerId,
         is_deleted: false
       }
@@ -507,15 +512,105 @@ export async function createBuyer(buyerData: {
       return { success: false, error: 'Buyer with this email already exists' };
     }
     
+    // Check if user with same email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (existingUser) {
+      return { success: false, error: 'Email is already registered in the system' };
+    }
+    
+    // Check if business name is unique for this business owner
+    if (buyerData.businessName) {
+      const existingBusinessName = await prisma.buyer.findFirst({
+        where: {
+          businessName: buyerData.businessName,
+          businessOwnerId: businessOwnerId,
+          is_deleted: false
+        }
+      });
+      
+      if (existingBusinessName) {
+        return { success: false, error: 'A buyer with this business name already exists' };
+      }
+    }
+    
+    // Check if phone number is unique for this business owner
+    if (buyerData.phoneNumber) {
+      const existingPhone = await prisma.buyer.findFirst({
+        where: {
+          phoneNumber: buyerData.phoneNumber,
+          businessOwnerId: businessOwnerId,
+          is_deleted: false
+        }
+      });
+      
+      if (existingPhone) {
+        return { success: false, error: 'A buyer with this phone number already exists' };
+      }
+    }
+    
+    // Generate a strong password for the buyer
+    const tempPassword = generateStrongPassword();
+    
+    // Hash the password
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
+    // Create User account for the buyer (roleId 3 = buyer)
+    const user = await prisma.user.create({
+      data: {
+        email: email,
+        password: hashedPassword,
+        first_name: buyerData.contactName.split(' ')[0] || buyerData.contactName,
+        last_name: buyerData.contactName.split(' ').slice(1).join(' ') || '',
+        roleId: 3, // buyer role
+        businessName: buyerData.businessName || buyerData.buyersCompanyName || ''
+      }
+    });
+    
+    // Create buyer record
     const buyer = await prisma.buyer.create({
       data: {
         ...buyerData,
-        email: buyerData.contactEmail, // Map contactEmail to email
+        email: email,
         businessOwnerId: businessOwnerId,
         status: 'active',
         is_deleted: false
       }
     });
+
+    // Send welcome email to buyer with credentials
+    if (email) {
+      try {
+        const businessOwner = await prisma.businessOwner.findUnique({
+          where: { id: businessOwnerId },
+          select: { businessName: true, email: true }
+        });
+
+        const loginUrl = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
+        
+        const emailHtml = generateBuyerWelcomeTemplate({
+          buyerName: buyerData.contactName || 'Buyer',
+          businessName: businessOwner?.businessName || 'Business',
+          email: email,
+          password: tempPassword,
+          loginUrl
+        });
+
+        await sendEmailWithRetry({
+          to: email,
+          subject: `Welcome to ${businessOwner?.businessName || 'Our Platform'} 🎉`,
+          html: emailHtml,
+          from: businessOwner?.email || process.env.EMAIL_USER
+        });
+
+      } catch (emailError) {
+        console.error('Failed to send welcome email to buyer:', emailError);
+        // Don't fail the buyer creation if email fails
+      }
+    }
     
     return {
       success: true,
@@ -567,6 +662,86 @@ export async function getBuyersList(authToken?: string) {
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to get buyers list' 
+    };
+  }
+}
+
+// Check business name uniqueness for this business owner
+export async function checkBusinessNameUnique(businessName: string, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    if (!businessName) {
+      return { success: false, error: 'Business name is required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    const existingBuyer = await prisma.buyer.findFirst({
+      where: {
+        businessName: businessName,
+        businessOwnerId: businessOwnerId,
+        is_deleted: false
+      }
+    });
+    
+    return {
+      success: true,
+      data: { 
+        isUnique: !existingBuyer,
+        exists: !!existingBuyer
+      }
+    };
+  } catch (error) {
+    console.error('Error checking business name uniqueness:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to check business name uniqueness' 
+    };
+  }
+}
+
+// Check phone number uniqueness for this business owner
+export async function checkPhoneNumberUnique(phoneNumber: string, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    if (!phoneNumber) {
+      return { success: false, error: 'Phone number is required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+    
+    const existingBuyer = await prisma.buyer.findFirst({
+      where: {
+        phoneNumber: phoneNumber,
+        businessOwnerId: businessOwnerId,
+        is_deleted: false
+      }
+    });
+    
+    return {
+      success: true,
+      data: { 
+        isUnique: !existingBuyer,
+        exists: !!existingBuyer
+      }
+    };
+  } catch (error) {
+    console.error('Error checking phone number uniqueness:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to check phone number uniqueness' 
     };
   }
 }
@@ -797,6 +972,219 @@ export async function getPlanUsage(authToken?: string) {
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to fetch plan usage' 
+    };
+  }
+}
+
+// Activate buyer with email notification
+export async function activateBuyer(buyerId: string, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+
+    const buyer = await prisma.buyer.findFirst({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId
+      }
+    });
+
+    if (!buyer) {
+      return { success: false, error: 'Buyer not found' };
+    }
+
+    // Update buyer status
+    const updatedBuyer = await prisma.buyer.update({
+      where: { id: buyerId },
+      data: { 
+        status: 'active',
+        is_deleted: false
+      }
+    });
+
+    // Send activation email
+    if (buyer.email) {
+      try {
+        const businessOwner = await prisma.businessOwner.findUnique({
+          where: { id: businessOwnerId },
+          select: { businessName: true, email: true }
+        });
+
+        const emailHtml = generateBuyerStatusTemplate({
+          buyerName: buyer.contactName || 'Buyer',
+          businessName: businessOwner?.businessName || 'Business',
+          status: 'activated',
+          message: 'You can now access all features and place orders.'
+        });
+
+        await sendEmailWithRetry({
+          to: buyer.email,
+          subject: `Account Activated - ${businessOwner?.businessName || 'Platform'} 🎉`,
+          html: emailHtml,
+          from: businessOwner?.email
+        });
+
+      } catch (emailError) {
+        console.error('Failed to send activation email:', emailError);
+      }
+    }
+
+    return {
+      success: true,
+      data: { buyer: updatedBuyer }
+    };
+  } catch (error) {
+    console.error('Error activating buyer:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to activate buyer' 
+    };
+  }
+}
+
+// Deactivate buyer with email notification
+export async function deactivateBuyer(buyerId: string, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+
+    const buyer = await prisma.buyer.findFirst({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId
+      }
+    });
+
+    if (!buyer) {
+      return { success: false, error: 'Buyer not found' };
+    }
+
+    // Update buyer status
+    const updatedBuyer = await prisma.buyer.update({
+      where: { id: buyerId },
+      data: { status: 'inactive' }
+    });
+
+    // Send deactivation email
+    if (buyer.email) {
+      try {
+        const businessOwner = await prisma.businessOwner.findUnique({
+          where: { id: businessOwnerId },
+          select: { businessName: true, email: true }
+        });
+
+        const emailHtml = generateBuyerStatusTemplate({
+          buyerName: buyer.contactName || 'Buyer',
+          businessName: businessOwner?.businessName || 'Business',
+          status: 'deactivated',
+          message: 'Please contact support if you believe this is an error.'
+        });
+
+        await sendEmailWithRetry({
+          to: buyer.email,
+          subject: `Account Deactivated - ${businessOwner?.businessName || 'Platform'}`,
+          html: emailHtml,
+          from: businessOwner?.email
+        });
+
+      } catch (emailError) {
+        console.error('Failed to send deactivation email:', emailError);
+      }
+    }
+
+    return {
+      success: true,
+      data: { buyer: updatedBuyer }
+    };
+  } catch (error) {
+    console.error('Error deactivating buyer:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to deactivate buyer' 
+    };
+  }
+}
+
+// Delete buyer with email notification
+export async function deleteBuyer(buyerId: string, authToken?: string) {
+  try {
+    if (!authToken) {
+      return { success: false, error: 'Authentication token required' };
+    }
+    
+    const businessOwnerId = await getBusinessOwnerFromToken(authToken);
+    if (!businessOwnerId) {
+      return { success: false, error: 'Business owner not found' };
+    }
+
+    const buyer = await prisma.buyer.findFirst({
+      where: { 
+        id: buyerId,
+        businessOwnerId: businessOwnerId
+      }
+    });
+
+    if (!buyer) {
+      return { success: false, error: 'Buyer not found' };
+    }
+
+    // Soft delete buyer
+    const deletedBuyer = await prisma.buyer.update({
+      where: { id: buyerId },
+      data: { 
+        status: 'inactive',
+        is_deleted: true
+      }
+    });
+
+    // Send deletion email
+    if (buyer.email) {
+      try {
+        const businessOwner = await prisma.businessOwner.findUnique({
+          where: { id: businessOwnerId },
+          select: { businessName: true, email: true }
+        });
+
+        const emailHtml = generateBuyerStatusTemplate({
+          buyerName: buyer.contactName || 'Buyer',
+          businessName: businessOwner?.businessName || 'Business',
+          status: 'deleted',
+          message: 'Your account and all associated data have been removed from our system.'
+        });
+
+        await sendEmailWithRetry({
+          to: buyer.email,
+          subject: `Account Removed - ${businessOwner?.businessName || 'Platform'}`,
+          html: emailHtml,
+          from: businessOwner?.email
+        });
+
+      } catch (emailError) {
+        console.error('Failed to send deletion email:', emailError);
+      }
+    }
+
+    return {
+      success: true,
+      data: { buyer: deletedBuyer }
+    };
+  } catch (error) {
+    console.error('Error deleting buyer:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to delete buyer' 
     };
   }
 }

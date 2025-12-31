@@ -165,14 +165,14 @@ export default function ViewBuyerPage({ params }: ViewBuyerPageProps) {
                       </div>
                     </div>
 
-                    {(isBusinessOwner ? businessOwner.registrationNumber : buyer.registrationNumber) && (
+                    {(isBusinessOwner ? businessOwner.registrationNumber : (buyer as Buyer & { registrationNumber?: string }).registrationNumber) && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">
                           Registration Number
                         </label>
                         <div className="p-3 bg-muted/50 rounded-md border">
                           <span className="font-medium">
-                            {isBusinessOwner ? businessOwner.registrationNumber : buyer.registrationNumber}
+                            {isBusinessOwner ? businessOwner.registrationNumber : (buyer as Buyer & { registrationNumber?: string }).registrationNumber}
                           </span>
                         </div>
                       </div>
@@ -351,16 +351,16 @@ export default function ViewBuyerPage({ params }: ViewBuyerPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {user.city && (
+                    {(user as BusinessOwner).city || (user as Buyer).city ? (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">
                           City
                         </label>
                         <div className="p-3 bg-muted/50 rounded-md border">
-                          <span className="font-medium">{user.city}</span>
+                          <span className="font-medium">{(user as BusinessOwner).city || (user as Buyer).city}</span>
                         </div>
                       </div>
-                    )}
+                    ) : null}
 
                     {user.state && (
                       <div className="space-y-2">
@@ -384,14 +384,14 @@ export default function ViewBuyerPage({ params }: ViewBuyerPageProps) {
                       </div>
                     )}
 
-                    {(isBusinessOwner ? businessOwner.postalCode : buyer.postalCode) && (
+                    {(isBusinessOwner ? businessOwner.postalCode : (buyer as any).postalCode) && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">
                           Postal Code
                         </label>
                         <div className="p-3 bg-muted/50 rounded-md border">
                           <span className="font-medium">
-                            {isBusinessOwner ? businessOwner.postalCode : buyer.postalCode}
+                            {isBusinessOwner ? businessOwner.postalCode : (buyer as any).postalCode}
                           </span>
                         </div>
                       </div>

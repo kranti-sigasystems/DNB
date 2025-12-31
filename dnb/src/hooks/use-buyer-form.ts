@@ -37,6 +37,7 @@ interface UseBuyerFormReturn {
   // Form submission
   loading: boolean;
   errors: Record<string, string>;
+  validationLoading: Record<string, boolean>;
   submitForm: () => Promise<void>;
 }
 
@@ -91,6 +92,51 @@ export function useBuyerForm(): UseBuyerFormReturn {
   // Form submission state
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [validationLoading, setValidationLoading] = useState<Record<string, boolean>>({});
+
+  const validateField = async (field: string, value: string) => {
+    if (!value.trim()) return; // Don't validate empty fields
+    
+    setValidationLoading(prev => ({ ...prev, [field]: true }));
+    
+    try {
+      const response = await fetch('/api/buyers/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+      
+      const result = await response.json();
+      
+      if (!result.isValid) {
+        const fieldError = result.errors.find((e: any) => e.field === field);
+        if (fieldError) {
+          setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+        }
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      console.error('Validation error:', error);
+    } finally {
+      setValidationLoading(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  // Debounce validation
+  const debounceValidation = (field: string, value: string) => {
+    const timeoutId = setTimeout(() => {
+      if (['email', 'buyersCompanyName', 'registrationNumber', 'contactPhone'].includes(field)) {
+        validateField(field, value);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  };
 
   // Load initial data
   useEffect(() => {
@@ -127,9 +173,12 @@ export function useBuyerForm(): UseBuyerFormReturn {
         const locationsResponse = await getLocations(validToken, 0, 100);
         
         if (locationsResponse.success && locationsResponse.data) {
-          // Type cast to handle Date vs string differences
+          // Type cast to handle Date vs string differences and null values
           const locations = locationsResponse.data.data.map(location => ({
             ...location,
+            locationName: location.locationName || '',
+            address: location.address || '',
+            postalCode: location.postalCode || '',
             createdAt: typeof location.createdAt === 'string' ? location.createdAt : location.createdAt.toISOString(),
             updatedAt: typeof location.updatedAt === 'string' ? location.updatedAt : location.updatedAt.toISOString(),
           }));
@@ -155,20 +204,26 @@ export function useBuyerForm(): UseBuyerFormReturn {
     loadData();
   }, []); // Remove authToken dependency since we get it fresh each time
 
-  // Update form field
+  // Update form field with validation
   const updateField = (name: keyof CreateBuyerData, value: string) => {
+    const sanitizedValue = sanitizeString(value);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: sanitizeString(value)
+      [name]: sanitizedValue
     }));
     
-    // Clear error for this field
+    // Clear existing error for this field
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
+    }
+    
+    if (['email', 'buyersCompanyName', 'registrationNumber', 'contactPhone'].includes(name)) {
+      debounceValidation(name, sanitizedValue);
     }
   };
 
@@ -317,6 +372,7 @@ export function useBuyerForm(): UseBuyerFormReturn {
     // Form submission
     loading,
     errors,
+    validationLoading,
     submitForm,
   };
 }

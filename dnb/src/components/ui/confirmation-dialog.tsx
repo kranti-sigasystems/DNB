@@ -25,7 +25,7 @@ interface ConfirmationDialogProps {
   isLoading?: boolean;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'default' | 'destructive' | 'success';
+  variant?: 'default' | 'destructive';
 }
 
 const actionConfig = {
@@ -151,7 +151,7 @@ export function useConfirmationDialog() {
     onConfirm: () => void;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'default' | 'destructive' | 'success';
+    variant?: 'default' | 'destructive';
   }>({
     open: false,
     title: '',
@@ -170,7 +170,7 @@ export function useConfirmationDialog() {
     onConfirm: () => Promise<void> | void;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'default' | 'destructive' | 'success';
+    variant?: 'default' | 'destructive';
   }) => {
     
     setDialog({

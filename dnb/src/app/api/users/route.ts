@@ -74,9 +74,9 @@ export const GET = withErrorHandler(
         }
 
         if (result.success) {
-          return successResponse(200, 'Users retrieved successfully', result.data);
+          return successResponse(200, 'Users retrieved successfully', (result as any).data);
         } else {
-          return errorResponse(400, result.error || 'Failed to retrieve users');
+          return errorResponse(400, (result as any).error || 'Failed to retrieve users');
         }
       })
     )

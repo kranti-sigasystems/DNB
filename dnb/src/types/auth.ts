@@ -1,74 +1,55 @@
-// types/index.ts
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  otp: string;
+  password: string;
+}
+
 export interface LoginFormData {
-  businessName: string;
+  businessName?: string;
   email: string;
   password: string;
 }
 
-export interface AuthResponse {
-  authToken: string;
+export interface RefreshTokenRequest {
   refreshToken: string;
-  tokenPayload: TokenPayload;
 }
 
-export interface TokenPayload {
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    userRole: string;
+    businessName?: string;
+    name?: string;
+  };
+}
+
+export interface PasswordResetOtp {
   id: string;
-  name: string;
   email: string;
-  role: string;
-  activeNegotiationId?: string;
-  [key: string]: any;
+  otp: string;
+  expiresAt: Date;
+  used: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface AuthState {
-  authToken: string | null;
-  refreshToken: string | null;
-  user: TokenPayload | null;
-  isAuthenticated: boolean;
+export interface EmailTemplate {
+  title: string;
+  subTitle: string;
+  body: string;
+  footer?: string;
 }
 
-export interface LoginCredentials extends LoginFormData {
-  remember?: boolean;
-}
-
-export interface InputFieldProps {
-  label: string;
-  required?: boolean;
-  name?: string;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-  placeholder?: string;
-  error?: {
-    message?: string;
-  };
-  field?: any;
-}
-
-export interface PasswordFieldProps {
-  field: any;
-  label: string;
-  required?: boolean;
-  error?: {
-    message?: string;
-  };
-}
-
-export type ValidationRule = (value: string) => string | boolean;
-
-export interface ValidationRules {
-  email: ValidationRule;
-  password: ValidationRule;
-  required: (fieldName: string) => ValidationRule;
-  minLength: (fieldName: string, length: number) => ValidationRule;
-  maxLength: (fieldName: string, length: number) => ValidationRule;
-}
-
-export interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-  message: string;
+export interface EmailNotification {
+  to: string;
+  subject: string;
+  html: string;
+  from?: string;
 }

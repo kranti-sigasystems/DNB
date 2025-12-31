@@ -42,9 +42,9 @@ export default function LocationDetailPage({ params }: LocationDetailPageProps) 
           return;
         }
 
-        const result = await getLocationById(id, session.accessToken);
+        const result = await getLocationById(id);
         if (result.success && result.data) {
-          setLocation(result.data.location);
+          setLocation(result.data);
         } else {
           showError(result.error || 'Location not found');
           router.push('/locations');
@@ -72,9 +72,9 @@ export default function LocationDetailPage({ params }: LocationDetailPageProps) 
 
     showAlert({
       title: 'Delete Location',
-      description: `Are you sure you want to delete "${location.city}, ${location.state}"? This action cannot be undone.`,
+      description: `Are you sure you want to delete "${location.city}, ${location.country}"? This action cannot be undone.`,
       action: 'delete',
-      itemName: `${location.city}, ${location.state}`,
+      itemName: `${location.city}, ${location.country}`,
       onConfirm: async () => {
         try {
           setIsDeleting(true);
@@ -84,7 +84,7 @@ export default function LocationDetailPage({ params }: LocationDetailPageProps) 
             return;
           }
 
-          const result = await deleteLocation(location.id, session.accessToken);
+          const result = await deleteLocation(location.id);
           if (result.success) {
             showSuccess('Location deleted successfully!');
             
@@ -285,9 +285,7 @@ export default function LocationDetailPage({ params }: LocationDetailPageProps) 
                     <label className="text-sm font-medium text-muted-foreground">Country</label>
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-base font-medium">
-                        {location.country ? `${location.country.name} (${location.country.code})` : 'N/A'}
-                      </span>
+                      <span className="text-base font-medium">{location.country}</span>
                     </div>
                   </div>
                 </div>

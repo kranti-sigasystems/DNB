@@ -57,13 +57,6 @@ export function DataTablePagination({
     },
   });
 
-  // Sync external state with internal state
-  React.useEffect(() => {
-    if (currentPage !== actions.goToPage) {
-      // This ensures external changes are reflected
-    }
-  }, [currentPage]);
-
   return (
     <div className={cn("flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4", className)}>
       {/* Items info and page size selector */}

@@ -4,6 +4,10 @@ export interface User {
   first_name: string;
   last_name: string;
   phoneNumber?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
   status: 'active' | 'inactive';
   isDeleted: boolean;
   createdAt: string;
@@ -20,12 +24,16 @@ export interface BusinessOwner extends User {
 
 export interface Buyer extends User {
   contactName?: string;
-  contactEmail?: string;
+  contactEmail?: string | null;
   contactPhone?: string;
   buyersCompanyName?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  countryCode?: string;
   productName?: string;
   locationName?: string;
   businessOwnerId?: string;
+  postalCode?: string;
 }
 
 export interface UsersResponse {

@@ -17,7 +17,7 @@ import { MoveLeftIcon, RefreshCcw } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
-  const {} = useAuth();
+  const { login } = useAuth();
 
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -31,6 +31,14 @@ export default function Login() {
         sessionStorage.setItem("authToken", authToken);
         sessionStorage.setItem("refreshToken", refreshToken);
         sessionStorage.setItem("user", JSON.stringify(tokenPayload));
+        
+        // Also trigger the auth hook to update
+        login({
+          accessToken: authToken,
+          refreshToken,
+          user: tokenPayload
+        });
+        
         toast.success("Login successful!");
         // Redirect to dashboard or specified route
         if (result.redirectTo) {

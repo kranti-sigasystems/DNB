@@ -52,6 +52,7 @@ export default function AddBuyerPage() {
     remainingBuyers,
     loading,
     errors,
+    validationLoading,
     submitForm,
   } = useBuyerForm();
 
@@ -208,16 +209,28 @@ export default function AddBuyerPage() {
                           {field.label}
                           {field.required && <span className="text-red-500 ml-1">*</span>}
                         </Label>
-                        <Input
-                          id={field.name}
-                          type={field.type || "text"}
-                          placeholder={field.placeholder || field.label}
-                          value={formData[field.name]}
-                          onChange={(e) => updateField(field.name, e.target.value)}
-                          className={errors[field.name] ? 'border-red-500' : ''}
-                        />
+                        <div className="relative">
+                          <Input
+                            id={field.name}
+                            type={field.type || "text"}
+                            placeholder={field.placeholder || field.label}
+                            value={formData[field.name]}
+                            onChange={(e) => updateField(field.name, e.target.value)}
+                            className={`${errors[field.name] ? 'border-red-500 focus:border-red-500' : ''} ${
+                              validationLoading[field.name] ? 'pr-10' : ''
+                            }`}
+                          />
+                          {validationLoading[field.name] && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                            </div>
+                          )}
+                        </div>
                         {errors[field.name] && (
-                          <p className="text-sm text-red-500">{errors[field.name]}</p>
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <span className="text-red-500">⚠️</span>
+                            {errors[field.name]}
+                          </p>
                         )}
                       </div>
                     ))}
@@ -246,16 +259,28 @@ export default function AddBuyerPage() {
                           {field.label}
                           {field.required && <span className="text-red-500 ml-1">*</span>}
                         </Label>
-                        <Input
-                          id={field.name}
-                          type={field.type || "text"}
-                          placeholder={field.placeholder || field.label}
-                          value={formData[field.name]}
-                          onChange={(e) => updateField(field.name, e.target.value)}
-                          className={errors[field.name] ? 'border-red-500' : ''}
-                        />
+                        <div className="relative">
+                          <Input
+                            id={field.name}
+                            type={field.type || "text"}
+                            placeholder={field.placeholder || field.label}
+                            value={formData[field.name]}
+                            onChange={(e) => updateField(field.name, e.target.value)}
+                            className={`${errors[field.name] ? 'border-red-500 focus:border-red-500' : ''} ${
+                              validationLoading[field.name] ? 'pr-10' : ''
+                            }`}
+                          />
+                          {validationLoading[field.name] && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                            </div>
+                          )}
+                        </div>
                         {errors[field.name] && (
-                          <p className="text-sm text-red-500">{errors[field.name]}</p>
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <span className="text-red-500">⚠️</span>
+                            {errors[field.name]}
+                          </p>
                         )}
                       </div>
                     ))}

@@ -441,9 +441,11 @@ export async function createUser(
       const { createBuyer } = await import('./business-owner.actions');
       const result = await createBuyer({
         contactName: buyerData.contactName || `${buyerData.first_name || ''} ${buyerData.last_name || ''}`.trim(),
-        contactEmail: buyerData.email!,
+        contactEmail: buyerData.email || undefined,
         buyersCompanyName: buyerData.buyersCompanyName || '',
-        ...buyerData
+        registrationNumber: buyerData.registrationNumber || undefined,
+        taxId: (buyerData as any).taxId || undefined,
+        countryCode: (buyerData as any).countryCode || undefined,
       }, authToken);
       
       if (!result.success || !result.data) {
@@ -543,10 +545,12 @@ export async function updateUser(
       const { updateBuyer } = await import('./business-owner.actions');
       const result = await updateBuyer(userId, {
         contactName: buyerData.contactName,
-        contactEmail: buyerData.email,
+        contactEmail: buyerData.email || undefined,
         buyersCompanyName: buyerData.buyersCompanyName,
+        registrationNumber: buyerData.registrationNumber || undefined,
+        taxId: (buyerData as any).taxId || undefined,
+        countryCode: (buyerData as any).countryCode || undefined,
         status: buyerData.status,
-        ...buyerData
       }, authToken);
       
       if (!result.success || !result.data) {
