@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CheckoutNavbar from "@/components/features/home/components/CheckoutNavbar";
 import {
   CheckCircle2,
   CreditCard,
@@ -12,11 +11,11 @@ import {
   FileText,
   PackageCheck,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function OnboardingProcessPage() {
   return (
     <>
-      <CheckoutNavbar />
       <section className="min-h-screen bg-background px-6 py-16">
         <div className="mx-auto max-w-6xl space-y-16">
           {/* HEADER */}
@@ -80,16 +79,18 @@ export default function OnboardingProcessPage() {
                 You’re Ready to Go Live
               </h2>
 
-              <p className="text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-muted-foreground max-w-2xl mx-auto pb-3">
                 Once your email is verified, you can access your dashboard.
                 Features such as smart negotiation, analytics, and team
                 collaboration will be available based on your chosen plan.
               </p>
 
-              <Button size="lg" className="gap-2">
-                Go to Dashboard
-                <CheckCircle2 className="h-5 w-5" />
-              </Button>
+              <Link href="/">
+                <Button size="lg" className="gap-2">
+                  Launch Your Business
+                  <CheckCircle2 className="h-5 w-5" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

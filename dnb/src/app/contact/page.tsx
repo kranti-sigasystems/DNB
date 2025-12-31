@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import CheckoutNavbar from "@/components/features/home/components/CheckoutNavbar";
 import {
   Mail,
   Phone,
@@ -20,34 +19,33 @@ import {
 export default function ContactPage() {
   return (
     <>
-      <CheckoutNavbar />
-      <section className="min-h-screen bg-background px-6 py-20">
-        <div className="mx-auto max-w-7xl space-y-20">
+      <section className="min-h-screen bg-background px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl space-y-16 lg:space-y-20">
           {/* HEADER */}
-          <div className="max-w-3xl mx-auto text-center space-y-5">
+          <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-5">
             <Badge className="bg-primary/10 text-primary">
               Contact Our Team
             </Badge>
 
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
               Let’s Talk About Your
-              <span className="block bg-gradient-to-br from-primary via-primary/60 to-primary/30 bg-clip-text text-transparent pb-3">
+              <span className="block bg-gradient-to-br from-primary via-primary/60 to-primary/30 bg-clip-text text-transparent mt-2">
                 Digital Negotiation Needs
               </span>
             </h1>
 
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base sm:text-lg text-muted-foreground">
               Whether you are looking for a product demo, enterprise onboarding,
               or support assistance, our team is ready to help you move forward.
             </p>
           </div>
 
           {/* MAIN CONTENT */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
             {/* LEFT – CONTACT DETAILS */}
-            <div className="space-y-8">
-              <Card className="border shadow-md">
-                <CardContent className="p-6 space-y-6">
+            <div className="space-y-6 sm:space-y-8">
+              <Card className="border shadow-sm sm:shadow-md rounded-2xl">
+                <CardContent className="p-5 sm:p-6 space-y-6">
                   <ContactItem
                     icon={<Mail className="h-5 w-5" />}
                     title="Email"
@@ -58,7 +56,7 @@ export default function ContactPage() {
                   <ContactItem
                     icon={<Phone className="h-5 w-5" />}
                     title="Phone"
-                    description="Business hours: Mon–Fri, 9 AM – 6 PM IST"
+                    description="Mon–Fri, 9 AM – 6 PM IST"
                     value="+91 98765 43210"
                   />
 
@@ -71,31 +69,30 @@ export default function ContactPage() {
                 </CardContent>
               </Card>
 
-              {/* BUSINESS USE CASES */}
-              <Card className="border bg-primary/5 shadow-md">
-                <CardContent className="p-6 space-y-5">
+              {/* BUSINESS USE CASE */}
+              <Card className="border bg-primary/5 shadow-sm sm:shadow-md rounded-2xl">
+                <CardContent className="p-5 sm:p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Building2 className="h-6 w-6 text-primary" />
                     <h3 className="text-lg font-semibold">
                       For Enterprises & Teams
                     </h3>
                   </div>
-                  <p className="text-muted-foreground">
-                    Contact us for bulk onboarding, advanced analytics,
-                    dedicated support, and custom integrations tailored to your
-                    business operations.
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Bulk onboarding, advanced analytics, dedicated support, and
+                    custom integrations tailored to your operations.
                   </p>
                 </CardContent>
               </Card>
             </div>
 
             {/* RIGHT – CONTACT FORM */}
-            <Card className="border shadow-xl rounded-2xl">
+            <Card className="border shadow-lg rounded-2xl">
               <CardHeader>
-                <CardTitle>Send Us a Message</CardTitle>
+                <CardTitle className="text-xl">Send Us a Message</CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-5 sm:space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
@@ -134,7 +131,7 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <Button size="lg" className="w-full gap-2">
+                <Button size="lg" className="w-full h-12 gap-2">
                   Submit Inquiry
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -143,7 +140,7 @@ export default function ContactPage() {
           </div>
 
           {/* SUPPORT STRIP */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <SupportCard
               icon={<Briefcase className="h-6 w-6" />}
               title="Sales & Demo"
@@ -166,6 +163,8 @@ export default function ContactPage() {
   );
 }
 
+/* --- Reusable Components --- */
+
 function ContactItem({
   icon,
   title,
@@ -179,13 +178,13 @@ function ContactItem({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+      <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
         {icon}
       </div>
-      <div>
+      <div className="space-y-0.5">
         <p className="font-semibold">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-muted-foreground">{value}</p>
+        <p className="text-sm sm:text-base text-muted-foreground">{value}</p>
       </div>
     </div>
   );
@@ -201,13 +200,15 @@ function SupportCard({
   description: string;
 }) {
   return (
-    <Card className="border shadow-md hover:shadow-lg transition-shadow">
+    <Card className="border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-6 space-y-3">
         <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
           {icon}
         </div>
         <h3 className="font-semibold text-lg">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          {description}
+        </p>
       </CardContent>
     </Card>
   );
