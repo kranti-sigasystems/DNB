@@ -144,7 +144,7 @@ export function useOffers(options: UseOffersOptions = {}) {
   );
 
   const handleGetOfferById = useCallback(
-    async (offerId: number): Promise<any | null> => {
+    async (offerId: number): Promise<any> => {
       try {
         const authToken = getAuthToken();
         if (!authToken) {
@@ -154,7 +154,7 @@ export function useOffers(options: UseOffersOptions = {}) {
         const result = await getOfferById(offerId, authToken);
         
         if (result.success && result.data) {
-          return result.data;
+          return result;
         } else {
           showError(result.error || 'Failed to fetch offer');
           return null;

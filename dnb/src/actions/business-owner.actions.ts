@@ -421,8 +421,6 @@ export async function updateBuyer(buyerId: string, updateData: {
   contactEmail?: string;
   buyersCompanyName?: string;
   registrationNumber?: string;
-  taxId?: string;
-  countryCode?: string;
   status?: string;
   [key: string]: any;
 }, authToken?: string) {
@@ -521,11 +519,12 @@ export async function createBuyer(buyerData: {
       return { success: false, error: 'Email is already registered in the system' };
     }
     
-    // Check if business name is unique for this business owner
-    if (buyerData.businessName) {
+    // Check if business name is unique for this business owner (use buyersCompanyName if businessName not provided)
+    const businessNameToCheck = buyerData.businessName || buyerData.buyersCompanyName;
+    if (businessNameToCheck) {
       const existingBusinessName = await prisma.buyer.findFirst({
         where: {
-          businessName: buyerData.businessName,
+          businessName: businessNameToCheck,
           businessOwnerId: businessOwnerId,
           is_deleted: false
         }
@@ -536,11 +535,12 @@ export async function createBuyer(buyerData: {
       }
     }
     
-    // Check if phone number is unique for this business owner
-    if (buyerData.phoneNumber) {
+    // Check if phone number is unique for this business owner (use contactPhone if phoneNumber not provided)
+    const phoneToCheck = buyerData.phoneNumber || buyerData.contactPhone;
+    if (phoneToCheck) {
       const existingPhone = await prisma.buyer.findFirst({
         where: {
-          phoneNumber: buyerData.phoneNumber,
+          phoneNumber: phoneToCheck,
           businessOwnerId: businessOwnerId,
           is_deleted: false
         }
@@ -577,7 +577,11 @@ export async function createBuyer(buyerData: {
         email: email,
         businessOwnerId: businessOwnerId,
         status: 'active',
-        is_deleted: false
+        is_deleted: false,
+        // Ensure businessName is set (use buyersCompanyName as fallback)
+        businessName: buyerData.businessName || buyerData.buyersCompanyName || '',
+        // Ensure phoneNumber is set (use contactPhone as fallback)
+        phoneNumber: buyerData.phoneNumber || buyerData.contactPhone || '',
       }
     });
 

@@ -29,11 +29,8 @@ export default function Layout({ children }: LayoutProps) {
     "/forgot-password",
   ];
 
-  const noNavbarRoutes = ["/"];
-
   const isBuyer = userRole === "buyer";
   const shouldShowSidebar = !isBuyer && !noSidebarRoutes.includes(pathname);
-  const shouldShowNavbar = !noNavbarRoutes.includes(pathname);
 
   const contentPadding = sidebarCollapsed ? "lg:pl-16" : "lg:pl-64";
   const shouldHavePadding =
@@ -84,13 +81,11 @@ export default function Layout({ children }: LayoutProps) {
           shouldShowSidebar && contentPadding
         )}
       >
-        {shouldShowNavbar && (
-          <Navbar
-            onMenuClick={() => setMobileSidebarOpen(true)}
-            showSidebarButton={shouldShowSidebar}
-            isNoSidebarRoute={isNoSidebarRoute}
-          />
-        )}
+        <Navbar
+          onMenuClick={() => setMobileSidebarOpen(true)}
+          showSidebarButton={shouldShowSidebar}
+          isNoSidebarRoute={isNoSidebarRoute}
+        />
         <main
           className={cn(
             "flex-1 overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20",

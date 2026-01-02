@@ -13,8 +13,6 @@ import { ReduxProvider } from "@/providers/ReduxProvider";
 import { useToastContext } from "@/providers/ToastProvider";
 import { setGlobalToastFunctions } from "@/utils/toast";
 import { usePerformanceOptimizations } from "@/hooks/use-performance";
-import Navbar from "@/components/layout/Navbar";
-import LandingNavbar from "@/components/features/home/components/Landingnavbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,7 +85,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <PerformanceProvider>
                 <ToastInitializer />
                 <LoadingBar />
-                <LandingNavbar />
                 <AuthProvider>{children}</AuthProvider>
                 {/* React Hot Toast configuration */}
                 <Toaster

@@ -79,7 +79,8 @@ export default function AddBuyerPage() {
           .map(e => {
             // Convert field names to user-friendly labels
             const fieldLabels: Record<string, string> = {
-              contactName: 'Contact Name',
+              firstName: 'First Name',
+              lastName: 'Last Name',
               email: 'Email Address',
               contactPhone: 'Phone Number',
               buyersCompanyName: 'Company Name',
@@ -114,7 +115,7 @@ export default function AddBuyerPage() {
       title: 'Add New Buyer',
       description: 'Are you sure you want to add this buyer to your system?',
       action: 'add',
-      itemName: `${formData.contactName} (${formData.buyersCompanyName})`,
+      itemName: `${formData.firstName} ${formData.lastName} (${formData.buyersCompanyName})`,
       onConfirm: async () => {
         try {
           await submitForm();

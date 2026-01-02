@@ -58,13 +58,14 @@ export function useBuyerForm(): UseBuyerFormReturn {
 
   // Form data
   const [formData, setFormData] = useState<CreateBuyerData>({
-    contactName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     contactEmail: '',
     contactPhone: '',
+    phoneNumber: '',
     buyersCompanyName: '',
     registrationNumber: '',
-    taxId: '',
     productName: '',
     locationName: '',
     country: '',
@@ -72,7 +73,7 @@ export function useBuyerForm(): UseBuyerFormReturn {
     city: '',
     address: '',
     postalCode: '',
-    countryCode: '',
+    businessName: '',
   });
 
   // Products state
@@ -100,25 +101,49 @@ export function useBuyerForm(): UseBuyerFormReturn {
     setValidationLoading(prev => ({ ...prev, [field]: true }));
     
     try {
-      const response = await fetch('/api/buyers/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
-      });
-      
-      const result = await response.json();
-      
-      if (!result.isValid) {
-        const fieldError = result.errors.find((e: any) => e.field === field);
-        if (fieldError) {
-          setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+      // For buyersCompanyName, check uniqueness via backend
+      if (field === 'buyersCompanyName') {
+        const validToken = await getValidToken();
+        if (!validToken) {
+          setValidationLoading(prev => ({ ...prev, [field]: false }));
+          return;
+        }
+
+        // Import the check function
+        const { checkBusinessNameUnique } = await import('@/actions/business-owner.actions');
+        const result = await checkBusinessNameUnique(value, validToken);
+        
+        if (result.success && result.data && !result.data.isUnique) {
+          setErrors(prev => ({ ...prev, [field]: 'This company name is already in use' }));
+        } else {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[field];
+            return newErrors;
+          });
         }
       } else {
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[field];
-          return newErrors;
+        // For other fields, use the API validation
+        const response = await fetch('/api/buyers/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value }),
         });
+        
+        const result = await response.json();
+        
+        if (!result.isValid) {
+          const fieldError = result.errors.find((e: any) => e.field === field);
+          if (fieldError) {
+            setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+          }
+        } else {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[field];
+            return newErrors;
+          });
+        }
       }
     } catch (error) {
       console.error('Validation error:', error);
@@ -291,19 +316,23 @@ export function useBuyerForm(): UseBuyerFormReturn {
       }
 
       // Create buyer
+      const contactName = `${formData.firstName} ${formData.lastName}`.trim();
       const buyerData = {
-        contactName: formData.contactName,
+        contactName: contactName,
         contactEmail: formData.contactEmail || formData.email,
+        email: formData.email,
         buyersCompanyName: formData.buyersCompanyName || '',
+        businessName: formData.buyersCompanyName || '', // Map to businessName for uniqueness check
         country: formData.country || 'United States',
         contactPhone: formData.contactPhone,
+        phoneNumber: formData.contactPhone, // Map to phoneNumber for uniqueness check
         productName: formData.productName,
         locationName: formData.locationName,
         address: formData.address,
         city: formData.city,
         state: formData.state,
         postalCode: formData.postalCode,
-        registrationNumber: formData.registrationNumber
+        registrationNumber: formData.registrationNumber,
       };
       
       const result = await createBuyer(buyerData, validToken);
@@ -311,13 +340,14 @@ export function useBuyerForm(): UseBuyerFormReturn {
       if (result.success) {
         // Reset form
         setFormData({
-          contactName: '',
+          firstName: '',
+          lastName: '',
           email: '',
           contactEmail: '',
           contactPhone: '',
+          phoneNumber: '',
           buyersCompanyName: '',
           registrationNumber: '',
-          taxId: '',
           productName: '',
           locationName: '',
           country: '',
@@ -325,7 +355,7 @@ export function useBuyerForm(): UseBuyerFormReturn {
           city: '',
           address: '',
           postalCode: '',
-          countryCode: '',
+          businessName: '',
         });
         setSelectedProduct(null);
         setSelectedLocation(null);

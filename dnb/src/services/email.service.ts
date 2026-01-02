@@ -4,6 +4,14 @@
  * This service provides email functionality for the application.
  * It can be easily configured to work with different email providers
  * like Nodemailer, SendGrid, Resend, etc.
+ * 
+ * Configuration is read from environment variables:
+ * - EMAIL_PROVIDER: 'nodemailer', 'sendgrid', 'resend', or 'console'
+ * - SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS: For Nodemailer
+ * - SENDGRID_API_KEY: For SendGrid
+ * - RESEND_API_KEY: For Resend
+ * - EMAIL_FROM: Default sender email
+ * - EMAIL_REPLY_TO: Default reply-to email
  */
 
 export interface EmailOptions {
@@ -27,7 +35,7 @@ export interface EmailResponse {
 }
 
 /**
- * Email service configuration
+ * Email service configuration - reads from environment variables
  */
 const EMAIL_CONFIG = {
   // Default sender information

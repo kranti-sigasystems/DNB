@@ -53,7 +53,6 @@ model Buyer {
   email              String   @unique
   contactEmail       String?
   contactPhone       String?
-  phoneNumber        String?
   buyersCompanyName  String?
   productName        String?
   locationName       String?
@@ -62,10 +61,9 @@ model Buyer {
   is_deleted         Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  phoneNumber        String?
   businessName       String?
-  registrationNumber String?  @unique
-  taxId              String?
-  countryCode        String?
+  registrationNumber String?
   address            String?
   city               String?
   state              String?
@@ -76,9 +74,6 @@ model Buyer {
   businessOwner BusinessOwner @relation(fields: [businessOwnerId], references: [id], onDelete: Cascade)
   offers        Offer[]       @relation("BuyerOffers")
 
-  // Unique constraints per business owner
-  @@unique([businessOwnerId, businessName], name: "unique_buyer_business_name_per_owner")
-  @@unique([businessOwnerId, phoneNumber], name: "unique_buyer_phone_per_owner")
   @@map("buyers")
 }
 

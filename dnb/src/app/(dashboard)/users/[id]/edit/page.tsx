@@ -60,7 +60,8 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
   
   // Form data
   const [formData, setFormData] = useState<CreateBuyerData>({
-    contactName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     contactEmail: '',
     contactPhone: '',
@@ -70,8 +71,6 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
     productName: '',
     locationName: '',
     registrationNumber: '',
-    taxId: '',
-    countryCode: '',
     address: '',
     city: '',
     state: '',
@@ -171,8 +170,13 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
           setBuyer(typedBuyer);
           
           // Update form data with buyer information
+          const nameParts = (buyer.contactName || '').split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
           const buyerFormData: CreateBuyerData = {
-            contactName: buyer.contactName || '',
+            firstName: firstName,
+            lastName: lastName,
             email: buyer.email || '',
             contactEmail: buyer.contactEmail || '',
             contactPhone: buyer.contactPhone || '',
@@ -182,8 +186,6 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
             productName: buyer.productName || '',
             locationName: buyer.locationName || '',
             registrationNumber: buyer.registrationNumber || '',
-            taxId: buyer.taxId || '',
-            countryCode: buyer.countryCode || '',
             address: buyer.address || '',
             city: buyer.city || '',
             state: buyer.state || '',
@@ -307,7 +309,8 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
           .filter(e => e.message === ValidationMessages.required)
           .map(e => {
             const fieldLabels: Record<string, string> = {
-              contactName: 'Contact Name',
+              firstName: 'First Name',
+              lastName: 'Last Name',
               email: 'Email Address',
               contactPhone: 'Phone Number',
               buyersCompanyName: 'Company Name',
@@ -337,7 +340,7 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
       title: 'Update Buyer',
       description: 'Are you sure you want to update this buyer information?',
       action: 'update',
-      itemName: `${formData.contactName} (${formData.buyersCompanyName})`,
+      itemName: `${formData.firstName} ${formData.lastName} (${formData.buyersCompanyName})`,
       onConfirm: async () => {
         try {
           setIsSaving(true);
@@ -347,8 +350,10 @@ export default function EditBuyerPage({ params }: EditBuyerPageProps) {
             return;
           }
 
+          const contactName = `${formData.firstName} ${formData.lastName}`.trim();
           const updateData = {
             ...formData,
+            contactName: contactName,
             productName: selectedProduct?.productName || formData.productName,
             locationName: selectedLocation?.locationName || formData.locationName,
           };
