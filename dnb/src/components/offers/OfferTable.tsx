@@ -86,7 +86,6 @@ interface OfferTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   onView: (offerId: number) => void;
-  onEdit: (offerId: number) => void;
   onDelete: (offerId: number) => void;
   onAddOffer?: () => void;
   isRefreshing?: boolean;
@@ -95,12 +94,10 @@ interface OfferTableProps {
 const ActionMenu = ({ 
   offer, 
   onView, 
-  onEdit, 
   onDelete 
 }: { 
   offer: Offer;
   onView: (offerId: number) => void;
-  onEdit: (offerId: number) => void;
   onDelete: (offerId: number) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -152,14 +149,6 @@ const ActionMenu = ({
             <span>View Details</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem 
-            onClick={() => onEdit(offer.id)}
-            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent/50 focus:bg-accent/50 rounded-sm transition-colors"
-          >
-            <Edit className="w-4 h-4 text-muted-foreground" />
-            <span>Edit</span>
-          </DropdownMenuItem>
-          
           <div className="h-px bg-border/50 my-1" />
           
           <DropdownMenuItem 
@@ -179,12 +168,10 @@ const ActionMenu = ({
 const MobileCard = ({ 
   offer, 
   onView,
-  onEdit,
   onDelete
 }: { 
   offer: Offer;
   onView: (offerId: number) => void;
-  onEdit: (offerId: number) => void;
   onDelete: (offerId: number) => void;
 }) => {
   // Check if offer is expired
@@ -240,7 +227,6 @@ const MobileCard = ({
             <ActionMenu 
               offer={offer} 
               onView={onView}
-              onEdit={onEdit}
               onDelete={onDelete}
             />
           </div>
@@ -475,7 +461,6 @@ export function OfferTable({
   onPageChange,
   onPageSizeChange,
   onView,
-  onEdit,
   onDelete,
   onAddOffer,
   isRefreshing = false,
@@ -648,7 +633,6 @@ export function OfferTable({
                 key={offer.id} 
                 offer={offer} 
                 onView={onView}
-                onEdit={onEdit}
                 onDelete={onDelete}
               />
             ))}
@@ -781,7 +765,6 @@ export function OfferTable({
                             <ActionMenu 
                               offer={offer}
                               onView={onView}
-                              onEdit={onEdit}
                               onDelete={onDelete}
                             />
                           </TableCell>

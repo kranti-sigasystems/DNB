@@ -67,10 +67,6 @@ export default function OffersPage() {
     router.push(`/offers/${offerId}`);
   }, [router]);
 
-  const handleEdit = useCallback((offerId: number) => {
-    router.push(`/offers/${offerId}/edit`);
-  }, [router]);
-
   const handleAddOffer = useCallback(() => {
     router.push('/offer-draft');
   }, [router]);
@@ -126,7 +122,6 @@ export default function OffersPage() {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
         onView={handleView}
-        onEdit={handleEdit}
         onDelete={handleDelete}
         onAddOffer={handleAddOffer}
         isRefreshing={actionLoading}

@@ -14,16 +14,6 @@ export const BUYER_FORM_FIELDS: BuyerFormFields = {
       placeholder: 'Enter registration number'
     },
     { 
-      name: 'taxId', 
-      label: 'Tax ID',
-      placeholder: 'Enter tax identification number'
-    },
-    { 
-      name: 'countryCode', 
-      label: 'Country Code',
-      placeholder: 'Enter country code (e.g., US, IN, UK)'
-    },
-    { 
       name: 'country', 
       label: 'Country', 
       required: true,
@@ -32,10 +22,16 @@ export const BUYER_FORM_FIELDS: BuyerFormFields = {
   ],
   contact: [
     { 
-      name: 'contactName', 
-      label: 'Contact Name', 
+      name: 'firstName', 
+      label: 'First Name', 
       required: true,
-      placeholder: 'Enter contact person name'
+      placeholder: 'Enter first name'
+    },
+    { 
+      name: 'lastName', 
+      label: 'Last Name', 
+      required: true,
+      placeholder: 'Enter last name'
     },
     { 
       name: 'email', 
@@ -50,6 +46,12 @@ export const BUYER_FORM_FIELDS: BuyerFormFields = {
       required: true,
       type: 'tel',
       placeholder: 'Enter phone number'
+    },
+    { 
+      name: 'contactEmail', 
+      label: 'Alternate Email (Optional)',
+      type: 'email',
+      placeholder: 'Enter alternate email address'
     },
   ],
   address: [

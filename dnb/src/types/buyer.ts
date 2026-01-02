@@ -4,28 +4,27 @@ export interface Buyer {
   email: string;
   contactEmail?: string | null;
   contactPhone?: string | null;
-  phoneNumber?: string | null;
   buyersCompanyName?: string | null;
-  businessName?: string | null;
-  registrationNumber?: string | null;
-  taxId?: string | null;
-  countryCode?: string | null;
   productName?: string | null;
   locationName?: string | null;
   businessOwnerId: string;
-  country: string;
-  state?: string | null;
-  city?: string | null;
-  address?: string | null;
-  postalCode?: string | null;
   status: string;
   is_deleted: boolean;
   createdAt: string | Date;
   updatedAt: string | Date;
+  phoneNumber?: string | null;
+  businessName?: string | null;
+  registrationNumber?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country: string;
+  postalCode?: string | null;
 }
 
 export interface CreateBuyerData {
-  contactName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   contactEmail?: string;
   contactPhone?: string;
@@ -33,8 +32,6 @@ export interface CreateBuyerData {
   buyersCompanyName?: string;
   businessName?: string;
   registrationNumber?: string;
-  taxId?: string;
-  countryCode?: string;
   productName?: string;
   locationName?: string;
   country: string;

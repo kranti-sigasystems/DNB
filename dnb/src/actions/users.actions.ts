@@ -444,8 +444,6 @@ export async function createUser(
         contactEmail: buyerData.email || undefined,
         buyersCompanyName: buyerData.buyersCompanyName || '',
         registrationNumber: buyerData.registrationNumber || undefined,
-        taxId: (buyerData as any).taxId || undefined,
-        countryCode: (buyerData as any).countryCode || undefined,
       }, authToken);
       
       if (!result.success || !result.data) {
@@ -548,8 +546,6 @@ export async function updateUser(
         contactEmail: buyerData.email || undefined,
         buyersCompanyName: buyerData.buyersCompanyName,
         registrationNumber: buyerData.registrationNumber || undefined,
-        taxId: (buyerData as any).taxId || undefined,
-        countryCode: (buyerData as any).countryCode || undefined,
         status: buyerData.status,
       }, authToken);
       

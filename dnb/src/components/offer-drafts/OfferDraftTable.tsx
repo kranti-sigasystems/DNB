@@ -65,7 +65,6 @@ interface OfferDraftTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   onView: (draftNo: number) => void;
-  onEdit: (draftNo: number) => void;
   onDelete: (draftNo: number) => void;
   onAddDraft?: () => void;
   isRefreshing?: boolean;
@@ -74,12 +73,10 @@ interface OfferDraftTableProps {
 const ActionMenu = ({ 
   draft, 
   onView, 
-  onEdit, 
   onDelete 
 }: { 
   draft: OfferDraft;
   onView: (draftNo: number) => void;
-  onEdit: (draftNo: number) => void;
   onDelete: (draftNo: number) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -131,14 +128,6 @@ const ActionMenu = ({
             <span>View Details</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem 
-            onClick={() => onEdit(draft.draftNo!)}
-            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent/50 focus:bg-accent/50 rounded-sm transition-colors"
-          >
-            <Edit className="w-4 h-4 text-muted-foreground" />
-            <span>Edit</span>
-          </DropdownMenuItem>
-          
           <div className="h-px bg-border/50 my-1" />
           
           <DropdownMenuItem 
@@ -158,12 +147,10 @@ const ActionMenu = ({
 const MobileCard = ({ 
   draft, 
   onView,
-  onEdit,
   onDelete
 }: { 
   draft: OfferDraft;
   onView: (draftNo: number) => void;
-  onEdit: (draftNo: number) => void;
   onDelete: (draftNo: number) => void;
 }) => {
   const getStatusColor = (status: string) => {
@@ -193,7 +180,6 @@ const MobileCard = ({
             <ActionMenu 
               draft={draft} 
               onView={onView}
-              onEdit={onEdit}
               onDelete={onDelete}
             />
           </div>
@@ -423,7 +409,6 @@ export function OfferDraftTable({
   onPageChange,
   onPageSizeChange,
   onView,
-  onEdit,
   onDelete,
   onAddDraft,
   isRefreshing = false,
@@ -552,7 +537,6 @@ export function OfferDraftTable({
                 key={draft.draftNo} 
                 draft={draft} 
                 onView={onView}
-                onEdit={onEdit}
                 onDelete={onDelete}
               />
             ))}
@@ -651,7 +635,6 @@ export function OfferDraftTable({
                             <ActionMenu 
                               draft={draft}
                               onView={onView}
-                              onEdit={onEdit}
                               onDelete={onDelete}
                             />
                           </TableCell>

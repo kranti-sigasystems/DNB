@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const ValidationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^[\+]?[0-9\s\-\(\)]{7,20}$/,
-  name: /^[a-zA-Z\s\-'\.]{2,50}$/,
+  name: /^[a-zA-Z\s\-'\.]{2,100}$/,
   businessName: /^[a-zA-Z0-9\s\-'\.&,]{2,100}$/,
   productCode: /^[A-Z0-9\-_]{2,20}$/,
   sku: /^[A-Z0-9\-_]{1,50}$/,
@@ -22,7 +22,7 @@ export const ValidationMessages = {
   required: 'This field is required',
   email: 'Please enter a valid email address',
   phone: 'Please enter a valid phone number (7-20 characters, can include +, spaces, hyphens, parentheses)',
-  name: 'Name should contain only letters, spaces, hyphens, apostrophes, and dots (2-50 characters)',
+  name: 'Name should contain only letters, spaces, hyphens, apostrophes, and dots (2-100 characters)',
   businessName: 'Business name should contain letters, numbers, spaces, and common symbols (2-100 characters)',
   productCode: 'Product code should contain uppercase letters, numbers, hyphens, and underscores (2-20 characters)',
   sku: 'SKU should contain uppercase letters, numbers, hyphens, and underscores (1-50 characters)',
@@ -95,7 +95,7 @@ export const BuyerValidationSchema = z.object({
   // Contact Information
   contactName: z.string()
     .min(2, ValidationMessages.minLength(2))
-    .max(50, ValidationMessages.maxLength(50))
+    .max(100, ValidationMessages.maxLength(100))
     .regex(ValidationPatterns.name, ValidationMessages.name),
   
   email: z.string()
@@ -214,7 +214,8 @@ export const validateBuyerData = (data: any): { isValid: boolean; errors: Array<
 
   // Required fields validation
   const requiredFields = [
-    { field: 'contactName', type: 'name' as keyof typeof ValidationPatterns },
+    { field: 'firstName', type: 'name' as keyof typeof ValidationPatterns },
+    { field: 'lastName', type: 'name' as keyof typeof ValidationPatterns },
     { field: 'email', type: 'email' as keyof typeof ValidationPatterns },
     { field: 'contactPhone', type: 'phone' as keyof typeof ValidationPatterns },
     { field: 'buyersCompanyName', type: 'businessName' as keyof typeof ValidationPatterns },
@@ -240,7 +241,6 @@ export const validateBuyerData = (data: any): { isValid: boolean; errors: Array<
   // Optional fields validation
   const optionalFields = [
     { field: 'registrationNumber', type: 'businessName' as keyof typeof ValidationPatterns },
-    { field: 'taxId', type: 'businessName' as keyof typeof ValidationPatterns },
   ];
 
   for (const { field, type } of optionalFields) {
